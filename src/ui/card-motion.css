@@ -1,3 +1,9 @@
+.game-card .pixel-art,
+.card-back .pixel-art {
+  shape-rendering: geometricPrecision;
+  image-rendering: auto;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .game-card,
   .card-back {

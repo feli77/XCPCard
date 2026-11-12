@@ -16,5 +16,8 @@ const patterns: Record<string, string[]> = {
 };
 export function PixelArt({ kind, className = '' }: { kind: string; className?: string }) {
   const pixels = patterns[kind];
-  return <svg className={`pixel-art ${className}`} viewBox="0 0 16 12" fill="currentColor" shapeRendering="crispEdges" aria-hidden="true">{pixels.flatMap((row, y) => [...row].map((p, x) => p === '1' ? <rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" /> : null))}</svg>;
+  const path = pixels.flatMap((row, y) => [...row].map((pixel, x) =>
+    pixel === '1' ? `M${x} ${y}h1v1h-1z` : '',
+  )).join('');
+  return <svg className={`pixel-art ${className}`} viewBox="0 0 16 12" fill="currentColor" shapeRendering="crispEdges" aria-hidden="true"><path d={path}/></svg>;
 }
