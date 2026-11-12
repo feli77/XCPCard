@@ -123,12 +123,13 @@ small {
   font-size: 13px;
   color: #828073;
   padding: 0 3px;
+  transition: color 180ms ease;
 }
 .app-header nav button.nav-active {
   color: var(--ink);
   font-weight: 700;
 }
-.app-header nav button.nav-active:after {
+.app-header nav button:after {
   position: absolute;
   content: "";
   height: 4px;
@@ -136,6 +137,31 @@ small {
   background: var(--ink);
   left: 0;
   right: 0;
+  transform: scaleX(0);
+  transition: transform 220ms ease;
+}
+.app-header nav button.nav-active:after {
+  transform: scaleX(1);
+}
+.tab-content {
+  animation: tab-enter 220ms ease-out;
+}
+@keyframes tab-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tab-content {
+    animation: none;
+  }
+  .app-header nav button,
+  .app-header nav button:after {
+    transition: none;
+  }
 }
 .app-header nav i {
   font: 10px var(--mono);

@@ -241,39 +241,43 @@ export function App() {
         </div>
       </header>
 
-      {screen === "lobby" && (
-        <Lobby
-          profile={profile}
-          match={match}
-          onBegin={begin}
-          onResume={() => {
-            setViewProblem(match!.currentProblem);
-            setScreen("match");
-          }}
-          onNextSeason={() =>
-            setSession((s) => ({ ...s, profile: nextSeason(s.profile) }))
-          }
-          onEditDeck={() => navigate("deck")}
-        />
-      )}
+      {screen !== "match" && (
+        <div key={screen} className="tab-content">
+          {screen === "lobby" && (
+            <Lobby
+              profile={profile}
+              match={match}
+              onBegin={begin}
+              onResume={() => {
+                setViewProblem(match!.currentProblem);
+                setScreen("match");
+              }}
+              onNextSeason={() =>
+                setSession((s) => ({ ...s, profile: nextSeason(s.profile) }))
+              }
+              onEditDeck={() => navigate("deck")}
+            />
+          )}
 
-      {screen === "deck" && (
-        <Collection
-          profile={profile}
-          playing={!!playing}
-          category={category}
-          onCategory={setCategory}
-          onRemove={removeCard}
-          onAdd={addCard}
-        />
-      )}
+          {screen === "deck" && (
+            <Collection
+              profile={profile}
+              playing={!!playing}
+              category={category}
+              onCategory={setCategory}
+              onRemove={removeCard}
+              onAdd={addCard}
+            />
+          )}
 
-      {screen === "packs" && (
-        <Packs
-          profile={profile}
-          onOpen={buyPack}
-          onContest={() => navigate("lobby")}
-        />
+          {screen === "packs" && (
+            <Packs
+              profile={profile}
+              onOpen={buyPack}
+              onContest={() => navigate("lobby")}
+            />
+          )}
+        </div>
       )}
 
       {screen === "match" && match && (
