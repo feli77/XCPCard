@@ -971,6 +971,7 @@ small {
 }
 .deck-slots > button {
   border: 1px solid #d8d5c7;
+  border-radius: 8px;
   background: #fbf9f2;
   padding: 9px 11px;
   display: flex;
