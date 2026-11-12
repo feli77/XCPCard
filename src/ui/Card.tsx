@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react';
-import type { CSSProperties, DragEvent, PointerEvent } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { CSSProperties, PointerEvent } from 'react';
 import { createPortal } from 'react-dom';
 import type { CardDefinition } from '../content/types';
 import { rarities } from '../content/data';
@@ -11,7 +11,8 @@ interface CardProps {
   count?: number;
   onClick?: () => void;
   draggable?: boolean;
-  onDragStart?: (event: DragEvent) => void;
+  onPointerDown?: (event: PointerEvent<HTMLDivElement>) => void;
+  dragging?: boolean;
   progress?: number;
   active?: boolean;
   dice?: number;
@@ -19,12 +20,13 @@ interface CardProps {
   onDiscard?: () => void;
   compact?: boolean;
 }
-export function Card({ card, selected, count, onClick, draggable, onDragStart, progress, active, dice, scoreGain, onDiscard, compact = false }: CardProps) {
+export function Card({ card, selected, count, onClick, draggable, onPointerDown, dragging, progress, active, dice, scoreGain, onDiscard, compact = false }: CardProps) {
   const rarity = rarities[card.rarity];
   const [tooltip, setTooltip] = useState<CSSProperties | null>(null);
   const tiltBounds = useRef<DOMRect | null>(null);
+  useEffect(() => { if (dragging) setTooltip(null); }, [dragging]);
   function tiltCard(event: PointerEvent<HTMLDivElement>) {
-    if (event.pointerType !== 'mouse' || event.buttons || !tiltBounds.current) return;
+    if (event.pointerType !== 'mouse' || event.buttons || dragging || !tiltBounds.current) return;
     const { left, top, width, height } = tiltBounds.current;
     const x = Math.max(-1, Math.min(1, (event.clientX - left) / width * 2 - 1));
     const y = Math.max(-1, Math.min(1, (event.clientY - top) / height * 2 - 1));
@@ -37,24 +39,27 @@ export function Card({ card, selected, count, onClick, draggable, onDragStart, p
     element.style.removeProperty('--tilt-y');
   }
   function showDetails(element: HTMLDivElement) {
+    if (document.body.classList.contains('card-dragging')) return;
     const rect = element.getBoundingClientRect();
     setTooltip({ left: Math.max(12, Math.min(window.innerWidth - 250, rect.left - 25)), ...(rect.top > 190 ? { bottom: window.innerHeight - rect.top + 12 } : { top: rect.bottom + 12 }) });
   }
   return <>
     <div
-      className={`game-card rarity-${card.rarity} ${selected ? 'selected' : ''} ${active ? 'is-active' : ''} ${progress !== undefined && !active ? 'processing' : ''} ${compact ? 'compact' : ''}`}
+      className={`game-card rarity-${card.rarity} ${selected ? 'selected' : ''} ${active ? 'is-active' : ''} ${progress !== undefined && !active ? 'processing' : ''} ${compact ? 'compact' : ''} ${dragging ? 'is-dragging' : ''}`}
       style={{ '--rarity': rarity.color } as CSSProperties}
       onClick={onClick}
-      draggable={draggable}
-      onDragStart={event => { resetTilt(event.currentTarget); setTooltip(null); onDragStart?.(event); }}
+      draggable={false}
+      data-draggable={draggable || undefined}
+      onDragStart={event => event.preventDefault()}
+      onPointerDown={event => { resetTilt(event.currentTarget); setTooltip(null); onPointerDown?.(event); }}
       onPointerEnter={event => {
         if (event.pointerType !== 'mouse') return;
         tiltBounds.current = event.currentTarget.getBoundingClientRect();
         tiltCard(event);
       }}
       onPointerMove={tiltCard}
-      onPointerLeave={event => resetTilt(event.currentTarget)}
-      onPointerCancel={event => resetTilt(event.currentTarget)}
+      onPointerLeave={event => { if (!dragging) resetTilt(event.currentTarget); }}
+      onPointerCancel={event => { if (!dragging) resetTilt(event.currentTarget); }}
       onMouseEnter={event => showDetails(event.currentTarget)}
       onMouseLeave={() => setTooltip(null)}
       onFocus={event => showDetails(event.currentTarget)}
@@ -80,7 +85,7 @@ export function Card({ card, selected, count, onClick, draggable, onDragStart, p
       {progress !== undefined && !active && <div className="card-progress"><span style={{ width: `${progress * 100}%` }}/></div>}
       {onDiscard && <button className="card-discard" onClick={event => { event.stopPropagation(); onDiscard(); }} aria-label={`弃掉${card.name}`}>×</button>}
     </div>
-    {tooltip && createPortal(<div className="card-tooltip floating-tooltip" style={tooltip} role="tooltip">
+    {tooltip && !dragging && createPortal(<div className="card-tooltip floating-tooltip" style={tooltip} role="tooltip">
       <strong>{card.name} · {rarity.name}</strong>
       {card.effectText && <p>{card.effectText}</p>}
       <p>「{card.joke}」</p>

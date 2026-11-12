@@ -295,7 +295,7 @@ test('paused hand reservations cannot queue the same physical card twice', async
   await first.click();
   await page.getByRole('button', { name: '预排出牌 →', exact: true }).click();
   await expect(page.locator('.reserved-label')).toHaveText('已预排');
-  await expect(first).toHaveAttribute('draggable', 'false');
+  await expect(first).not.toHaveAttribute('data-draggable', 'true');
   await first.click();
   await expect(page.getByRole('button', { name: '预排出牌 →', exact: true })).toBeDisabled();
   expect((await state(page)).match.pendingActions).toHaveLength(1);

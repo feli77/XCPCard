@@ -1,11 +1,11 @@
-import { useState } from "react";
-import type { CSSProperties, DragEvent } from "react";
+import type { CSSProperties } from "react";
 import { cards, rarities } from "../content/data";
 import { uiText } from "../content/text";
 import { cardById } from "../game/engine";
 import type { Profile } from "../game/types";
 import { Card } from "./Card";
 import { PixelArt } from "./PixelArt";
+import { useCardDrag } from "./useCardDrag";
 
 interface CollectionProps {
   profile: Profile;
@@ -26,10 +26,11 @@ export function Collection({
   onRemove,
   onAdd,
 }: CollectionProps) {
-  const [draggedCard, setDraggedCard] = useState<{
-    from: CardZone;
-    id: string;
-  } | null>(null);
+  const { dragged: draggedCard, startDrag, onClickCapture, onPointerDownCapture } = useCardDrag<{ from: CardZone; id: string }>((item, target) => {
+    if (item.from === target) return;
+    if (target === "deck") onAdd(item.id);
+    else if (target === "collection") onRemove(item.id);
+  });
   const collectionCount = Object.values(profile.collection).reduce(
     (a, b) => a + b,
     0,
@@ -44,36 +45,15 @@ export function Collection({
         card.categories.some((c) => c === category)),
   );
 
-  function drag(event: DragEvent, from: CardZone, id: string) {
-    event.dataTransfer.setData("application/xcpcard-collection", id);
-    event.dataTransfer.effectAllowed = "move";
-    setDraggedCard({ from, id });
-  }
-
-  function allowDrop(event: DragEvent, target: CardZone) {
-    if (!draggedCard || draggedCard.from === target) return;
-    event.preventDefault();
-    event.dataTransfer.dropEffect = "move";
-  }
-
-  function drop(event: DragEvent, target: CardZone) {
-    if (!draggedCard || draggedCard.from === target) return;
-    event.preventDefault();
-    if (target === "deck") onAdd(draggedCard.id);
-    else onRemove(draggedCard.id);
-    setDraggedCard(null);
-  }
-
   return (
-    <main className="collection-page" onDragEnd={() => setDraggedCard(null)}>
+    <main className="collection-page" onClickCapture={onClickCapture} onPointerDownCapture={onPointerDownCapture}>
       {playing && (
         <div className="inline-notice">{uiText.collection.inMatch}</div>
       )}
       <div className="collection-layout">
         <section
           className={`collection-library ${draggedCard?.from === "deck" ? "drop-target" : ""}`}
-          onDragOver={(event) => allowDrop(event, "collection")}
-          onDrop={(event) => drop(event, "collection")}
+          data-card-drop="collection"
         >
           <div className="collection-toolbar">
             <h3>
@@ -109,7 +89,8 @@ export function Collection({
                   count={profile.collection[card.id]}
                   onClick={() => onAdd(card.id)}
                   draggable
-                  onDragStart={(event) => drag(event, "collection", card.id)}
+                  dragging={draggedCard?.from === "collection" && draggedCard.id === card.id}
+                  onPointerDown={(event) => startDrag(event, { from: "collection", id: card.id })}
                 />
                 <span>
                   已带 {deckCount(card.id)} / {profile.collection[card.id]}
@@ -120,8 +101,7 @@ export function Collection({
         </section>
         <section
           className={`deck-editor panel ${draggedCard?.from === "collection" ? "drop-target" : ""}`}
-          onDragOver={(event) => allowDrop(event, "deck")}
-          onDrop={(event) => drop(event, "deck")}
+          data-card-drop="deck"
         >
           <div className="section-heading">
             <h3>
@@ -138,19 +118,24 @@ export function Collection({
             {[...new Set(profile.deck)].map((id) => (
               <button
                 key={id}
+                className={`deck-entry ${draggedCard?.from === "deck" && draggedCard.id === id ? "is-dragging" : ""}`}
                 style={
                   {
                     "--rarity": rarities[cardById[id].rarity].color,
                   } as CSSProperties
                 }
                 onClick={() => onRemove(id)}
-                draggable
-                onDragStart={(event) => drag(event, "deck", id)}
+                draggable={false}
+                data-draggable
+                onDragStart={(event) => event.preventDefault()}
+                onPointerDown={(event) => startDrag(event, { from: "deck", id }, { width: 125, height: 183 })}
               >
-                <PixelArt kind={cardById[id].art} />
-                <span>{cardById[id].name}</span>
-                <b>×{deckCount(id)}</b>
-                <i>−</i>
+                {draggedCard?.from === "deck" && draggedCard.id === id ? <Card card={cardById[id]} /> : <>
+                  <PixelArt kind={cardById[id].art} />
+                  <span>{cardById[id].name}</span>
+                  <b>×{deckCount(id)}</b>
+                  <i>−</i>
+                </>}
               </button>
             ))}
             {profile.deck.length === 0 && (

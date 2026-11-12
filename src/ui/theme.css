@@ -604,8 +604,47 @@ small {
     0 0 0 2px var(--ink),
     4px 10px 0 #c9c6b7;
 }
+.game-card[data-draggable="true"],
+.deck-entry[data-draggable="true"] {
+  touch-action: none;
+  cursor: grab;
+}
+.card-dragging,
+.card-dragging * {
+  cursor: grabbing !important;
+  user-select: none;
+}
+.game-card.is-dragging,
+.game-card.is-dragging:hover,
+.deck-entry.is-dragging {
+  position: fixed;
+  left: var(--drag-left);
+  top: var(--drag-top);
+  width: var(--drag-width);
+  min-width: var(--drag-width);
+  max-width: var(--drag-width);
+  height: var(--drag-height);
+  margin: 0;
+  z-index: 1000;
+  translate: none;
+  transform: perspective(500px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg)) rotateZ(var(--drag-rotation, 0deg));
+  transition: transform 0.08s ease-out;
+  animation: none;
+  pointer-events: none;
+  box-shadow: 8px 14px 24px #302f2a33;
+}
+.card-drag-placeholder {
+  flex-shrink: 0;
+  pointer-events: none;
+}
+.collection-item:has(> .is-dragging) > span,
+.drag-companion {
+  visibility: hidden;
+}
 @media (prefers-reduced-motion: reduce) {
-  .game-card {
+  .game-card,
+  .game-card.is-dragging,
+  .deck-entry.is-dragging {
     transform: none;
     transition: none;
   }
@@ -877,12 +916,6 @@ small {
   outline-offset: 6px;
   background-color: #697e5510;
 }
-.collection-page [draggable="true"] {
-  cursor: grab;
-}
-.collection-page [draggable="true"]:active {
-  cursor: grabbing;
-}
 .page-heading {
   display: flex;
   justify-content: space-between;
@@ -946,26 +979,39 @@ small {
   gap: 10px;
   border-left: 3px solid var(--rarity);
 }
-.deck-slots > button .pixel-art {
+.deck-slots > button > .pixel-art {
   width: 25px;
   height: 20px;
   flex-shrink: 0;
   color: var(--rarity);
 }
-.deck-slots > button span {
+.deck-slots > button > span {
   font-size: 11px;
 }
-.deck-slots > button b {
+.deck-slots > button > b {
   font: 12px var(--mono);
   margin-left: auto;
   color: #918977;
 }
-.deck-slots > button i {
+.deck-slots > button > i {
   font-style: normal;
   color: #b0a891;
 }
 .deck-slots > button:hover {
   background: #eeeade;
+}
+.deck-slots > .deck-entry.is-dragging {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.deck-entry.is-dragging .game-card {
+  width: 100%;
+  height: 100%;
+  transform: none;
+  translate: none;
+  box-shadow: 8px 14px 24px #302f2a33;
 }
 .collection-toolbar {
   display: flex;

@@ -760,6 +760,9 @@
 .feedback-WA {
   animation: shake 0.25s;
 }
+.table-panel:has(.is-dragging) {
+  animation-duration: 0s;
+}
 .feedback-AC {
   border-color: #9aaa7d;
 }

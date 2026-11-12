@@ -1,9 +1,9 @@
-import type { DragEvent } from 'react';
 import { hints } from '../content/text';
 import { canSubmit, cardById, standings, tableScore } from '../game/engine';
 import type { Action, Match, Standing } from '../game/types';
 import { Card } from './Card';
 import { PixelArt } from './PixelArt';
+import { useCardDrag } from './useCardDrag';
 
 interface MatchViewProps {
   match: Match;
@@ -41,16 +41,9 @@ export function MatchView({
     ? !problem.table.length && !match.pendingActions.some(action => action.type === 'play' && action.problem === viewProblem)
     : !ready || viewProblem !== match.currentProblem;
 
-  function drag(event: DragEvent, from: 'hand' | 'table', uid: string) {
-    const uids = from === 'hand' && availableSelected.includes(uid) ? availableSelected : [uid];
-    event.dataTransfer.setData('application/xcpcard', JSON.stringify({ from, uids }));
-    event.dataTransfer.effectAllowed = 'move';
-  }
-
-  function drop(event: DragEvent, target: 'table' | 'discard') {
-    event.preventDefault();
-    const transfer: { from: 'hand' | 'table'; uids: string[] } =
-      JSON.parse(event.dataTransfer.getData('application/xcpcard'));
+  const { dragged, startDrag, onClickCapture, onPointerDownCapture } = useCardDrag<{
+    from: 'hand' | 'table'; uid: string; uids: string[];
+  }>((transfer, target) => {
     const uids = transfer.from === 'hand' ? transfer.uids.filter(uid => !reserved.has(uid)) : transfer.uids;
     if (!uids.length) return;
     if (target === 'table' && transfer.from === 'hand' && read && problem.acTime === null) {
@@ -60,9 +53,9 @@ export function MatchView({
         ? { type: 'discard-hand', uids }
         : { type: 'discard-table', uids, problem: viewProblem });
     }
-  }
+  });
 
-  return <main className={`match-page ${match.paused ? 'paused' : ''}`}>
+  return <main className={`match-page ${match.paused ? 'paused' : ''}`} onClickCapture={onClickCapture} onPointerDownCapture={onPointerDownCapture}>
     <div className="match-toolbar">
       <div className="clock-block">
         <span className="tiny-label">CONTEST TIME</span>
@@ -97,8 +90,7 @@ export function MatchView({
       <ProblemMenu match={match} viewProblem={viewProblem} onChoose={onChooseProblem}/>
       <section
         className={`table-panel ${match.feedback?.problem === viewProblem ? `feedback-${match.feedback.result}` : ''}`}
-        onDragOver={event => event.preventDefault()}
-        onDrop={event => drop(event, 'table')}
+        data-card-drop="table"
       >
         <div className="problem-heading">
           <span className="problem-letter">{problem.label}</span>
@@ -151,7 +143,8 @@ export function MatchView({
                 dice={instance.dice}
                 scoreGain={scoreGain}
                 draggable
-                onDragStart={event => drag(event, 'table', instance.uid)}
+                dragging={dragged?.from === 'table' && dragged.uid === instance.uid}
+                onPointerDown={event => startDrag(event, { from: 'table', uid: instance.uid, uids: [instance.uid] })}
                 onDiscard={() => onCommand({ type: 'discard-table', uids: [instance.uid], problem: viewProblem })}
               />;
             }) : <div className="empty-table">
@@ -213,13 +206,18 @@ export function MatchView({
       <div className="hand-cards">
         {match.hand.map(instance => {
           const isReserved = reserved.has(instance.uid);
-          return <div key={instance.uid} className={`hand-card-slot ${isReserved ? 'is-reserved' : ''}`}>
+          const movingTogether = dragged?.from === 'hand' && dragged.uid !== instance.uid && dragged.uids.includes(instance.uid);
+          return <div key={instance.uid} className={`hand-card-slot ${isReserved ? 'is-reserved' : ''} ${movingTogether ? 'drag-companion' : ''}`}>
             <Card
               card={cardById[instance.cardId]}
               selected={!isReserved && selected.includes(instance.uid)}
               onClick={isReserved ? undefined : () => onToggleSelected(instance.uid)}
               draggable={!isReserved}
-              onDragStart={event => drag(event, 'hand', instance.uid)}
+              dragging={dragged?.from === 'hand' && dragged.uid === instance.uid}
+              onPointerDown={isReserved ? undefined : event => startDrag(event, {
+                from: 'hand', uid: instance.uid,
+                uids: availableSelected.includes(instance.uid) ? availableSelected : [instance.uid],
+              })}
             />
             {isReserved && <span className="reserved-label">已预排</span>}
           </div>;
@@ -227,8 +225,7 @@ export function MatchView({
         {!match.hand.length && <div className="empty-hand">思路暂时用完了，下一张正在路上。</div>}
         <div
           className="discard-pile"
-          onDragOver={event => event.preventDefault()}
-          onDrop={event => { event.stopPropagation(); drop(event, 'discard'); }}
+          data-card-drop="discard"
         >
           <span>↧</span><b>{match.discard.length}</b><small>弃牌堆</small><i>拖到这里弃牌</i>
         </div>
