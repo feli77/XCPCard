@@ -567,6 +567,7 @@ small {
   min-width: 120px;
   height: 178px;
   border: 2px solid var(--rarity);
+  border-radius: 8px;
   padding: 7px;
   background: #fbfaf5;
   box-shadow: 3px 3px 0 #d6d1c4;
@@ -800,6 +801,8 @@ small {
   right: -2px;
   bottom: -2px;
   height: 5px;
+  border-radius: 0 0 8px 8px;
+  overflow: hidden;
   background: #e2ddcf;
 }
 .card-progress > span {

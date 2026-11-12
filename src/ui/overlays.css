@@ -148,6 +148,7 @@
   height: 230px;
   width: 155px;
   border: 3px solid #f1ecda;
+  border-radius: 8px;
   outline: 2px solid #6f7760;
   box-shadow: 5px 5px 0 #c1bca9;
   background-color: #6f7760;
