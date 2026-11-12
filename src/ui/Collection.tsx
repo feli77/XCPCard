@@ -1,4 +1,5 @@
-import type { CSSProperties } from "react";
+import { useState } from "react";
+import type { CSSProperties, DragEvent } from "react";
 import { cards, rarities } from "../content/data";
 import { uiText } from "../content/text";
 import { cardById } from "../game/engine";
@@ -15,6 +16,8 @@ interface CollectionProps {
   onAdd: (cardId: string) => void;
 }
 
+type CardZone = "collection" | "deck";
+
 export function Collection({
   profile,
   playing,
@@ -23,6 +26,10 @@ export function Collection({
   onRemove,
   onAdd,
 }: CollectionProps) {
+  const [draggedCard, setDraggedCard] = useState<{
+    from: CardZone;
+    id: string;
+  } | null>(null);
   const collectionCount = Object.values(profile.collection).reduce(
     (a, b) => a + b,
     0,
@@ -37,13 +44,37 @@ export function Collection({
         card.categories.some((c) => c === category)),
   );
 
+  function drag(event: DragEvent, from: CardZone, id: string) {
+    event.dataTransfer.setData("application/xcpcard-collection", id);
+    event.dataTransfer.effectAllowed = "move";
+    setDraggedCard({ from, id });
+  }
+
+  function allowDrop(event: DragEvent, target: CardZone) {
+    if (!draggedCard || draggedCard.from === target) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+  }
+
+  function drop(event: DragEvent, target: CardZone) {
+    if (!draggedCard || draggedCard.from === target) return;
+    event.preventDefault();
+    if (target === "deck") onAdd(draggedCard.id);
+    else onRemove(draggedCard.id);
+    setDraggedCard(null);
+  }
+
   return (
-    <main className="collection-page">
+    <main className="collection-page" onDragEnd={() => setDraggedCard(null)}>
       {playing && (
         <div className="inline-notice">{uiText.collection.inMatch}</div>
       )}
       <div className="collection-layout">
-        <section className="collection-library">
+        <section
+          className={`collection-library ${draggedCard?.from === "deck" ? "drop-target" : ""}`}
+          onDragOver={(event) => allowDrop(event, "collection")}
+          onDrop={(event) => drop(event, "collection")}
+        >
           <div className="collection-toolbar">
             <h3>
               全部收藏 <small>{collectionCount} 张</small>
@@ -77,6 +108,8 @@ export function Collection({
                   card={card}
                   count={profile.collection[card.id]}
                   onClick={() => onAdd(card.id)}
+                  draggable
+                  onDragStart={(event) => drag(event, "collection", card.id)}
                 />
                 <span>
                   已带 {deckCount(card.id)} / {profile.collection[card.id]}
@@ -85,12 +118,16 @@ export function Collection({
             ))}
           </div>
         </section>
-        <section className="deck-editor panel">
+        <section
+          className={`deck-editor panel ${draggedCard?.from === "collection" ? "drop-target" : ""}`}
+          onDragOver={(event) => allowDrop(event, "deck")}
+          onDrop={(event) => drop(event, "deck")}
+        >
           <div className="section-heading">
             <h3>
               参赛卡组 <small className="deck-count">{profile.deck.length} / 24</small>
             </h3>
-            <span>点击移出</span>
+            <span>点击或拖出</span>
           </div>
           <span
             className={`deck-state ${profile.deck.length === 24 ? "valid" : ""}`}
@@ -107,6 +144,8 @@ export function Collection({
                   } as CSSProperties
                 }
                 onClick={() => onRemove(id)}
+                draggable
+                onDragStart={(event) => drag(event, "deck", id)}
               >
                 <PixelArt kind={cardById[id].art} />
                 <span>{cardById[id].name}</span>

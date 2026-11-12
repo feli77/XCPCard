@@ -861,6 +861,19 @@ small {
 }
 .collection-library {
   min-width: 0;
+  min-height: 240px;
+}
+.collection-library.drop-target,
+.deck-editor.drop-target {
+  outline: 2px dashed var(--green);
+  outline-offset: 6px;
+  background-color: #697e5510;
+}
+.collection-page [draggable="true"] {
+  cursor: grab;
+}
+.collection-page [draggable="true"]:active {
+  cursor: grabbing;
 }
 .page-heading {
   display: flex;

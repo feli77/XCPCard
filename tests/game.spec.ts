@@ -33,6 +33,76 @@ test('lobby and deck edits obey owned copies and 24-card entry', async ({ page }
   expect(errors).toEqual([]);
 });
 
+test('collection drag and drop moves one copy in either direction and persists the deck', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: '我的卡组', exact: true }).click();
+  const before = await state(page);
+  const deckCard = page.locator('.deck-slots button').filter({ hasText: '枚举' });
+  const collectionCard = page.locator('.collection-cards').getByRole('button', { name: /^枚举，/ });
+  await deckCard.dragTo(page.locator('.collection-library'), { targetPosition: { x: 10, y: 10 } });
+  await expect(page.locator('.deck-count')).toHaveText('23 / 24');
+  await expect(deckCard.locator('b')).toHaveText('×1');
+  await expect(collectionCard.locator('.card-count')).toHaveText('×2');
+  expect((await state(page)).profile.collection).toEqual(before.profile.collection);
+  await collectionCard.dragTo(page.locator('.deck-editor .section-heading'));
+  await expect(page.locator('.deck-count')).toHaveText('24 / 24');
+  await expect(deckCard.locator('b')).toHaveText('×2');
+  await expect(page.locator('.collection-item').filter({ hasText: '枚举' })).toContainText('已带 2 / 2');
+  const after = await state(page);
+  expect(after.profile.collection).toEqual(before.profile.collection);
+  await page.reload();
+  expect((await state(page)).profile.deck).toEqual(after.profile.deck);
+});
+
+test('collection drag and drop respects deck capacity and owned copies', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: '我的卡组', exact: true }).click();
+  const before = await state(page);
+  const deck = page.locator('.deck-editor .section-heading');
+  const collectionCard = page.locator('.collection-cards').getByRole('button', { name: /^枚举，/ });
+  await collectionCard.dragTo(deck);
+  await expect(page.getByRole('status')).toHaveText('卡组已满，先移出一张。');
+  expect((await state(page)).profile.deck).toEqual(before.profile.deck);
+  await page.locator('.deck-slots button').filter({ hasText: '枚举' }).dragTo(page.locator('.collection-library'), { targetPosition: { x: 10, y: 10 } });
+  await expect(page.locator('.deck-count')).toHaveText('23 / 24');
+  const reducedDeck = (await state(page)).profile.deck;
+  await page.locator('.collection-cards').getByRole('button', { name: /^快速排序，/ }).dragTo(deck);
+  await expect(page.getByRole('status')).toHaveText('这张卡已经全部带上了。');
+  expect((await state(page)).profile.deck).toEqual(reducedDeck);
+  await collectionCard.dragTo(deck);
+  await expect(page.locator('.deck-count')).toHaveText('24 / 24');
+});
+
+test('collection drags within the same area or outside both areas leave the deck unchanged', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: '我的卡组', exact: true }).click();
+  const before = await state(page);
+  const deckCard = page.locator('.deck-slots button').filter({ hasText: '枚举' });
+  await page.locator('.collection-cards').getByRole('button', { name: /^枚举，/ }).dragTo(page.locator('.collection-toolbar h3'));
+  expect((await state(page)).profile.deck).toEqual(before.profile.deck);
+  await deckCard.dragTo(page.locator('.deck-editor .section-heading'));
+  expect((await state(page)).profile.deck).toEqual(before.profile.deck);
+  await deckCard.dragTo(page.locator('.header-meta'));
+  expect((await state(page)).profile.deck).toEqual(before.profile.deck);
+  await expect(page.locator('.deck-count')).toHaveText('24 / 24');
+});
+
+test('collection drag and drop supports adding to and removing the last card from an empty deck', async ({ page }) => {
+  const profile = createProfile();
+  profile.deck = [];
+  await page.goto('/');
+  await page.evaluate(([key, value]) => localStorage.setItem(key, value), [storageKey, JSON.stringify({ profile, match: null, result: null, openedPack: null })]);
+  await page.reload();
+  await page.getByRole('button', { name: '我的卡组', exact: true }).click();
+  await page.locator('.collection-cards').getByRole('button', { name: /^枚举，/ }).dragTo(page.locator('.deck-editor .empty-copy'));
+  await expect(page.locator('.deck-count')).toHaveText('1 / 24');
+  await expect(page.locator('.deck-slots button')).toHaveCount(1);
+  await page.locator('.deck-slots button').dragTo(page.locator('.collection-library'), { targetPosition: { x: 10, y: 10 } });
+  await expect(page.locator('.deck-count')).toHaveText('0 / 24');
+  await expect(page.locator('.deck-editor .empty-copy')).toBeVisible();
+  expect((await state(page)).profile.collection).toEqual(profile.collection);
+});
+
 test('read, multi-select, paused planned play and submission execute on resume', async ({ page }) => {
   await start(page);
   expect((await state(page)).match.problems[0].readProgress).toBe(0);

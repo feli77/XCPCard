@@ -9,7 +9,7 @@ export const uiText = {
   },
   collection: {
     inMatch: "本场使用开赛时的卡组；调整会用于下一场。",
-    empty: "从左侧收藏中，挑选你的第一张算法。",
+    empty: "从左侧收藏中，点击或拖入你的第一张算法。",
     full: "卡组已满，先移出一张。",
     allIncluded: "这张卡已经全部带上了。",
   },
