@@ -8,9 +8,8 @@ export const uiText = {
     footer: "一套算法，一桌思路，一点点运气。",
   },
   collection: {
-    description: "点击收藏加一张，点击卡组减一张。同名卡按实际拥有数量加入。",
     inMatch: "本场使用开赛时的卡组；调整会用于下一场。",
-    empty: "从下方收藏中，挑选你的第一张算法。",
+    empty: "从左侧收藏中，挑选你的第一张算法。",
     full: "卡组已满，先移出一张。",
     allIncluded: "这张卡已经全部带上了。",
   },

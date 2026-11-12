@@ -19,12 +19,12 @@ test('lobby and deck edits obey owned copies and 24-card entry', async ({ page }
   await page.screenshot({ path: 'test-results/lobby.png', fullPage: true });
   await page.getByRole('button', { name: '我的卡组', exact: true }).click();
   await page.locator('.deck-slots button').filter({ hasText: '枚举' }).click();
-  await expect(page.locator('.page-heading h1')).toHaveText('我的卡组 23 / 24');
+  await expect(page.locator('.deck-count')).toHaveText('23 / 24');
   await page.getByRole('button', { name: '赛事大厅', exact: true }).click();
   await expect(page.getByRole('button', { name: '参加比赛' })).toBeDisabled();
   await page.getByRole('button', { name: '我的卡组', exact: true }).click();
   await page.locator('.collection-cards').getByRole('button', { name: /^枚举，/ }).click();
-  await expect(page.locator('.page-heading h1')).toHaveText('我的卡组 24 / 24');
+  await expect(page.locator('.deck-count')).toHaveText('24 / 24');
   await expect(page.locator('.collection-item').filter({ hasText: '枚举' })).toContainText('已带 2 / 2');
   await page.locator('.collection-cards').getByRole('button', { name: /^枚举，/ }).click();
   expect((await state(page)).profile.deck).toHaveLength(24);
