@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import type { CSSProperties, DragEvent } from 'react';
+import { useRef, useState } from 'react';
+import type { CSSProperties, DragEvent, PointerEvent } from 'react';
 import { createPortal } from 'react-dom';
 import type { CardDefinition } from '../content/types';
 import { rarities } from '../content/data';
@@ -22,6 +22,20 @@ interface CardProps {
 export function Card({ card, selected, count, onClick, draggable, onDragStart, progress, active, dice, scoreGain, onDiscard, compact = false }: CardProps) {
   const rarity = rarities[card.rarity];
   const [tooltip, setTooltip] = useState<CSSProperties | null>(null);
+  const tiltBounds = useRef<DOMRect | null>(null);
+  function tiltCard(event: PointerEvent<HTMLDivElement>) {
+    if (event.pointerType !== 'mouse' || event.buttons || !tiltBounds.current) return;
+    const { left, top, width, height } = tiltBounds.current;
+    const x = Math.max(-1, Math.min(1, (event.clientX - left) / width * 2 - 1));
+    const y = Math.max(-1, Math.min(1, (event.clientY - top) / height * 2 - 1));
+    event.currentTarget.style.setProperty('--tilt-x', `${-y * 10}deg`);
+    event.currentTarget.style.setProperty('--tilt-y', `${x * 10}deg`);
+  }
+  function resetTilt(element: HTMLDivElement) {
+    tiltBounds.current = null;
+    element.style.removeProperty('--tilt-x');
+    element.style.removeProperty('--tilt-y');
+  }
   function showDetails(element: HTMLDivElement) {
     const rect = element.getBoundingClientRect();
     setTooltip({ left: Math.max(12, Math.min(window.innerWidth - 250, rect.left - 25)), ...(rect.top > 190 ? { bottom: window.innerHeight - rect.top + 12 } : { top: rect.bottom + 12 }) });
@@ -32,11 +46,19 @@ export function Card({ card, selected, count, onClick, draggable, onDragStart, p
       style={{ '--rarity': rarity.color } as CSSProperties}
       onClick={onClick}
       draggable={draggable}
-      onDragStart={event => { setTooltip(null); onDragStart?.(event); }}
+      onDragStart={event => { resetTilt(event.currentTarget); setTooltip(null); onDragStart?.(event); }}
+      onPointerEnter={event => {
+        if (event.pointerType !== 'mouse') return;
+        tiltBounds.current = event.currentTarget.getBoundingClientRect();
+        tiltCard(event);
+      }}
+      onPointerMove={tiltCard}
+      onPointerLeave={event => resetTilt(event.currentTarget)}
+      onPointerCancel={event => resetTilt(event.currentTarget)}
       onMouseEnter={event => showDetails(event.currentTarget)}
       onMouseLeave={() => setTooltip(null)}
       onFocus={event => showDetails(event.currentTarget)}
-      onBlur={() => setTooltip(null)}
+      onBlur={event => { resetTilt(event.currentTarget); setTooltip(null); }}
       role={onClick ? 'button' : undefined}
       tabIndex={0}
       onKeyDown={event => {

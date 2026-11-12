@@ -571,25 +571,36 @@ small {
   background: #fbfaf5;
   box-shadow: 3px 3px 0 #d6d1c4;
   cursor: default;
+  transform: perspective(800px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
   transition:
-    transform 0.15s,
+    transform 0.25s ease-out,
+    translate 0.15s,
     box-shadow 0.15s;
   user-select: none;
   flex-shrink: 0;
+}
+.game-card:hover {
+  z-index: 10;
+  transition-duration: 0.1s, 0.15s, 0.15s;
 }
 .game-card[role="button"] {
   cursor: pointer;
 }
 .game-card[role="button"]:hover {
-  transform: translateY(-8px);
-  z-index: 10;
+  translate: 0 -8px;
   box-shadow: 4px 8px 0 #d6d1c4;
 }
 .game-card.selected {
-  transform: translateY(-13px);
+  translate: 0 -13px;
   box-shadow:
     0 0 0 2px var(--ink),
     4px 10px 0 #c9c6b7;
+}
+@media (prefers-reduced-motion: reduce) {
+  .game-card {
+    transform: none;
+    transition: none;
+  }
 }
 .game-card.selected:after {
   content: "✓";
