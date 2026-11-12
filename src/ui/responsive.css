@@ -1,0 +1,182 @@
+@media (min-width: 1550px) {
+  .arena {
+    grid-template-columns: 230px minmax(500px, 1fr) 330px;
+  }
+  .hand-cards {
+    justify-content: center;
+    gap: 22px;
+  }
+  .hand-cards .game-card {
+    max-width: 145px;
+    height: 190px;
+    padding: 9px;
+  }
+  .hand-cards .card-art {
+    height: 70px;
+  }
+  .match-page {
+    padding: 0 35px 15px;
+  }
+  .table-cards .game-card {
+    width: 120px;
+    min-width: 120px;
+    height: 178px;
+  }
+  .table-cards .card-art {
+    height: 62px;
+  }
+  .team-problems button {
+    width: 15px;
+    height: 14px;
+  }
+  .team-title > span {
+    font-size: 10px;
+  }
+  .arena {
+    height: calc(100vh - 440px);
+  }
+}
+@media (max-width: 1200px) {
+  .app-header {
+    padding: 0 30px;
+  }
+  .brand-sub {
+    display: none;
+  }
+  .lobby {
+    padding: 35px 30px 0;
+  }
+  .ticket-content {
+    padding: 25px 20px;
+  }
+  .ticket-illustration {
+    flex-basis: 100px;
+  }
+  .ticket-illustration:before {
+    width: 100px;
+    height: 100px;
+  }
+  .ticket-illustration .pixel-art {
+    width: 75px;
+  }
+  .ticket-copy h2 {
+    font-size: 29px;
+  }
+  .lobby-grid,
+  .lobby-bottom {
+    gap: 20px;
+    grid-template-columns: 1.3fr 1fr;
+  }
+  .arena {
+    grid-template-columns: 170px minmax(400px, 1fr) 250px;
+    gap: 10px;
+  }
+  .match-page {
+    padding: 0 14px 12px;
+  }
+  .hand-cards {
+    gap: 9px;
+  }
+  .hand-cards .game-card {
+    height: 162px;
+  }
+  .hand-cards .card-art {
+    height: 51px;
+    padding: 8px 14px;
+  }
+  .hand-cards .card-name {
+    font-size: 10px;
+  }
+  .hand-cards .card-categories {
+    font-size: 7px;
+  }
+  .discard-pile {
+    min-width: 58px;
+  }
+  .hand-panel {
+    padding: 11px 12px 14px;
+  }
+  .hand-cards {
+    min-height: 165px;
+  }
+  .arena {
+    height: calc(100vh - 395px);
+  }
+  .problem-heading {
+    padding: 14px 12px;
+  }
+  .table-caption {
+    display: none;
+  }
+  .problem-heading h2 {
+    font-size: 15px;
+  }
+  .table-cards {
+    padding: 15px 13px 20px;
+    gap: 11px;
+  }
+  .hand-heading {
+    gap: 20px;
+  }
+  .collection-page,
+  .packs-page {
+    padding: 35px 30px;
+  }
+  .pack-grid {
+    gap: 15px;
+  }
+}
+@media (min-width: 1201px) and (max-width: 1549px) {
+  .arena {
+    height: calc(100vh - 440px);
+  }
+}
+@media (max-height: 820px) {
+  .arena {
+    min-height: 300px;
+    height: calc(100vh - 440px);
+  }
+  .reading-desk {
+    min-height: 160px;
+  }
+  .solved-desk {
+    min-height: 180px;
+  }
+  .paused .arena {
+    height: calc(100vh - 478px);
+    min-height: 270px;
+  }
+}
+@media (max-height: 820px) {
+  .problem-heading { padding: 12px 16px; }
+  .score-strip { padding: 8px 16px 4px; }
+  .score-strip strong { font-size: 28px; }
+  .score-target b { font-size: 17px; }
+  .table-bottom { padding: 8px 16px; }
+  .tutorial-tip { padding: 5px 12px; }
+  .table-cards { align-items: flex-start; gap: 12px; padding: 12px 16px; }
+  .table-cards .game-card {
+    display: grid;
+    grid-template-columns: 48px 1fr;
+    grid-template-rows: 11px 18px 13px 22px;
+    column-gap: 8px;
+    width: 190px;
+    min-width: 190px;
+    height: 84px;
+    padding: 6px;
+  }
+  .table-cards .card-top { grid-column: 1 / -1; }
+  .table-cards .card-art {
+    grid-column: 1;
+    grid-row: 2 / 5;
+    width: 48px;
+    height: 54px;
+    padding: 8px;
+    margin: 0;
+  }
+  .table-cards .card-name { grid-column: 2; grid-row: 2; font-size: 11px; }
+  .table-cards .card-categories { grid-column: 2; grid-row: 3; margin: 0; }
+  .table-cards .card-stats { grid-column: 2; grid-row: 4; padding-top: 4px; }
+  .table-cards .active-label { top: 62px; left: 7px; right: auto; }
+  .empty-table { min-height: 90px; }
+}
