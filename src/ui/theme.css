@@ -560,12 +560,19 @@ small {
   image-rendering: pixelated;
 }
 /* Cards */
+.game-card,
+.card-back,
+.reveal-slot {
+  aspect-ratio: 125 / 183;
+}
 .game-card {
   --rarity: #888;
   position: relative;
+  display: flex;
+  flex-direction: column;
   width: 120px;
   min-width: 120px;
-  height: 178px;
+  min-height: 0;
   border: 2px solid var(--rarity);
   border-radius: 8px;
   padding: 7px;
@@ -630,7 +637,8 @@ small {
   font-size: 7px;
 }
 .card-art {
-  height: 62px;
+  flex: 1;
+  min-height: 0;
   position: relative;
   border: 1px solid color-mix(in srgb, var(--rarity) 35%, transparent);
   background-color: color-mix(in srgb, var(--rarity) 9%, #faf9f2);
@@ -999,7 +1007,6 @@ small {
 }
 .collection-item .game-card {
   width: 125px;
-  height: 183px;
 }
 .collection-item > span {
   font-size: 9px;

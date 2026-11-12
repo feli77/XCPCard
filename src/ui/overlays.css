@@ -93,19 +93,16 @@
 .reveal-slot {
   position: relative;
   width: 155px;
-  height: 230px;
   animation: cardEnter 0.4s backwards;
   animation-delay: var(--delay);
 }
 .reveal-slot .game-card {
   width: 155px;
   min-width: 155px;
-  height: 230px;
   padding: 10px;
   animation: flip 0.35s ease-out;
 }
 .reveal-slot .card-art {
-  height: 90px;
   padding: 17px 32px;
   margin: 10px 0 13px;
 }
@@ -145,7 +142,6 @@
   text-align: center;
 }
 .card-back {
-  height: 230px;
   width: 155px;
   border: 3px solid #f1ecda;
   border-radius: 8px;

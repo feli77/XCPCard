@@ -313,6 +313,7 @@
   padding: 15px 20px 28px;
   flex: 1;
   overflow: auto;
+  scroll-padding-top: 12px;
   min-height: 0;
 }
 .table-cards.empty {
@@ -321,11 +322,7 @@
 .table-cards .game-card {
   width: 109px;
   min-width: 109px;
-  height: 167px;
   padding: 6px;
-}
-.table-cards .card-art {
-  height: 54px;
 }
 .table-cards .card-name {
   font-size: 10px;
@@ -653,11 +650,7 @@
   width: calc((100vw - 330px) / 8);
   min-width: 91px;
   max-width: 132px;
-  height: 174px;
   padding: 6px;
-}
-.hand-cards .card-art {
-  height: 60px;
 }
 .hand-cards .card-name {
   font-size: 11px;
