@@ -1,24 +1,7 @@
-@property --card-float-z {
-  syntax: "<length>";
-  inherits: false;
-  initial-value: 0px;
-}
-
 @media (prefers-reduced-motion: no-preference) {
-  .game-card,
-  .card-back,
-  .game-card.is-active,
-  .reveal-slot .game-card {
-    animation:
-      var(--card-entry-animation, none),
-      card-idle-float 4.8s ease-in-out infinite;
-    animation-play-state: running, var(--card-idle-state, running);
-  }
-
   .game-card,
   .card-back {
     scale: 1;
-    transform: perspective(800px) translateZ(var(--card-float-z)) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
   }
 
   .game-card {
@@ -39,40 +22,14 @@
       scale 0.24s cubic-bezier(0.2, 0.7, 0.2, 1);
   }
 
-  .card-back:hover {
-    transform: perspective(800px) translateY(-8px) translateZ(var(--card-float-z));
-  }
-
   .game-card:where(:hover, :focus-visible, :has(:focus-visible)),
   .card-back:where(:hover, :focus-visible) {
-    --card-idle-state: paused;
     scale: 1.04;
     z-index: 10;
   }
 
-  .game-card.is-active {
-    --card-entry-animation: activate 0.4s ease-out;
-  }
-
-  .reveal-slot .game-card {
-    --card-entry-animation: flip 0.35s ease-out;
-  }
-
   .game-card.is-dragging,
   .deck-entry.is-dragging .game-card {
-    animation: none;
     scale: 1;
-  }
-}
-
-@keyframes card-idle-float {
-  0%,
-  20%,
-  100% {
-    --card-float-z: 0px;
-  }
-  50%,
-  70% {
-    --card-float-z: 4px;
   }
 }
