@@ -459,7 +459,7 @@ describe('赛季、组卡与开包', () => {
     const cyanGuaranteeHigh = rollPack(2, rngSequence([...Array(12).fill(0), 0.9]));
     expect(cyanGuaranteeHigh[4]).toBe('dice');
     const purpleGuarantee = rollPack(4, rngSequence([...Array(12).fill(0), 0.6]));
-    expect(cardById[purpleGuarantee[4]].rarity).toBe(5);
+    expect(cardById[purpleGuarantee[4]].rarity).toBe(7);
   });
   it('算法8个档位均有卡池，四种技巧固定稀有度', () => {
     for (let rarity = 0; rarity < 8; rarity++) expect(cards.some(card => card.type === 'algorithm' && card.rarity === rarity)).toBe(true);
