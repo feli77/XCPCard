@@ -1,10 +1,12 @@
-import type { CSSProperties } from 'react';
+import { useRef, type CSSProperties } from 'react';
 import { canSubmit, cardById, standings, tableScore } from '../game/engine';
 import type { Action, Match, Standing } from '../game/types';
 import { Card } from './Card';
+import { CardPile } from './CardPile';
 import { ContestCountdown } from './ContestCountdown';
 import { PixelArt } from './PixelArt';
 import { useCardDrag } from './useCardDrag';
+import { useCardTransfers } from './useCardTransfers';
 
 interface MatchViewProps {
   match: Match;
@@ -23,6 +25,8 @@ export function MatchView({
   match, viewProblem, selected,
   onCommand, onChooseProblem, onToggleSelected, onTogglePause,
 }: MatchViewProps) {
+  const root = useRef<HTMLElement>(null);
+  const captureCards = useCardTransfers(match, root);
   const leaderboard = standings(match);
   const player = leaderboard.find(team => team.player)!;
   const problem = match.problems[viewProblem];
@@ -50,7 +54,9 @@ export function MatchView({
     }
   });
 
-  return <main className="match-page" onClickCapture={onClickCapture} onPointerDownCapture={onPointerDownCapture}>
+  return <main className="match-page" ref={root}
+    onClickCapture={event => { captureCards(); onClickCapture(event); }}
+    onPointerDownCapture={() => { captureCards(); onPointerDownCapture(); }}>
     <ContestCountdown time={match.time}/>
     <div className="match-toolbar">
       <div className="clock-block">
@@ -127,6 +133,7 @@ export function MatchView({
                 : instance.dice;
               return <Card
                 key={instance.uid}
+                uid={instance.uid}
                 card={card}
                 active={instance.active}
                 progress={instance.duration ? instance.progress / instance.duration : 0}
@@ -168,7 +175,6 @@ export function MatchView({
       <div className="hand-heading">
         <h3>共享手牌 <span>{match.hand.length} / 8</span></h3>
         <div>
-          <span>牌库 {match.deck.length}</span>
           <span>下张 {match.hand.length === 8 ? '满手暂停' : `${Math.max(0, (match.globalEffects.draw?.interval || 4) - match.drawProgress).toFixed(0)}′`}</span>
         </div>
         <span className="hand-selection">{availableSelected.length ? `已选 ${availableSelected.length} 张` : '点击多选 · 拖放出牌'}</span>
@@ -190,6 +196,7 @@ export function MatchView({
         </div>
       </div>
       <div className="hand-cards">
+        <CardPile cards={match.discard} kind="discard"/>
         <div className="hand-fan" style={{ '--hand-count': Math.max(1, match.hand.length) } as CSSProperties}>
           {match.hand.map((instance, index) => {
             const isReserved = reserved.has(instance.uid);
@@ -201,6 +208,7 @@ export function MatchView({
               style={{ '--fan-angle': `${offset * 2.5}deg`, '--fan-drop': `${offset * offset * 1.8}px` } as CSSProperties}
             >
               <Card
+                uid={instance.uid}
                 card={cardById[instance.cardId]}
                 selected={!isReserved && selected.includes(instance.uid)}
                 onClick={isReserved ? undefined : () => onToggleSelected(instance.uid)}
@@ -216,12 +224,7 @@ export function MatchView({
           })}
           {!match.hand.length && <div className="empty-hand">思路暂时用完了，下一张正在路上。</div>}
         </div>
-        <div
-          className="discard-pile"
-          data-card-drop="discard"
-        >
-          <span>↧</span><b>{match.discard.length}</b><small>弃牌堆</small><i>拖到这里弃牌</i>
-        </div>
+        <CardPile cards={match.deck} kind="deck"/>
       </div>
     </section>
     {match.pendingActions.length > 0 && <PendingActions match={match}/>}

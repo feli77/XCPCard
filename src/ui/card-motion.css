@@ -4,6 +4,58 @@
   image-rendering: auto;
 }
 
+.card-in-transit {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+.card-flight {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 1050;
+  pointer-events: none;
+  perspective: 900px;
+  transform-origin: center;
+}
+.card-flight-rotor {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+}
+.card-flight .card-flight-front,
+.card-flight .card-flight-back {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  height: 100%;
+  margin: 0;
+  translate: none;
+  rotate: none;
+  scale: 1;
+  backface-visibility: hidden;
+  transition: none;
+  box-shadow: 4px 8px 18px #302f2a26;
+}
+.card-flight .card-flight-front {
+  transform: rotateY(0deg);
+  padding: 6px;
+}
+.card-flight .card-flight-back {
+  transform: rotateY(180deg);
+}
+.card-flight .card-name {
+  font-size: 11px;
+}
+.card-flight .card-stats {
+  padding-top: 6px;
+}
+.card-flight .card-discard {
+  display: none;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .game-card,
   .card-back {

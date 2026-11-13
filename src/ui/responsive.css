@@ -67,14 +67,10 @@
   .hand-cards .card-categories {
     font-size: 7px;
   }
-  .discard-pile {
-    min-width: 58px;
-  }
   .hand-panel {
     padding: 11px 12px 14px;
   }
   .hand-cards {
-    padding-inline: 90px;
     min-height: 215px;
   }
   .problem-heading {

@@ -6,6 +6,7 @@ import { rarities } from '../content/data';
 import { PixelArt } from './PixelArt';
 
 interface CardProps {
+  uid?: string;
   card: CardDefinition;
   selected?: boolean;
   count?: number;
@@ -20,7 +21,7 @@ interface CardProps {
   onDiscard?: () => void;
   compact?: boolean;
 }
-export function Card({ card, selected, count, onClick, draggable, onPointerDown, dragging, progress, active, dice, scoreGain, onDiscard, compact = false }: CardProps) {
+export function Card({ uid, card, selected, count, onClick, draggable, onPointerDown, dragging, progress, active, dice, scoreGain, onDiscard, compact = false }: CardProps) {
   const rarity = rarities[card.rarity];
   const [tooltip, setTooltip] = useState<CSSProperties | null>(null);
   const tiltBounds = useRef<DOMRect | null>(null);
@@ -60,6 +61,7 @@ export function Card({ card, selected, count, onClick, draggable, onPointerDown,
       style={{ '--rarity': rarity.color } as CSSProperties}
       onClick={onClick}
       draggable={false}
+      data-card-uid={uid}
       data-draggable={draggable || undefined}
       onDragStart={event => event.preventDefault()}
       onPointerDown={event => { resetTilt(event.currentTarget); hideDetails(); onPointerDown?.(event); }}
