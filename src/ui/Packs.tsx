@@ -37,6 +37,21 @@ export function Packs({ profile, onOpen, onContest }: PacksProps) {
               className="pack-item"
               key={pack.id}
               onClick={() => onOpen(index)}
+              onPointerMove={(event) => {
+                if (event.pointerType === "touch") return;
+                const bounds = event.currentTarget.getBoundingClientRect();
+                const x = (event.clientX - bounds.left) / bounds.width;
+                const y = (event.clientY - bounds.top) / bounds.height;
+                event.currentTarget.style.setProperty("--pack-x", `${x - 0.5}`);
+                event.currentTarget.style.setProperty("--pack-y", `${y - 0.5}`);
+                event.currentTarget.style.setProperty("--shine-x", `${x * 100}%`);
+                event.currentTarget.style.setProperty("--shine-y", `${y * 100}%`);
+              }}
+              onPointerLeave={(event) => {
+                for (const property of ["--pack-x", "--pack-y", "--shine-x", "--shine-y"]) {
+                  event.currentTarget.style.removeProperty(property);
+                }
+              }}
             >
               <div
                 className={`sealed-pack rarity-${pack.guarantee}`}
@@ -46,6 +61,8 @@ export function Packs({ profile, onOpen, onContest }: PacksProps) {
                   } as CSSProperties
                 }
               >
+                <i className="pack-seal pack-seal-top" aria-hidden="true" />
+                <i className="pack-seal pack-seal-bottom" aria-hidden="true" />
                 <span>XCPCard</span>
                 <PixelArt kind="trophy" />
                 <b>
