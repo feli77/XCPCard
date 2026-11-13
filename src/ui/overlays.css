@@ -108,10 +108,10 @@
 }
 .reveal-slot .card-name {
   font-size: 14px;
+  margin-bottom: 13px;
 }
 .reveal-slot .card-categories {
   font-size: 10px;
-  margin: 8px 0 13px;
 }
 .reveal-slot .card-stats b {
   font-size: 23px;

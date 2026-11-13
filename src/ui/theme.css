@@ -692,11 +692,15 @@ small {
 .card-top {
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
+  gap: 4px;
   font: 7px var(--mono);
   color: var(--rarity);
   letter-spacing: 1px;
 }
 .card-top > span:last-child {
+  flex-shrink: 0;
+  white-space: nowrap;
   font-family: inherit;
   letter-spacing: 0;
   font-size: 7px;
@@ -724,6 +728,7 @@ small {
   opacity: 0.5;
 }
 .card-name {
+  margin-bottom: 9px;
   font-size: 11px;
   font-weight: 800;
   letter-spacing: -0.5px;
@@ -733,9 +738,6 @@ small {
 }
 .card-categories {
   font-size: 8px;
-  color: #979184;
-  white-space: nowrap;
-  margin: 5px 0 9px;
   letter-spacing: -0.3px;
 }
 .card-stats {

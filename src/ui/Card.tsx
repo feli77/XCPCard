@@ -74,10 +74,9 @@ export function Card({ card, selected, count, onClick, draggable, onPointerDown,
       aria-label={`${card.name}，${card.score} 分，${card.time} 分钟${selected ? '，已选中' : ''}`}
       aria-pressed={onClick ? !!selected : undefined}
     >
-      <div className="card-top"><span>{card.type === 'algorithm' ? 'ALG' : 'TRICK'}</span><span>{rarity.name} ◆</span></div>
+      <div className="card-top"><span className="card-categories">{card.categories.length ? card.categories.join(' / ') : '技巧卡'}</span><span>{rarity.name} ◆</span></div>
       <div className="card-art"><PixelArt kind={card.art}/><span className="art-corner">{String(card.rarity + 1).padStart(2, '0')}</span></div>
       <div className="card-name">{card.name}</div>
-      <div className="card-categories">{card.categories.length ? card.categories.join(' / ') : '技巧卡'}</div>
       <div className="card-stats"><b>{card.score}<small> 分</small></b><span>◷ {card.time}′</span></div>
       {count !== undefined && <span className="card-count">×{count}</span>}
       {active && <span className="active-label">{dice ? `+${dice}` : 'READY'}</span>}
