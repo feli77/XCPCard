@@ -55,6 +55,7 @@ export function App() {
     session.match?.currentProblem || 0,
   );
   const [category, setCategory] = useState("全部");
+  const [rarity, setRarity] = useState<number | null>(null);
   const [notice, setNotice] = useState("");
   const [seenHints, setSeenHints] = useState<string[]>(() =>
     JSON.parse(localStorage.getItem("xcpcard-hints") || "[]"),
@@ -265,6 +266,8 @@ export function App() {
               playing={!!playing}
               category={category}
               onCategory={setCategory}
+              rarity={rarity}
+              onRarity={setRarity}
               onRemove={removeCard}
               onAdd={addCard}
             />
