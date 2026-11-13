@@ -365,7 +365,7 @@ describe('赛季、组卡与开包', () => {
     expect(cyanGuarantee[4]).toBe('maimai');
     const cyanGuaranteeHigh = rollPack(2, rngSequence([...Array(12).fill(0), 0.9]));
     expect(cyanGuaranteeHigh[4]).toBe('dice');
-    const purpleGuarantee = rollPack(4, rngSequence([...Array(12).fill(0), 0.6]));
+    const purpleGuarantee = rollPack(4, rngSequence([...Array(12).fill(0), 0.99]));
     expect(cardById[purpleGuarantee[4]].rarity).toBe(7);
   });
   it('算法8个档位均有卡池，四种技巧固定稀有度', () => {

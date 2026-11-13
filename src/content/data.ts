@@ -14,6 +14,8 @@ export const rarities: RarityDefinition[] = [
 export const rarityWeights = [0.4, 0.28, 0.16, 0.09, 0.04, 0.02, 0.008, 0.002];
 
 export const cards: CardDefinition[] = [
+  // 算法卡
+  // 灰（0）
   { id: 'enumerate', name: '枚举', type: 'algorithm', rarity: 0, score: 300, time: 4, categories: ['基础算法'], joke: '所有答案都试试，总有一个没意见。', art: 'grid' },
   { id: 'quick-sort', name: '快速排序', type: 'algorithm', rarity: 0, score: 350, time: 4, categories: ['基础算法'], joke: '先排好队，再决定谁先过。', art: 'sort' },
   { id: 'two-pointers', name: '双指针', type: 'algorithm', rarity: 0, score: 350, time: 4, categories: ['基础算法'], joke: '两个人向中间走，总得碰个面。', art: 'search' },
@@ -22,65 +24,88 @@ export const cards: CardDefinition[] = [
   { id: 'sieve', name: '埃氏筛', type: 'algorithm', rarity: 0, score: 350, time: 5, categories: ['数学'], joke: '把合数筛掉，质数就很突出。', art: 'grid' },
   { id: 'bfs', name: 'BFS', type: 'algorithm', rarity: 0, score: 350, time: 5, categories: ['图论'], joke: '一层一层找，主打一个不插队。', art: 'graph' },
   { id: 'dfs', name: 'DFS', type: 'algorithm', rarity: 0, score: 350, time: 5, categories: ['图论'], joke: '一条路走到黑，还好记得回头。', art: 'tree' },
+  { id: 'insertion-sort', name: '插入排序', type: 'algorithm', rarity: 0, score: 300, time: 4, categories: ['基础算法'], joke: '摸一张牌，找个位置插队。', art: 'sort' },
+  { id: 'simulation', name: '模拟', type: 'algorithm', rarity: 0, score: 300, time: 4, categories: ['基础算法'], joke: '题目说怎么做，咱就老实怎么做。', art: 'grid' },
+  { id: 'sliding-window', name: '滑动窗口', type: 'algorithm', rarity: 0, score: 350, time: 5, categories: ['基础算法'], joke: '窗口往右挪，风景也跟着更新。', art: 'search' },
+  { id: 'horner', name: '秦九韶算法', type: 'algorithm', rarity: 0, score: 350, time: 5, categories: ['数学'], joke: '括号套得好，乘法省不少。', art: 'math' },
+  { id: 'flood-fill', name: '洪水填充', type: 'algorithm', rarity: 0, score: 350, time: 5, categories: ['图论'], joke: '从一个格子出发，把邻居都叫醒。', art: 'grid' },
+
+  // 绿（1）
   { id: 'binary-search', name: '二分查找', type: 'algorithm', rarity: 1, score: 400, time: 5, categories: ['基础算法'], joke: '答案夹在中间，先砍掉一半。', art: 'search' },
   { id: 'knapsack', name: '0/1 背包', type: 'algorithm', rarity: 1, score: 400, time: 6, categories: ['DP'], joke: '都想带走，可惜背包不同意。', art: 'bag' },
   { id: 'greedy', name: '贪心', type: 'algorithm', rarity: 1, score: 400, time: 5, categories: ['基础算法'], joke: '眼前选最好的，证明交给队友。', art: 'sort' },
   { id: 'difference', name: '差分', type: 'algorithm', rarity: 1, score: 400, time: 5, categories: ['基础算法'], joke: '两头记一笔，中间自己悟。', art: 'grid' },
   { id: 'union-find', name: '并查集', type: 'algorithm', rarity: 1, score: 450, time: 6, categories: ['数据结构', '图论'], joke: '先认个祖宗，再谈是不是一家人。', art: 'tree' },
   { id: 'fast-power', name: '快速幂', type: 'algorithm', rarity: 1, score: 400, time: 5, categories: ['数学'], joke: '乘得太慢？把自己平方一下。', art: 'math' },
+  { id: 'monotonic-stack', name: '单调栈', type: 'algorithm', rarity: 1, score: 400, time: 5, categories: ['数据结构'], joke: '后来者更强，前面的人请出栈。', art: 'sort' },
+  { id: 'merge-sort', name: '归并排序', type: 'algorithm', rarity: 1, score: 400, time: 5, categories: ['基础算法'], joke: '先各自排好，再体面地合并。', art: 'sort' },
+  { id: 'binary-search-answer', name: '二分答案', type: 'algorithm', rarity: 1, score: 450, time: 6, categories: ['基础算法'], joke: '答案能不能做到？先猜一个问问。', art: 'search' },
+  { id: 'complete-knapsack', name: '完全背包', type: 'algorithm', rarity: 1, score: 400, time: 6, categories: ['DP'], joke: '东西可以拿无数次，背包只有一个。', art: 'bag' },
+
+  // 青（2）
   { id: 'dijkstra', name: 'Dijkstra', type: 'algorithm', rarity: 2, score: 500, time: 6, categories: ['图论'], joke: '绕路可以，负权不行。', art: 'graph' },
   { id: 'kruskal', name: 'Kruskal', type: 'algorithm', rarity: 2, score: 500, time: 6, categories: ['图论'], joke: '最便宜的边先牵手，成环就分手。', art: 'tree' },
   { id: 'topological-sort', name: '拓扑排序', type: 'algorithm', rarity: 2, score: 500, time: 6, categories: ['图论'], joke: '先做先修课，别让依赖打成结。', art: 'graph' },
   { id: 'fenwick-tree', name: '树状数组', type: 'algorithm', rarity: 2, score: 550, time: 7, categories: ['数据结构'], joke: 'lowbit 很小，管的事不少。', art: 'tree' },
   { id: 'kmp', name: 'KMP', type: 'algorithm', rarity: 2, score: 550, time: 7, categories: ['字符串'], joke: '匹配失败没关系，别从头再爱。', art: 'string' },
+  { id: 'floyd', name: 'Floyd', type: 'algorithm', rarity: 2, score: 500, time: 6, categories: ['图论'], joke: '两个人走不通，就找中间人介绍。', art: 'graph' },
+  { id: 'trie', name: '字典树', type: 'algorithm', rarity: 2, score: 500, time: 6, categories: ['字符串', '数据结构'], joke: '前缀相同的，先走同一条路。', art: 'tree' },
+  { id: 'lis', name: '最长上升子序列', type: 'algorithm', rarity: 2, score: 550, time: 7, categories: ['DP'], joke: '人生可以跳着走，但数字得往上。', art: 'sort' },
+
+  // 蓝（3）
   { id: 'interval-dp', name: '区间 DP', type: 'algorithm', rarity: 3, score: 650, time: 8, categories: ['DP'], joke: '小区间先凑合，大区间抄答案。', art: 'grid' },
   { id: 'segment-tree', name: '线段树', type: 'algorithm', rarity: 3, score: 650, time: 8, categories: ['数据结构'], joke: '区间的事，分几个部门处理。', art: 'tree' },
   { id: 'lca', name: '最近公共祖先', type: 'algorithm', rarity: 3, score: 650, time: 8, categories: ['图论', '数据结构'], joke: '往上翻家谱，总能翻到同一个人。', art: 'tree' },
   { id: 'convex-hull', name: '凸包', type: 'algorithm', rarity: 3, score: 700, time: 9, categories: ['计算几何'], joke: '一根橡皮筋，圈住全场显眼包。', art: 'geometry' },
   { id: 'matrix-power', name: '矩阵快速幂', type: 'algorithm', rarity: 3, score: 700, time: 9, categories: ['数学', 'DP'], joke: '递推太长，就让矩阵替你加班。', art: 'math' },
+  { id: 'tree-dp', name: '树形 DP', type: 'algorithm', rarity: 3, score: 650, time: 8, categories: ['DP', '图论'], joke: '孩子们先商量，家长最后拍板。', art: 'tree' },
+  { id: 'state-compression-dp', name: '状压 DP', type: 'algorithm', rarity: 3, score: 700, time: 9, categories: ['DP'], joke: '人太多记不住，就把大家塞进二进制。', art: 'grid' },
+  { id: 'manacher', name: 'Manacher', type: 'algorithm', rarity: 3, score: 700, time: 9, categories: ['字符串'], joke: '回文照镜子，半边的信息两边用。', art: 'string' },
+
+  // 紫（4）
   { id: 'tarjan', name: 'Tarjan', type: 'algorithm', rarity: 4, score: 800, time: 10, categories: ['图论'], joke: '绕来绕去，原来大家都在一个圈。', art: 'graph' },
   { id: 'heavy-light', name: '重链剖分', type: 'algorithm', rarity: 4, score: 850, time: 11, categories: ['图论', '数据结构'], joke: '把树拆成链，树表示意见很大。', art: 'tree' },
   { id: 'aho-corasick', name: 'AC 自动机', type: 'algorithm', rarity: 4, score: 850, time: 11, categories: ['字符串'], joke: '名字里有 AC，提交前还是要检查。', art: 'string' },
   { id: 'digit-dp', name: '数位 DP', type: 'algorithm', rarity: 4, score: 800, time: 10, categories: ['数学', 'DP'], joke: '数太大数不完，那就按位讨价还价。', art: 'grid' },
+  { id: 'dinic', name: 'Dinic', type: 'algorithm', rarity: 4, score: 850, time: 11, categories: ['图论'], joke: '先分层，再让流量排队通过。', art: 'graph' },
+  { id: 'mo', name: '莫队', type: 'algorithm', rarity: 4, score: 800, time: 10, categories: ['基础算法', '数据结构'], joke: '问题排个队，指针少走冤枉路。', art: 'sort' },
+  { id: 'splay', name: 'Splay', type: 'algorithm', rarity: 4, score: 850, time: 11, categories: ['数据结构'], joke: '谁刚被访问，谁就转到最上面。', art: 'tree' },
+
+  // 橙（5）
   { id: 'fft', name: 'FFT', type: 'algorithm', rarity: 5, score: 1000, time: 12, categories: ['数学'], joke: '换个世界乘一乘，再穿越回来。', art: 'math' },
   { id: 'ntt', name: 'NTT', type: 'algorithm', rarity: 5, score: 1000, time: 12, categories: ['数学'], joke: '不想处理精度，就换个模数生活。', art: 'math' },
   { id: 'suffix-array', name: '后缀数组', type: 'algorithm', rarity: 5, score: 1050, time: 13, categories: ['字符串'], joke: '把每个后缀排一遍，故事就有顺序了。', art: 'string' },
   { id: 'min-cost-flow', name: '最小费用最大流', type: 'algorithm', rarity: 5, score: 1050, time: 13, categories: ['图论'], joke: '流量要拉满，经费还得省。', art: 'graph' },
+  { id: 'centroid-decomposition', name: '点分治', type: 'algorithm', rarity: 5, score: 1000, time: 12, categories: ['图论'], joke: '找到树的重心，再把问题各个击破。', art: 'tree' },
+  { id: 'exkmp', name: '扩展 KMP', type: 'algorithm', rarity: 5, score: 1000, time: 12, categories: ['字符串'], joke: '前缀有多像，让每个位置自己回答。', art: 'string' },
+
+  // 红（6）
   { id: 'persistent-segment-tree', name: '可持久化线段树', type: 'algorithm', rarity: 6, score: 1200, time: 14, categories: ['数据结构'], joke: '旧版本全保留，祖传 bug 也能查。', art: 'tree' },
   { id: 'suffix-automaton', name: '后缀自动机', type: 'algorithm', rarity: 6, score: 1250, time: 15, categories: ['字符串'], joke: '子串太多记不住，那就造台机器。', art: 'string' },
   { id: 'cdq', name: 'CDQ 分治', type: 'algorithm', rarity: 6, score: 1200, time: 14, categories: ['基础算法', '数据结构'], joke: '把问题分开谈，贡献回头再算。', art: 'sort' },
   { id: 'polynomial', name: '多项式牛顿迭代', type: 'algorithm', rarity: 6, score: 1300, time: 16, categories: ['数学'], joke: '答案先猜一点，每轮把信心翻倍。', art: 'math' },
+  { id: 'polynomial-inverse', name: '多项式求逆', type: 'algorithm', rarity: 6, score: 1200, time: 14, categories: ['数学'], joke: '乘起来要等于一，先从一项项试起。', art: 'math' },
+  { id: 'palindromic-tree', name: '回文自动机', type: 'algorithm', rarity: 6, score: 1200, time: 14, categories: ['字符串', '数据结构'], joke: '回文太多，就请它们在树上安家。', art: 'tree' },
+
+  // 黑红（7）
   { id: 'link-cut-tree', name: 'Link-Cut Tree', type: 'algorithm', rarity: 7, score: 1500, time: 18, categories: ['数据结构', '图论'], joke: '今天连，明天断，树也过上动态人生。', art: 'tree' },
   { id: 'dynamic-dp', name: '动态 DP', type: 'algorithm', rarity: 7, score: 1450, time: 17, categories: ['DP', '数据结构'], joke: '答案天天变，转移矩阵只好连夜上班。', art: 'grid' },
   { id: 'min25', name: 'Min_25 筛', type: 'algorithm', rarity: 7, score: 1450, time: 17, categories: ['数学'], joke: '数字大得离谱，筛子也得读过论文。', art: 'math' },
   { id: 'half-plane', name: '动态半平面交', type: 'algorithm', rarity: 7, score: 1500, time: 18, categories: ['计算几何', '数据结构'], joke: '每人划一条线，看看还有没有生存空间。', art: 'geometry' },
-  { id: 'insertion-sort', name: '插入排序', type: 'algorithm', rarity: 0, score: 300, time: 4, categories: ['基础算法'], joke: '摸一张牌，找个位置插队。', art: 'sort' },
-  { id: 'simulation', name: '模拟', type: 'algorithm', rarity: 0, score: 300, time: 4, categories: ['基础算法'], joke: '题目说怎么做，咱就老实怎么做。', art: 'grid' },
-  { id: 'sliding-window', name: '滑动窗口', type: 'algorithm', rarity: 0, score: 350, time: 5, categories: ['基础算法'], joke: '窗口往右挪，风景也跟着更新。', art: 'search' },
-  { id: 'horner', name: '秦九韶算法', type: 'algorithm', rarity: 0, score: 350, time: 5, categories: ['数学'], joke: '括号套得好，乘法省不少。', art: 'math' },
-  { id: 'flood-fill', name: '洪水填充', type: 'algorithm', rarity: 0, score: 350, time: 5, categories: ['图论'], joke: '从一个格子出发，把邻居都叫醒。', art: 'grid' },
-  { id: 'monotonic-stack', name: '单调栈', type: 'algorithm', rarity: 1, score: 400, time: 5, categories: ['数据结构'], joke: '后来者更强，前面的人请出栈。', art: 'sort' },
-  { id: 'merge-sort', name: '归并排序', type: 'algorithm', rarity: 1, score: 400, time: 5, categories: ['基础算法'], joke: '先各自排好，再体面地合并。', art: 'sort' },
-  { id: 'binary-search-answer', name: '二分答案', type: 'algorithm', rarity: 1, score: 450, time: 6, categories: ['基础算法'], joke: '答案能不能做到？先猜一个问问。', art: 'search' },
-  { id: 'complete-knapsack', name: '完全背包', type: 'algorithm', rarity: 1, score: 400, time: 6, categories: ['DP'], joke: '东西可以拿无数次，背包只有一个。', art: 'bag' },
-  { id: 'floyd', name: 'Floyd', type: 'algorithm', rarity: 2, score: 500, time: 6, categories: ['图论'], joke: '两个人走不通，就找中间人介绍。', art: 'graph' },
-  { id: 'trie', name: '字典树', type: 'algorithm', rarity: 2, score: 500, time: 6, categories: ['字符串', '数据结构'], joke: '前缀相同的，先走同一条路。', art: 'tree' },
-  { id: 'lis', name: '最长上升子序列', type: 'algorithm', rarity: 2, score: 550, time: 7, categories: ['DP'], joke: '人生可以跳着走，但数字得往上。', art: 'sort' },
-  { id: 'tree-dp', name: '树形 DP', type: 'algorithm', rarity: 3, score: 650, time: 8, categories: ['DP', '图论'], joke: '孩子们先商量，家长最后拍板。', art: 'tree' },
-  { id: 'state-compression-dp', name: '状压 DP', type: 'algorithm', rarity: 3, score: 700, time: 9, categories: ['DP'], joke: '人太多记不住，就把大家塞进二进制。', art: 'grid' },
-  { id: 'manacher', name: 'Manacher', type: 'algorithm', rarity: 3, score: 700, time: 9, categories: ['字符串'], joke: '回文照镜子，半边的信息两边用。', art: 'string' },
-  { id: 'dinic', name: 'Dinic', type: 'algorithm', rarity: 4, score: 850, time: 11, categories: ['图论'], joke: '先分层，再让流量排队通过。', art: 'graph' },
-  { id: 'mo', name: '莫队', type: 'algorithm', rarity: 4, score: 800, time: 10, categories: ['基础算法', '数据结构'], joke: '问题排个队，指针少走冤枉路。', art: 'sort' },
-  { id: 'splay', name: 'Splay', type: 'algorithm', rarity: 4, score: 850, time: 11, categories: ['数据结构'], joke: '谁刚被访问，谁就转到最上面。', art: 'tree' },
-  { id: 'centroid-decomposition', name: '点分治', type: 'algorithm', rarity: 5, score: 1000, time: 12, categories: ['图论'], joke: '找到树的重心，再把问题各个击破。', art: 'tree' },
-  { id: 'exkmp', name: '扩展 KMP', type: 'algorithm', rarity: 5, score: 1000, time: 12, categories: ['字符串'], joke: '前缀有多像，让每个位置自己回答。', art: 'string' },
-  { id: 'polynomial-inverse', name: '多项式求逆', type: 'algorithm', rarity: 6, score: 1200, time: 14, categories: ['数学'], joke: '乘起来要等于一，先从一项项试起。', art: 'math' },
-  { id: 'palindromic-tree', name: '回文自动机', type: 'algorithm', rarity: 6, score: 1200, time: 14, categories: ['字符串', '数据结构'], joke: '回文太多，就请它们在树上安家。', art: 'tree' },
   { id: 'dynamic-convex-hull', name: '动态凸包', type: 'algorithm', rarity: 7, score: 1450, time: 17, categories: ['计算几何', '数据结构'], joke: '点来点去，橡皮筋也得跟着加班。', art: 'geometry' },
   { id: 'segment-tree-merge', name: '线段树合并', type: 'algorithm', rarity: 7, score: 1450, time: 17, categories: ['数据结构'], joke: '两棵树开会，重叠的部门当场合并。', art: 'tree' },
+
+  // 技巧卡
+  // 灰（0）
   { id: 'template', name: '祖传模板', type: 'technique', rarity: 0, score: 0, time: 3, categories: [], joke: '祖宗说能过。', effect: { kind: 'multiplier', amount: 0.2 }, effectText: '本题总分 +20%；弃掉此卡即移除。', art: 'template' },
+
+  // 绿（1）
   { id: 'coffee', name: '咖啡', type: 'technique', rarity: 1, score: 0, time: 2, categories: [], joke: '把明天的精神借过来。', effect: { kind: 'coffee', duration: 60, factor: 0.75 }, effectText: '全局持续 60 分钟：其间开始处理的卡牌耗时 −25%；再次触发刷新时长。', art: 'coffee' },
+
+  // 青（2）
   { id: 'maimai', name: '舞萌曲谱', type: 'technique', rarity: 2, score: 0, time: 4, categories: [], joke: '手速没用在正地方，但有用。', effect: { kind: 'draw', duration: 45, interval: 3 }, effectText: '全局持续 45 分钟：抽牌间隔由 4 分钟缩短为 3 分钟；再次触发刷新时长。', art: 'music' },
+
+  // 蓝（3）
   { id: 'dice', name: '骰子', type: 'technique', rarity: 3, score: 0, time: 2, categories: [], joke: '证明略，点数如下。', effect: { kind: 'dice', sides: 6, unit: 100 }, effectText: '生效时等概率为本题增加 100～600 分；弃掉此卡即移除。', art: 'dice' },
 ];
 
