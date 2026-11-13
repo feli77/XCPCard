@@ -2,6 +2,7 @@ import { hints } from '../content/text';
 import { canSubmit, cardById, standings, tableScore } from '../game/engine';
 import type { Action, Match, Standing } from '../game/types';
 import { Card } from './Card';
+import { ContestCountdown } from './ContestCountdown';
 import { PixelArt } from './PixelArt';
 import { useCardDrag } from './useCardDrag';
 
@@ -56,6 +57,7 @@ export function MatchView({
   });
 
   return <main className={`match-page ${match.paused ? 'paused' : ''}`} onClickCapture={onClickCapture} onPointerDownCapture={onPointerDownCapture}>
+    <ContestCountdown time={match.time}/>
     <div className="match-toolbar">
       <div className="clock-block">
         <span className="tiny-label">CONTEST TIME</span>
