@@ -54,23 +54,25 @@ export function Packs({ profile, onOpen, onContest }: PacksProps) {
               }}
             >
               <div
-                className={`sealed-pack rarity-${pack.guarantee}`}
+                className="pack-object"
                 style={
                   {
                     "--rarity": rarities[pack.guarantee].color,
                   } as CSSProperties
                 }
               >
-                <i className="pack-seal pack-seal-top" aria-hidden="true" />
-                <i className="pack-seal pack-seal-bottom" aria-hidden="true" />
-                <span>XCPCard</span>
-                <PixelArt kind="trophy" />
-                <b>
-                  ALGORITHM
-                  <br />
-                  BOOSTER PACK
-                </b>
-                <small>5 CARDS / ONE MORE AC</small>
+                <div className={`sealed-pack rarity-${pack.guarantee}`}>
+                  <i className="pack-seal pack-seal-top" aria-hidden="true" />
+                  <i className="pack-seal pack-seal-bottom" aria-hidden="true" />
+                  <span>XCPCard</span>
+                  <PixelArt kind="trophy" />
+                  <b>
+                    ALGORITHM
+                    <br />
+                    BOOSTER PACK
+                  </b>
+                  <small>5 CARDS / ONE MORE AC</small>
+                </div>
               </div>
               <h3>
                 {pack.guarantee
