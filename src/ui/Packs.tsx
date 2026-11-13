@@ -79,7 +79,7 @@ export function Packs({ profile, onOpen, onContest }: PacksProps) {
                   ? `保底${rarities[pack.guarantee].name}卡包`
                   : "普通卡包"}
               </h3>
-              <span>{eventById[pack.eventId].name}奖励</span>
+              <span>{pack.eventId === "starter" ? "新手礼包" : `${eventById[pack.eventId].name}奖励`}</span>
               <strong>拆开看看 ↗</strong>
             </button>
           ))}
@@ -113,7 +113,7 @@ export function PackReveal({
     <div className="pack-overlay">
       <div className="pack-open-heading">
         <span className="eyebrow">
-          {eventById[pack.eventId].name} · 比赛奖励
+          {pack.eventId === "starter" ? "新手礼包" : `${eventById[pack.eventId].name} · 比赛奖励`}
         </span>
         <h2>{uiText.packs.openingTitle}</h2>
         <p>点击翻开卡牌　{pack.revealed.length} / 5</p>

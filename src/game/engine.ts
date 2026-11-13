@@ -1,4 +1,4 @@
-import { cards, initialDeck, events, problemNames, teamNames, rarityWeights } from '../content/data';
+import { cards, events, problemNames, teamNames, rarityWeights } from '../content/data';
 import type { Category, CardDefinition } from '../content/types';
 import type { Action, CardInstance, Match, MatchResult, Opponent, Pack, Profile, Standing, TableCard } from './types';
 
@@ -26,9 +26,8 @@ const seed = () => Math.floor(Math.random() * 4294967296);
 const uniqueId = () => crypto.randomUUID();
 
 export function createProfile(): Profile {
-  const collection: Record<string, number> = {};
-  for (const id of initialDeck) collection[id] = (collection[id] ?? 0) + 1;
-  return { collection, deck: [...initialDeck], season: 1, mainIndex: 0, seasonEnded: false, playedEvents: [], packs: [], history: [] };
+  const packs: Pack[] = Array.from({ length: 8 }, () => ({ id: uniqueId(), eventId: 'starter', guarantee: 0 }));
+  return { collection: {}, deck: [], season: 1, mainIndex: 0, seasonEnded: false, playedEvents: [], packs, history: [] };
 }
 
 export function availableEvents(profile: Profile) {

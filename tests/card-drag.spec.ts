@@ -1,5 +1,6 @@
 import { test, expect, type Locator, type Page } from '@playwright/test';
-import { createProfile, startMatch } from '../src/game/engine';
+import { startMatch } from '../src/game/engine';
+import { createTestProfile } from './fixtures';
 import type { Match, Profile } from '../src/game/types';
 
 const storageKey = 'xcpcard-save';
@@ -8,7 +9,7 @@ async function state(page: Page): Promise<{ profile: Profile; match: Match }> {
   return page.evaluate(key => JSON.parse(localStorage.getItem(key)!), storageKey);
 }
 
-async function load(page: Page, profile = createProfile(), match: Match | null = null) {
+async function load(page: Page, profile = createTestProfile(), match: Match | null = null) {
   await page.addInitScript(({ key, session }) => {
     localStorage.setItem(key, JSON.stringify(session));
     localStorage.setItem('xcpcard-hints', JSON.stringify(['read', 'play', 'submit']));
@@ -17,7 +18,7 @@ async function load(page: Page, profile = createProfile(), match: Match | null =
 }
 
 async function matchFixture(page: Page, tableCount = 0) {
-  const profile = createProfile();
+  const profile = createTestProfile();
   const match = startMatch(profile, 'school', 492);
   match.paused = true;
   match.problems[0].readProgress = match.problems[0].readTime;
@@ -88,7 +89,7 @@ test('collection lifts the original card while keeping its grid position and res
 });
 
 test('deck entry becomes a full card and the next entry fills its position after the final copy is removed', async ({ page }) => {
-  const profile = createProfile();
+  const profile = createTestProfile();
   profile.deck = ['enumerate', 'quick-sort', 'two-pointers'];
   await load(page, profile);
   await page.getByRole('button', { name: '我的卡组', exact: true }).click();
@@ -115,7 +116,7 @@ test('deck entry becomes a full card and the next entry fills its position after
 });
 
 test('a collection drop adds exactly one copy and an ordinary click still adds another', async ({ page }) => {
-  const profile = createProfile();
+  const profile = createTestProfile();
   profile.deck = [];
   await load(page, profile);
   await page.getByRole('button', { name: '我的卡组', exact: true }).click();
@@ -301,7 +302,7 @@ test('table cards keep their positions during dragging and fill the gap only aft
 });
 
 test('automatic acceptance cancels a lifted table card immediately when its source is removed', async ({ page }) => {
-  const profile = createProfile();
+  const profile = createTestProfile();
   const match = startMatch(profile, 'school', 492);
   match.paused = true;
   const problem = match.problems[0];
