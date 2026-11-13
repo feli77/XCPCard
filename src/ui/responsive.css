@@ -130,10 +130,6 @@
   .solved-desk {
     min-height: 180px;
   }
-  .paused .arena {
-    height: calc(100vh - 478px);
-    min-height: 270px;
-  }
 }
 @media (max-height: 820px) {
   .problem-heading { padding: 12px 16px; }
@@ -141,7 +137,6 @@
   .score-strip strong { font-size: 28px; }
   .score-target b { font-size: 17px; }
   .table-bottom { padding: 8px 16px; }
-  .tutorial-tip { padding: 5px 12px; }
   .table-cards { align-items: flex-start; gap: 12px; padding: 12px 16px; }
   .empty-table { min-height: 90px; }
 }

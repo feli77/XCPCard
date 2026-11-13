@@ -14,6 +14,10 @@
   --line: #d9d5ca;
   --green: #697e55;
   --mono: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  scrollbar-width: none;
+}
+:root::-webkit-scrollbar {
+  display: none;
 }
 * {
   box-sizing: border-box;
@@ -1068,6 +1072,22 @@ small {
 .filters > button.active {
   background: var(--ink);
   color: white;
+}
+.rarity-filters {
+  align-items: center;
+}
+.filter-label {
+  margin-right: 4px;
+  font-size: 10px;
+  color: var(--muted);
+}
+.rarity-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 5px;
+  border-radius: 50%;
+  background: var(--rarity);
 }
 .collection-cards {
   display: grid;

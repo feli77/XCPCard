@@ -11,6 +11,41 @@ async function start(page: Page) {
 }
 async function elapsed(page: Page, seconds: number) { await page.clock.runFor(seconds * 1000); }
 
+test('screen-edge countdown follows contest time, pause, warning thresholds and viewport size', async ({ page }) => {
+  await start(page);
+  const frame = page.locator('.contest-countdown');
+  const path = frame.locator('path');
+  await expect(frame).toHaveCSS('color', 'rgb(105, 126, 85)');
+  await expect(path).toHaveAttribute('stroke-dasharray', '1000 1000');
+  await expect(frame).toHaveCSS('pointer-events', 'none');
+
+  await elapsed(page, 150);
+  await expect(path).toHaveAttribute('stroke-dasharray', '500 1000');
+  await expect(path).toHaveAttribute('stroke-dashoffset', '-500');
+  await page.getByRole('button', { name: 'Ⅱ 暂停', exact: true }).click();
+  await elapsed(page, 10);
+  await expect(path).toHaveAttribute('stroke-dashoffset', '-500');
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await expect(frame).toHaveJSProperty('clientWidth', 1366);
+  await expect(frame).toHaveJSProperty('clientHeight', 768);
+  await expect.poll(() => path.evaluate(element => (element as SVGPathElement).getBBox().width)).toBe(1356);
+  await page.screenshot({ path: 'test-results/countdown-half.png', animations: 'disabled' });
+  await page.getByRole('button', { name: '▶ 继续比赛', exact: true }).click();
+
+  await elapsed(page, 89);
+  await expect(frame).toHaveCSS('color', 'rgb(105, 126, 85)');
+  await elapsed(page, 1);
+  await expect(frame).toHaveCSS('color', 'rgb(179, 154, 75)');
+  await elapsed(page, 29);
+  await expect(frame).toHaveCSS('color', 'rgb(179, 154, 75)');
+  await elapsed(page, 1);
+  await expect(frame).toHaveCSS('color', 'rgb(176, 103, 93)');
+  await page.screenshot({ path: 'test-results/countdown-critical.png', animations: 'disabled' });
+  await elapsed(page, 30);
+  await expect(path).toHaveAttribute('stroke-dasharray', '0 1000');
+  await expect(page.locator('.result-modal')).toBeVisible();
+});
+
 test('lobby and deck edits obey owned copies and 24-card entry', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', e => errors.push(e.message));
@@ -167,7 +202,7 @@ test('reload freezes saved match and preserves cards, queue and per-problem prog
   await elapsed(page, 2);
   const before = await state(page);
   await page.reload();
-  await expect(page.locator('.pause-banner')).toBeVisible();
+  await expect(page.getByRole('button', { name: '▶ 继续比赛', exact: true })).toBeVisible();
   const after = await state(page);
   expect(after.match.paused).toBe(true);
   expect(after.match.time).toBe(before.match.time);

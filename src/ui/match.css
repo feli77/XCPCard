@@ -1,4 +1,27 @@
 /* Contest */
+.contest-countdown {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1100;
+  pointer-events: none;
+  color: var(--green);
+}
+.contest-countdown.warning {
+  color: #b39a4b;
+}
+.contest-countdown.critical {
+  color: #b0675d;
+}
+.contest-countdown path {
+  transition: stroke-dasharray 0.2s linear, stroke-dashoffset 0.2s linear;
+}
+@media (prefers-reduced-motion: reduce) {
+  .contest-countdown path {
+    transition: none;
+  }
+}
 .match-title {
   display: flex;
   align-items: center;
@@ -116,23 +139,6 @@
   width: 119px;
   min-height: 35px;
   padding: 9px 12px;
-}
-.pause-banner {
-  display: flex;
-  gap: 20px;
-  align-items: center;
-  background: #e7e7d9;
-  border: 1px solid #c9cbb2;
-  padding: 9px 14px;
-  font-size: 10px;
-  margin-bottom: 10px;
-  color: #747b5a;
-}
-.pause-banner b {
-  font-size: 11px;
-}
-.pause-banner strong {
-  margin-left: auto;
 }
 .arena {
   display: grid;
@@ -710,24 +716,6 @@
 .pending-strip > span {
   background: #e7e8da;
   padding: 4px 8px;
-}
-.tutorial-tip {
-  background: #e6e9da;
-  padding: 9px 12px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  border-top: 1px solid #d0d6bc;
-  color: #7f896b;
-  font-size: 9px;
-  line-height: 1.7;
-  flex-shrink: 0;
-}
-.tutorial-tip > button {
-  white-space: nowrap;
-  font-size: 8px;
-  color: #74805e;
-  margin-left: auto;
 }
 .judge-toast {
   position: absolute;

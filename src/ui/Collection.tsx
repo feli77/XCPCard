@@ -12,6 +12,8 @@ interface CollectionProps {
   playing: boolean;
   category: string;
   onCategory: (category: string) => void;
+  rarity: number | null;
+  onRarity: (rarity: number | null) => void;
   onRemove: (cardId: string) => void;
   onAdd: (cardId: string) => void;
 }
@@ -23,6 +25,8 @@ export function Collection({
   playing,
   category,
   onCategory,
+  rarity,
+  onRarity,
   onRemove,
   onAdd,
 }: CollectionProps) {
@@ -40,6 +44,7 @@ export function Collection({
   const visibleCards = cards.filter(
     (card) =>
       profile.collection[card.id] &&
+      (rarity === null || card.rarity === rarity) &&
       (category === "全部" ||
         (category === "技巧" && card.type === "technique") ||
         card.categories.some((c) => c === category)),
@@ -59,7 +64,7 @@ export function Collection({
             <h3>
               全部收藏 <small>{collectionCount} 张</small>
             </h3>
-            <div className="filters">
+            <div className="filters" role="group" aria-label="类别筛选">
               {[
                 "全部",
                 "基础算法",
@@ -74,13 +79,39 @@ export function Collection({
                 <button
                   key={name}
                   className={category === name ? "active" : ""}
+                  aria-pressed={category === name}
                   onClick={() => onCategory(name)}
                 >
                   {name}
                 </button>
               ))}
             </div>
+            <div className="filters rarity-filters" role="group" aria-label="稀有度筛选">
+              <span className="filter-label">稀有度</span>
+              <button
+                className={rarity === null ? "active" : ""}
+                aria-pressed={rarity === null}
+                onClick={() => onRarity(null)}
+              >
+                全部
+              </button>
+              {rarities.map((definition, index) => (
+                <button
+                  key={definition.name}
+                  className={rarity === index ? "active" : ""}
+                  style={{ "--rarity": definition.color } as CSSProperties}
+                  aria-pressed={rarity === index}
+                  onClick={() => onRarity(index)}
+                >
+                  <span className="rarity-dot" aria-hidden="true" />
+                  {definition.name}
+                </button>
+              ))}
+            </div>
           </div>
+          {visibleCards.length === 0 && (
+            <p className="empty-copy">没有符合筛选条件的卡牌。</p>
+          )}
           <div className="collection-cards">
             {visibleCards.map((card) => (
               <div className="collection-item" key={card.id}>
