@@ -88,7 +88,6 @@ export function Card({ card, selected, count, onClick, draggable, onPointerDown,
       <strong>{card.name} · {rarity.name}</strong>
       {card.effectText && <p>{card.effectText}</p>}
       <p>「{card.joke}」</p>
-      <small>{card.categories.length ? '命中任一题目类别计全分，否则计一半。' : '技巧加分不受题目类别影响。'}</small>
     </div>, document.body)}
   </>;
 }
