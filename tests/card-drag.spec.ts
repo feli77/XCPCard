@@ -234,6 +234,52 @@ test('dragging selected cards queues them once and reserved cards cannot be drag
   expect((await state(page)).match.hand).toHaveLength(5);
 });
 
+test('hand selection and dragging respect the remaining table slots', async ({ page }) => {
+  await page.clock.install();
+  const initial = await matchFixture(page, 4);
+  await page.getByRole('button', { name: '▶ 继续比赛', exact: true }).click();
+  const hand = page.locator('.hand-cards .game-card');
+  await hand.nth(0).click();
+  await hand.nth(1).click();
+  await expect(page.locator('.hand-selection')).toHaveText('已选 1 张');
+  await expect(hand.nth(0)).toHaveClass(/selected/);
+  await expect(hand.nth(1)).not.toHaveClass(/selected/);
+  await hand.nth(0).click();
+  await hand.nth(1).click();
+  await page.getByRole('button', { name: '出牌 →', exact: true }).click();
+  await expect(page.locator('.table-cards .game-card')).toHaveCount(5);
+  await expect(page.locator('.hand-selection')).toHaveText('牌桌已满（最多 5 张）');
+  await lift(page, hand.nth(0));
+  await releaseOn(page, page.locator('.table-panel .problem-heading'));
+  expect((await state(page)).match.hand).toHaveLength(initial.hand.length - 1);
+  await expect(page.locator('.table-cards .game-card')).toHaveCount(5);
+  await page.locator('.table-cards .card-discard').first().click();
+  await hand.nth(0).click();
+  await page.getByRole('button', { name: '出牌 →', exact: true }).click();
+  await expect(page.locator('.table-cards .game-card')).toHaveCount(5);
+});
+
+test('paused planned plays reserve slots and planned table discards release them', async ({ page }) => {
+  await page.clock.install();
+  const initial = await matchFixture(page, 4);
+  const hand = page.locator('.hand-cards .game-card');
+  await hand.nth(0).click();
+  await page.getByRole('button', { name: '预排出牌 →', exact: true }).click();
+  await hand.nth(1).click();
+  await expect(hand.nth(1)).not.toHaveClass(/selected/);
+  await expect(page.getByRole('button', { name: '预排出牌 →', exact: true })).toBeDisabled();
+  await lift(page, hand.nth(1));
+  await releaseOn(page, page.locator('.table-panel .problem-heading'));
+  expect((await state(page)).match.pendingActions).toHaveLength(1);
+  await page.locator('.table-cards .card-discard').first().click();
+  await hand.nth(1).click();
+  await page.getByRole('button', { name: '预排出牌 →', exact: true }).click();
+  expect((await state(page)).match.pendingActions).toHaveLength(3);
+  await page.getByRole('button', { name: '▶ 继续比赛', exact: true }).click();
+  await expect(page.locator('.table-cards .game-card')).toHaveCount(5);
+  expect((await state(page)).match.hand).toHaveLength(initial.hand.length - 2);
+});
+
 test('table cards keep their positions during dragging and fill the gap only after a drop', async ({ page }) => {
   const initial = await matchFixture(page, 3);
   await page.getByRole('button', { name: '▶ 继续比赛', exact: true }).click();

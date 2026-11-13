@@ -4,6 +4,7 @@ import type { Action, CardInstance, Match, MatchResult, Opponent, Pack, Profile,
 
 export const MATCH_DURATION = 300;
 export const HAND_LIMIT = 8;
+export const TABLE_LIMIT = 5;
 export const DECK_SIZE = 24;
 export const cardById = Object.fromEntries(cards.map(card => [card.id, card]));
 const categories: Category[] = ['基础算法', '图论', '数学', 'DP', '数据结构', '字符串', '计算几何'];
@@ -117,9 +118,14 @@ function submit(match: Match, index: number) {
   problem.attempts.push({ time: match.time, result: accepted ? 'AC' : 'WA', score });
   if (accepted) {
     problem.acTime = match.time;
-    match.discard.push(...problem.table.map(({ uid, cardId }) => ({ uid, cardId })));
+    match.discard.push(...problem.table.filter(card => cardById[card.cardId].type === 'algorithm').map(({ uid, cardId }) => ({ uid, cardId })));
     problem.table = [];
-  } else problem.waRevision = problem.revision;
+  } else {
+    problem.waRevision = problem.revision;
+    const remaining = problem.table.filter(card => cardById[card.cardId].type === 'algorithm');
+    if (remaining.length !== problem.table.length) problem.revision++;
+    problem.table = remaining;
+  }
   problem.submitQueued = false;
   match.feedback = { id: (match.feedback?.id ?? 0) + 1, problem: index, result: accepted ? 'AC' : 'WA', text: accepted ? '过了，别碰它。' : '样例：我尽力了。' };
   return true;
@@ -134,8 +140,8 @@ function runAction(match: Match, action: Action, scheduled = false) {
       break;
     case 'play': {
       if (index !== match.currentProblem || problem.acTime !== null || problem.readProgress < problem.readTime) break;
-      const playing = action.uids.map(uid => match.hand.find(card => card.uid === uid)).filter((card): card is CardInstance => !!card);
-      if (!playing.length) break;
+      const playing = [...new Set(action.uids)].map(uid => match.hand.find(card => card.uid === uid)).filter((card): card is CardInstance => !!card);
+      if (!playing.length || problem.table.length + playing.length > TABLE_LIMIT) break;
       match.hand = match.hand.filter(card => !playing.some(item => item.uid === card.uid));
       problem.table.push(...playing.map(card => ({ ...card, progress: 0, duration: null, active: false })));
       problem.revision++;
@@ -206,8 +212,13 @@ function activate(match: Match, instance: TableCard) {
   instance.active = true;
   const effect = cardById[instance.cardId].effect;
   if (!effect) return;
-  if (effect.kind === 'coffee') match.globalEffects.coffee = { expiresAt: match.time + effect.duration, factor: effect.factor };
-  else if (effect.kind === 'draw') match.globalEffects.draw = { expiresAt: match.time + effect.duration, interval: effect.interval };
+  if (effect.kind === 'coffee' || effect.kind === 'draw') {
+    if (effect.kind === 'coffee') match.globalEffects.coffee = { expiresAt: match.time + effect.duration, factor: effect.factor };
+    else match.globalEffects.draw = { expiresAt: match.time + effect.duration, interval: effect.interval };
+    const problem = match.problems[match.currentProblem];
+    problem.table = problem.table.filter(card => card.uid !== instance.uid);
+    problem.revision++;
+  }
   else if (effect.kind === 'dice') instance.dice = (1 + Math.floor(random(match) * effect.sides)) * effect.unit;
 }
 

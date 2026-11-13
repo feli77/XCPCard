@@ -11,7 +11,7 @@ async function start(page: Page) {
 }
 async function elapsed(page: Page, seconds: number) { await page.clock.runFor(seconds * 1000); }
 
-test('lobby and deck edits obey owned copies and 24-card entry', async ({ page }) => {
+test('lobby and deck edits allow fewer cards and obey owned copies and the 24-card limit', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', e => errors.push(e.message));
   await page.goto('/');
@@ -20,8 +20,9 @@ test('lobby and deck edits obey owned copies and 24-card entry', async ({ page }
   await page.getByRole('button', { name: '我的卡组', exact: true }).click();
   await page.locator('.deck-slots button').filter({ hasText: '枚举' }).click();
   await expect(page.locator('.deck-count')).toHaveText('23 / 24');
+  await expect(page.locator('.deck-state')).toHaveText('■ 可以参赛');
   await page.getByRole('button', { name: '赛事大厅', exact: true }).click();
-  await expect(page.getByRole('button', { name: '参加比赛' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: '参加比赛' })).toBeEnabled();
   await page.getByRole('button', { name: '我的卡组', exact: true }).click();
   await page.locator('.collection-cards').getByRole('button', { name: /^枚举，/ }).click();
   await expect(page.locator('.deck-count')).toHaveText('24 / 24');
@@ -32,6 +33,29 @@ test('lobby and deck edits obey owned copies and 24-card entry', async ({ page }
   expect((await state(page)).profile.deck).toHaveLength(24);
   expect(errors).toEqual([]);
 });
+
+for (const count of [0, 1, 23]) {
+  for (const eventId of ['school', 'provincial']) {
+    test(`${count}-card decks can enter ${eventId}`, async ({ page }) => {
+      const profile = createProfile();
+      profile.deck = profile.deck.slice(0, count);
+      if (eventId === 'provincial') profile.mainIndex = 1;
+      await page.clock.install();
+      await page.goto('/');
+      await page.evaluate(([key, value]) => localStorage.setItem(key, value), [storageKey, JSON.stringify({ profile, match: null, result: null, openedPack: null })]);
+      await page.reload();
+      const entry = eventId === 'school'
+        ? page.getByRole('button', { name: '参加比赛' })
+        : page.locator('.side-ticket').filter({ hasText: '省赛' });
+      await expect(entry).toBeEnabled();
+      await entry.click();
+      await expect(page.locator('.match-page')).toBeVisible();
+      const match = (await state(page)).match;
+      expect(match.eventId).toBe(eventId);
+      expect([...match.hand, ...match.deck].map(card => card.cardId).sort()).toEqual([...profile.deck].sort());
+    });
+  }
+}
 
 test('collection drag and drop moves one copy in either direction and persists the deck', async ({ page }) => {
   await page.goto('/');

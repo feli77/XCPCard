@@ -54,10 +54,10 @@ export const cards: CardDefinition[] = [
   { id: 'dynamic-dp', name: '动态 DP', type: 'algorithm', rarity: 7, score: 1450, time: 17, categories: ['DP', '数据结构'], joke: '答案天天变，转移矩阵只好连夜上班。', art: 'grid' },
   { id: 'min25', name: 'Min_25 筛', type: 'algorithm', rarity: 7, score: 1450, time: 17, categories: ['数学'], joke: '数字大得离谱，筛子也得读过论文。', art: 'math' },
   { id: 'half-plane', name: '动态半平面交', type: 'algorithm', rarity: 7, score: 1500, time: 18, categories: ['计算几何', '数据结构'], joke: '每人划一条线，看看还有没有生存空间。', art: 'geometry' },
-  { id: 'template', name: '祖传模板', type: 'technique', rarity: 0, score: 0, time: 3, categories: [], joke: '祖宗说能过。', effect: { kind: 'multiplier', amount: 0.2 }, effectText: '本题总分 +20%；弃掉此卡即移除。', art: 'template' },
-  { id: 'coffee', name: '咖啡', type: 'technique', rarity: 1, score: 0, time: 2, categories: [], joke: '把明天的精神借过来。', effect: { kind: 'coffee', duration: 60, factor: 0.75 }, effectText: '全局持续 60 分钟：其间开始处理的卡牌耗时 −25%；再次触发刷新时长。', art: 'coffee' },
-  { id: 'maimai', name: '舞萌曲谱', type: 'technique', rarity: 2, score: 0, time: 4, categories: [], joke: '手速没用在正地方，但有用。', effect: { kind: 'draw', duration: 45, interval: 3 }, effectText: '全局持续 45 分钟：抽牌间隔由 4 分钟缩短为 3 分钟；再次触发刷新时长。', art: 'music' },
-  { id: 'dice', name: '骰子', type: 'technique', rarity: 3, score: 0, time: 2, categories: [], joke: '证明略，点数如下。', effect: { kind: 'dice', sides: 6, unit: 100 }, effectText: '生效时等概率为本题增加 100～600 分；弃掉此卡即移除。', art: 'dice' },
+  { id: 'template', name: '祖传模板', type: 'technique', rarity: 0, score: 0, time: 3, categories: [], joke: '祖宗说能过。', effect: { kind: 'multiplier', amount: 0.2 }, effectText: '本题总分 +20%；提交后销毁，提前弃掉即移除加成。', art: 'template' },
+  { id: 'coffee', name: '咖啡', type: 'technique', rarity: 1, score: 0, time: 2, categories: [], joke: '把明天的精神借过来。', effect: { kind: 'coffee', duration: 60, factor: 0.75 }, effectText: '全局持续 60 分钟：其间开始处理的卡牌耗时 −25%；再次触发刷新时长。生效后销毁。', art: 'coffee' },
+  { id: 'maimai', name: '舞萌曲谱', type: 'technique', rarity: 2, score: 0, time: 4, categories: [], joke: '手速没用在正地方，但有用。', effect: { kind: 'draw', duration: 45, interval: 3 }, effectText: '全局持续 45 分钟：抽牌间隔由 4 分钟缩短为 3 分钟；再次触发刷新时长。生效后销毁。', art: 'music' },
+  { id: 'dice', name: '骰子', type: 'technique', rarity: 3, score: 0, time: 2, categories: [], joke: '证明略，点数如下。', effect: { kind: 'dice', sides: 6, unit: 100 }, effectText: '生效时等概率为本题增加 100～600 分；提交后销毁，提前弃掉即移除加分。', art: 'dice' },
 ];
 
 export const initialDeck: string[] = [
