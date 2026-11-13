@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import { cards, rarities } from "../content/data";
 import { uiText } from "../content/text";
-import { cardById } from "../game/engine";
+import { cardById, DECK_SIZE } from "../game/engine";
 import type { Profile } from "../game/types";
 import { Card } from "./Card";
 import { PixelArt } from "./PixelArt";
@@ -136,14 +136,14 @@ export function Collection({
         >
           <div className="section-heading">
             <h3>
-              参赛卡组 <small className="deck-count">{profile.deck.length} / 24</small>
+              参赛卡组 <small className="deck-count">{profile.deck.length} / {DECK_SIZE}</small>
             </h3>
             <span>点击或拖出</span>
           </div>
           <span
-            className={`deck-state ${profile.deck.length === 24 ? "valid" : ""}`}
+            className={`deck-state ${profile.deck.length <= DECK_SIZE ? "valid" : ""}`}
           >
-            {profile.deck.length === 24 ? "■ 可以参赛" : "□ 凑齐 24 张出发"}
+            {profile.deck.length <= DECK_SIZE ? "■ 可以参赛" : `□ 最多携带 ${DECK_SIZE} 张`}
           </span>
           <div className="deck-slots">
             {[...new Set(profile.deck)].map((id) => (

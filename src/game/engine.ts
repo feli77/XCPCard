@@ -4,6 +4,7 @@ import type { Action, CardInstance, Match, MatchResult, Opponent, Pack, Profile,
 
 export const MATCH_DURATION = 300;
 export const HAND_LIMIT = 8;
+export const TABLE_LIMIT = 5;
 export const DECK_SIZE = 24;
 export const cardById = Object.fromEntries(cards.map(card => [card.id, card]));
 const categories: Category[] = ['基础算法', '图论', '数学', 'DP', '数据结构', '字符串', '计算几何'];
@@ -117,7 +118,7 @@ function submit(match: Match, index: number) {
   problem.attempts.push({ time: match.time, result: accepted ? 'AC' : 'WA', score });
   if (accepted) {
     problem.acTime = match.time;
-    match.discard.push(...problem.table.map(({ uid, cardId }) => ({ uid, cardId })));
+    match.discard.push(...problem.table.filter(card => cardById[card.cardId].type === 'algorithm').map(({ uid, cardId }) => ({ uid, cardId })));
     problem.table = [];
   } else problem.waRevision = problem.revision;
   problem.submitQueued = false;
@@ -134,8 +135,8 @@ function runAction(match: Match, action: Action, scheduled = false) {
       break;
     case 'play': {
       if (index !== match.currentProblem || problem.acTime !== null || problem.readProgress < problem.readTime) break;
-      const playing = action.uids.map(uid => match.hand.find(card => card.uid === uid)).filter((card): card is CardInstance => !!card);
-      if (!playing.length) break;
+      const playing = [...new Set(action.uids)].map(uid => match.hand.find(card => card.uid === uid)).filter((card): card is CardInstance => !!card);
+      if (!playing.length || problem.table.length + playing.length > TABLE_LIMIT) break;
       match.hand = match.hand.filter(card => !playing.some(item => item.uid === card.uid));
       problem.table.push(...playing.map(card => ({ ...card, progress: 0, duration: null, active: false })));
       problem.revision++;
@@ -151,7 +152,7 @@ function runAction(match: Match, action: Action, scheduled = false) {
     case 'discard-table': {
       const discarded = problem.table.filter(card => action.uids.includes(card.uid));
       if (!discarded.length) break;
-      match.discard.push(...discarded.map(({ uid, cardId }) => ({ uid, cardId })));
+      match.discard.push(...discarded.filter(card => cardById[card.cardId].type === 'algorithm').map(({ uid, cardId }) => ({ uid, cardId })));
       problem.table = problem.table.filter(card => !action.uids.includes(card.uid));
       problem.revision++;
       startNextCard(match, index);

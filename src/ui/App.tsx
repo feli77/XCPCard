@@ -7,6 +7,7 @@ import {
   cardById,
   collectCard,
   createProfile,
+  DECK_SIZE,
   nextSeason,
   openPack,
   setDeck,
@@ -163,7 +164,7 @@ export function App() {
     setSession((s) => ({ ...s, profile: setDeck(s.profile, deck) }));
   }
   function addCard(cardId: string) {
-    if (profile.deck.length >= 24) {
+    if (profile.deck.length >= DECK_SIZE) {
       setNotice(uiText.collection.full);
       return;
     }

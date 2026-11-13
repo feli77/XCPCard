@@ -1,4 +1,4 @@
-import { canSubmit, cardById, standings, tableScore } from '../game/engine';
+import { canSubmit, cardById, standings, tableScore, TABLE_LIMIT } from '../game/engine';
 import type { Action, Match, Standing } from '../game/types';
 import { Card } from './Card';
 import { ContestCountdown } from './ContestCountdown';
@@ -31,6 +31,13 @@ export function MatchView({
   const reserved = new Set(match.pendingActions.flatMap(action =>
     action.type === 'play' || action.type === 'discard-hand' ? action.uids : []));
   const availableSelected = selected.filter(uid => !reserved.has(uid));
+  const tableUids = new Set(problem.table.map(card => card.uid));
+  for (const action of match.pendingActions) {
+    if (!('problem' in action) || action.problem !== viewProblem) continue;
+    if (action.type === 'play') action.uids.forEach(uid => tableUids.add(uid));
+    else if (action.type === 'discard-table') action.uids.forEach(uid => tableUids.delete(uid));
+  }
+  const remainingSlots = Math.max(0, TABLE_LIMIT - tableUids.size);
   const submitDisabled = match.paused
     ? !problem.table.length && !match.pendingActions.some(action => action.type === 'play' && action.problem === viewProblem)
     : !ready || viewProblem !== match.currentProblem;
@@ -40,7 +47,7 @@ export function MatchView({
   }>((transfer, target) => {
     const uids = transfer.from === 'hand' ? transfer.uids.filter(uid => !reserved.has(uid)) : transfer.uids;
     if (!uids.length) return;
-    if (target === 'table' && transfer.from === 'hand' && read && problem.acTime === null) {
+    if (target === 'table' && transfer.from === 'hand' && read && problem.acTime === null && uids.length <= remainingSlots) {
       onCommand({ type: 'play', uids, problem: viewProblem });
     } else if (target === 'discard') {
       onCommand(transfer.from === 'hand'
@@ -90,7 +97,7 @@ export function MatchView({
               <span className="difficulty">难度 <b>{problem.difficulty}</b></span>
             </> : '读完题面，才能知道评测机在想什么。'}</p>
           </div>
-          <span className="table-caption">PROBLEM DESK</span>
+          <span className="table-caption">PROBLEM DESK · {tableUids.size} / {TABLE_LIMIT}</span>
         </div>
 
         {problem.acTime !== null ? <div className="solved-desk">
@@ -170,7 +177,7 @@ export function MatchView({
           <span>牌库 {match.deck.length}</span>
           <span>下张 {match.hand.length === 8 ? '满手暂停' : `${Math.max(0, (match.globalEffects.draw?.interval || 4) - match.drawProgress).toFixed(0)}′`}</span>
         </div>
-        <span className="hand-selection">{availableSelected.length ? `已选 ${availableSelected.length} 张` : '点击多选 · 拖放出牌'}</span>
+        <span className="hand-selection">{availableSelected.length ? `已选 ${availableSelected.length} 张` : remainingSlots ? '点击多选 · 拖放出牌' : `牌桌已满（最多 ${TABLE_LIMIT} 张）`}</span>
         <div className="hand-actions">
           <button
             className="secondary"
@@ -181,7 +188,7 @@ export function MatchView({
           </button>
           <button
             className="primary"
-            disabled={!availableSelected.length || !read || problem.acTime !== null}
+            disabled={!availableSelected.length || availableSelected.length > remainingSlots || !read || problem.acTime !== null}
             onClick={() => onCommand({ type: 'play', uids: availableSelected, problem: viewProblem })}
           >
             {match.paused ? '预排出牌' : '出牌'} →
@@ -196,7 +203,7 @@ export function MatchView({
             <Card
               card={cardById[instance.cardId]}
               selected={!isReserved && selected.includes(instance.uid)}
-              onClick={isReserved ? undefined : () => onToggleSelected(instance.uid)}
+              onClick={isReserved || (!selected.includes(instance.uid) && availableSelected.length >= remainingSlots) ? undefined : () => onToggleSelected(instance.uid)}
               draggable={!isReserved}
               dragging={dragged?.from === 'hand' && dragged.uid === instance.uid}
               onPointerDown={isReserved ? undefined : event => startDrag(event, {

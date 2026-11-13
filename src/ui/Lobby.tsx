@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import { events, rarities } from "../content/data";
 import { uiText } from "../content/text";
-import { availableEvents, cardById } from "../game/engine";
+import { availableEvents, cardById, DECK_SIZE } from "../game/engine";
 import type { Match, Profile } from "../game/types";
 import { Card } from "./Card";
 import { PixelArt } from "./PixelArt";
@@ -116,7 +116,7 @@ export function Lobby({
                   <b>5</b> 分钟一场
                 </span>
                 <span>
-                  <b>24</b> 张卡牌
+                  最多 <b>{DECK_SIZE}</b> 张卡牌
                 </span>
               </div>
             </div>
@@ -128,9 +128,9 @@ export function Lobby({
           </div>
           <div className="ticket-bottom">
             <span>
-              {profile.deck.length === 24
+              {profile.deck.length <= DECK_SIZE
                 ? "■ 卡组已就绪"
-                : `□ 卡组 ${profile.deck.length}/24，请先组卡`}
+                : `□ 卡组超过 ${DECK_SIZE} 张，请先调整`}
             </span>
             {playing ? (
               <button className="primary" onClick={onResume}>
@@ -143,7 +143,7 @@ export function Lobby({
             ) : (
               <button
                 className="primary"
-                disabled={profile.deck.length !== 24 || !mainEvent}
+                disabled={profile.deck.length > DECK_SIZE || !mainEvent}
                 onClick={() => onBegin(mainEvent!.id)}
               >
                 参加比赛 <span>→</span>
@@ -154,7 +154,7 @@ export function Lobby({
         <section className="deck-preview panel">
           <div className="section-heading">
             <h3>这次带这些</h3>
-            <span>{profile.deck.length} / 24</span>
+            <span>{profile.deck.length} / {DECK_SIZE}</span>
           </div>
           <div className="mini-deck">
             {[...new Set(profile.deck)].slice(0, 4).map((id, i) => (
@@ -193,7 +193,7 @@ export function Lobby({
                   disabled={
                     !permitted.some((e) => e.id === event.id) ||
                     !!playing ||
-                    profile.deck.length !== 24
+                    profile.deck.length > DECK_SIZE
                   }
                   onClick={() => onBegin(event.id)}
                 >
