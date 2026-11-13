@@ -82,14 +82,6 @@ export const cards: CardDefinition[] = [
   { id: 'coffee', name: '咖啡', type: 'technique', rarity: 1, score: 0, time: 2, categories: [], joke: '把明天的精神借过来。', effect: { kind: 'coffee', duration: 60, factor: 0.75 }, effectText: '全局持续 60 分钟：其间开始处理的卡牌耗时 −25%；再次触发刷新时长。', art: 'coffee' },
   { id: 'maimai', name: '舞萌曲谱', type: 'technique', rarity: 2, score: 0, time: 4, categories: [], joke: '手速没用在正地方，但有用。', effect: { kind: 'draw', duration: 45, interval: 3 }, effectText: '全局持续 45 分钟：抽牌间隔由 4 分钟缩短为 3 分钟；再次触发刷新时长。', art: 'music' },
   { id: 'dice', name: '骰子', type: 'technique', rarity: 3, score: 0, time: 2, categories: [], joke: '证明略，点数如下。', effect: { kind: 'dice', sides: 6, unit: 100 }, effectText: '生效时等概率为本题增加 100～600 分；弃掉此卡即移除。', art: 'dice' },
-  { id: 'rubber-duck', name: '小黄鸭调试', type: 'technique', rarity: 0, score: 0, time: 3, categories: [], joke: '讲到第三句，鸭子还没懂，你已经懂了。', effect: { kind: 'multiplier', amount: 0.2 }, effectText: '本题总分 +20%；弃掉此卡即移除。', art: 'template' },
-  { id: 'sample-prayer', name: '样例祈祷术', type: 'technique', rarity: 0, score: 0, time: 2, categories: [], joke: '样例全过，评测姬听了直摇头。', effect: { kind: 'dice', sides: 4, unit: 50 }, effectText: '生效时等概率为本题增加 50～200 分；弃掉此卡即移除。', art: 'dice' },
-  { id: 'energy-drink', name: '功能饮料', type: 'technique', rarity: 1, score: 0, time: 2, categories: [], joke: '队友问你困不困，你说代码已经开始发光了。', effect: { kind: 'coffee', duration: 40, factor: 0.75 }, effectText: '全局持续 40 分钟：其间开始处理的卡牌耗时 −25%；再次触发刷新时长。', art: 'coffee' },
-  { id: 'keyboard-slapping', name: '键盘按摩', type: 'technique', rarity: 1, score: 0, time: 3, categories: [], joke: '啪的一声很清脆，bug 觉得你在鼓掌。', effect: { kind: 'multiplier', amount: 0.25 }, effectText: '本题总分 +25%；弃掉此卡即移除。', art: 'template' },
-  { id: 'soundtrack', name: '热血 BGM', type: 'technique', rarity: 2, score: 0, time: 4, categories: [], joke: '前奏响起，队友以为你已经会做了。', effect: { kind: 'draw', duration: 30, interval: 3 }, effectText: '全局持续 30 分钟：抽牌间隔由 4 分钟缩短为 3 分钟；再次触发刷新时长。', art: 'music' },
-  { id: 'teammate-confidence', name: '队友的一句显然', type: 'technique', rarity: 2, score: 0, time: 3, categories: [], joke: '他说显然，你问为什么，他说再想想。', effect: { kind: 'multiplier', amount: 0.3 }, effectText: '本题总分 +30%；弃掉此卡即移除。', art: 'template' },
-  { id: 'coin-flip', name: '硬币决策', type: 'technique', rarity: 3, score: 0, time: 2, categories: [], joke: '正面写 DP，反面写贪心，立起来就读题。', effect: { kind: 'dice', sides: 2, unit: 200 }, effectText: '生效时等概率为本题增加 200 或 400 分；弃掉此卡即移除。', art: 'dice' },
-  { id: 'last-minute', name: '封榜前冲刺', type: 'technique', rarity: 3, score: 0, time: 3, categories: [], joke: '距离结束还有一分钟，距离读懂题意还有十分钟。', effect: { kind: 'coffee', duration: 30, factor: 0.7 }, effectText: '全局持续 30 分钟：其间开始处理的卡牌耗时 −30%；再次触发刷新时长。', art: 'coffee' },
 ];
 
 export const initialDeck: string[] = [

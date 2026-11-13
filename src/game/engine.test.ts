@@ -364,12 +364,12 @@ describe('赛季、组卡与开包', () => {
     const cyanGuarantee = rollPack(2, rngSequence([...Array(12).fill(0), 0.75]));
     expect(cyanGuarantee[4]).toBe('maimai');
     const cyanGuaranteeHigh = rollPack(2, rngSequence([...Array(12).fill(0), 0.9]));
-    expect(cyanGuaranteeHigh[4]).toBe('teammate-confidence');
+    expect(cyanGuaranteeHigh[4]).toBe('dice');
     const purpleGuarantee = rollPack(4, rngSequence([...Array(12).fill(0), 0.6]));
     expect(cardById[purpleGuarantee[4]].rarity).toBe(7);
   });
-  it('算法 8 个档位均有卡池，技巧在灰至蓝档位均衡分布', () => {
+  it('算法8个档位均有卡池，四种技巧固定稀有度', () => {
     for (let rarity = 0; rarity < 8; rarity++) expect(cards.some(card => card.type === 'algorithm' && card.rarity === rarity)).toBe(true);
-    expect([0, 1, 2, 3].map(rarity => cards.filter(card => card.type === 'technique' && card.rarity === rarity).length)).toEqual([3, 3, 3, 3]);
+    expect(cards.filter(card => card.type === 'technique').map(card => card.rarity)).toEqual([0, 1, 2, 3]);
   });
 });
