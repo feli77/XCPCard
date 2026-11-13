@@ -1128,7 +1128,7 @@ small {
   flex-direction: column;
   align-items: center;
   padding: 22px 10px;
-  transform: rotateX(8deg) rotateY(-17deg) rotateZ(-4deg);
+  transform: none;
   transition: transform 0.35s ease, box-shadow 0.35s ease;
   isolation: isolate;
 }
@@ -1190,17 +1190,9 @@ small {
 .sealed-pack .pixel-art {
   filter: drop-shadow(0 1px 0 #fffc) drop-shadow(1px 2px 1px #51446330);
 }
-@media (prefers-reduced-motion: reduce) {
-  .pack-item .sealed-pack,
-  .pack-item:hover .sealed-pack,
-  .pack-item:focus-visible .sealed-pack {
-    transition: none;
-    transform: rotateX(8deg) rotateY(-17deg) rotateZ(-4deg);
-  }
-}
 .pack-item:hover .sealed-pack,
 .pack-item:focus-visible .sealed-pack {
-  transform: translateY(-9px) rotateX(calc(8deg - var(--pack-y, 0) * 14deg)) rotateY(calc(-12deg + var(--pack-x, 0) * 20deg)) rotateZ(-2deg);
+  transform: translateY(-9px) rotateX(calc(var(--pack-y, 0) * -14deg)) rotateY(calc(var(--pack-x, 0) * 20deg));
   box-shadow:
     inset 3px 0 5px #fff9,
     inset -4px 0 8px #49365c30,
@@ -1209,6 +1201,14 @@ small {
     2px 3px 2px #4b40564d,
     14px 24px 20px -12px #4e3e6266,
     25px 40px 35px -17px #54456b45;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pack-item .sealed-pack,
+  .pack-item:hover .sealed-pack,
+  .pack-item:focus-visible .sealed-pack {
+    transition: none;
+    transform: none;
+  }
 }
 .sealed-pack > span {
   font-size: 19px;
