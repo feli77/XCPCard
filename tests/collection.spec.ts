@@ -29,7 +29,7 @@ test('rarity filters show owned cards and combine with category filters', async 
 
   await rarityFilter.getByRole('button', { name: '绿', exact: true }).click();
   await categoryFilter.getByRole('button', { name: '数学', exact: true }).click();
-  await expect(names).toHaveText(['快速幂']);
+  await expect(names).toHaveText(owned.filter(card => card.rarity === 1 && card.categories.includes('数学')).map(card => card.name));
   await categoryFilter.getByRole('button', { name: '技巧', exact: true }).click();
   await expect(names).toHaveText(['咖啡']);
   await rarityFilter.getByRole('button', { name: '黑红', exact: true }).click();

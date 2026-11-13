@@ -129,11 +129,45 @@ test('a collection drop adds exactly one copy and an ordinary click still adds a
   await expect(page.locator('.deck-count')).toHaveText('1 / 24');
 });
 
+test('hovering a fanned hand reveals the card, makes room on both sides and keeps details above it', async ({ page }) => {
+  await matchFixture(page);
+  const cards = page.locator('.hand-cards .game-card');
+  const source = cards.nth(3);
+  const left = cards.nth(1);
+  const right = cards.nth(5);
+  const initial = {
+    source: (await source.boundingBox())!,
+    left: (await left.boundingBox())!,
+    right: (await right.boundingBox())!,
+  };
+
+  await source.hover();
+  await expect(page.getByRole('tooltip')).toHaveCount(0);
+  await expect(source).toHaveCSS('scale', '1.4');
+  await expect.poll(async () => (await left.boundingBox())!.x).toBeLessThan(initial.left.x - 25);
+  await expect.poll(async () => (await right.boundingBox())!.x).toBeGreaterThan(initial.right.x + 25);
+  const enlarged = (await source.boundingBox())!;
+  expect(enlarged.width).toBeGreaterThan(initial.source.width * 1.3);
+  expect(enlarged.y).toBeLessThan(initial.source.y - 25);
+  const point = await center(source);
+  expect(await source.evaluate((element, position) => element.contains(document.elementFromPoint(position.x, position.y)), point)).toBe(true);
+  await expect(page.getByRole('tooltip')).toBeVisible();
+  await expect.poll(async () => {
+    const tooltip = (await page.getByRole('tooltip').boundingBox())!;
+    return tooltip.y + tooltip.height - (await source.boundingBox())!.y;
+  }).toBeLessThan(0);
+
+  await page.mouse.move(10, 100);
+  await expect(source).toHaveCSS('scale', '1');
+  await expect.poll(async () => Math.abs((await left.boundingBox())!.x - initial.left.x)).toBeLessThan(1);
+  await expect.poll(async () => Math.abs((await right.boundingBox())!.x - initial.right.x)).toBeLessThan(1);
+  await expect(page.getByRole('tooltip')).toHaveCount(0);
+});
+
 test('hand card follows the pointer, tilts with movement and reserves one card when dropped while paused', async ({ page }) => {
   const initial = await matchFixture(page);
   const slots = page.locator('.hand-card-slot');
   const source = slots.nth(0).locator('.game-card');
-  const sourceSlot = (await slots.nth(0).boundingBox())!;
   const next = slots.nth(1);
   const nextBounds = (await next.boundingBox())!;
   const original = await source.elementHandle();
@@ -168,7 +202,9 @@ test('hand card follows the pointer, tilts with movement and reserves one card w
   await page.getByRole('button', { name: '▶ 继续比赛', exact: true }).click();
   await expect(page.locator('.table-cards .game-card')).toHaveCount(1);
   expect((await state(page)).match.hand).toHaveLength(7);
-  expect((await slots.first().boundingBox())!.x).toBeCloseTo(sourceSlot.x, 0);
+  const fan = (await page.locator('.hand-fan').boundingBox())!;
+  const panel = (await page.locator('.hand-cards').boundingBox())!;
+  expect(fan.x + fan.width / 2).toBeCloseTo(panel.x + panel.width / 2, 0);
 });
 
 test('cancelled and outside hand drags restore the card without selecting it, then normal clicks work', async ({ page }) => {
