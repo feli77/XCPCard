@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import { canSubmit, cardById, standings, tableScore } from '../game/engine';
 import type { Action, Match, Standing } from '../game/types';
 import { Card } from './Card';
@@ -189,25 +190,32 @@ export function MatchView({
         </div>
       </div>
       <div className="hand-cards">
-        {match.hand.map(instance => {
-          const isReserved = reserved.has(instance.uid);
-          const movingTogether = dragged?.from === 'hand' && dragged.uid !== instance.uid && dragged.uids.includes(instance.uid);
-          return <div key={instance.uid} className={`hand-card-slot ${isReserved ? 'is-reserved' : ''} ${movingTogether ? 'drag-companion' : ''}`}>
-            <Card
-              card={cardById[instance.cardId]}
-              selected={!isReserved && selected.includes(instance.uid)}
-              onClick={isReserved ? undefined : () => onToggleSelected(instance.uid)}
-              draggable={!isReserved}
-              dragging={dragged?.from === 'hand' && dragged.uid === instance.uid}
-              onPointerDown={isReserved ? undefined : event => startDrag(event, {
-                from: 'hand', uid: instance.uid,
-                uids: availableSelected.includes(instance.uid) ? availableSelected : [instance.uid],
-              })}
-            />
-            {isReserved && <span className="reserved-label">已预排</span>}
-          </div>;
-        })}
-        {!match.hand.length && <div className="empty-hand">思路暂时用完了，下一张正在路上。</div>}
+        <div className="hand-fan" style={{ '--hand-count': Math.max(1, match.hand.length) } as CSSProperties}>
+          {match.hand.map((instance, index) => {
+            const isReserved = reserved.has(instance.uid);
+            const movingTogether = dragged?.from === 'hand' && dragged.uid !== instance.uid && dragged.uids.includes(instance.uid);
+            const offset = index - (match.hand.length - 1) / 2;
+            return <div
+              key={instance.uid}
+              className={`hand-card-slot ${isReserved ? 'is-reserved' : ''} ${movingTogether ? 'drag-companion' : ''}`}
+              style={{ '--fan-angle': `${offset * 2.5}deg`, '--fan-drop': `${offset * offset * 1.8}px` } as CSSProperties}
+            >
+              <Card
+                card={cardById[instance.cardId]}
+                selected={!isReserved && selected.includes(instance.uid)}
+                onClick={isReserved ? undefined : () => onToggleSelected(instance.uid)}
+                draggable={!isReserved}
+                dragging={dragged?.from === 'hand' && dragged.uid === instance.uid}
+                onPointerDown={isReserved ? undefined : event => startDrag(event, {
+                  from: 'hand', uid: instance.uid,
+                  uids: availableSelected.includes(instance.uid) ? availableSelected : [instance.uid],
+                })}
+              />
+              {isReserved && <span className="reserved-label">已预排</span>}
+            </div>;
+          })}
+          {!match.hand.length && <div className="empty-hand">思路暂时用完了，下一张正在路上。</div>}
+        </div>
         <div
           className="discard-pile"
           data-card-drop="discard"

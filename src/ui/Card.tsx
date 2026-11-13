@@ -24,7 +24,9 @@ export function Card({ card, selected, count, onClick, draggable, onPointerDown,
   const rarity = rarities[card.rarity];
   const [tooltip, setTooltip] = useState<CSSProperties | null>(null);
   const tiltBounds = useRef<DOMRect | null>(null);
-  useEffect(() => { if (dragging) setTooltip(null); }, [dragging]);
+  const tooltipTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => () => clearTimeout(tooltipTimer.current), []);
+  useEffect(() => { if (dragging) hideDetails(); }, [dragging]);
   function tiltCard(event: PointerEvent<HTMLDivElement>) {
     if (event.pointerType !== 'mouse' || event.buttons || dragging || !tiltBounds.current) return;
     const { left, top, width, height } = tiltBounds.current;
@@ -39,9 +41,18 @@ export function Card({ card, selected, count, onClick, draggable, onPointerDown,
     element.style.removeProperty('--tilt-y');
   }
   function showDetails(element: HTMLDivElement) {
+    clearTimeout(tooltipTimer.current);
     if (document.body.classList.contains('card-dragging')) return;
     const rect = element.getBoundingClientRect();
     setTooltip({ left: Math.max(12, Math.min(window.innerWidth - 250, rect.left - 25)), ...(rect.top > 190 ? { bottom: window.innerHeight - rect.top + 12 } : { top: rect.bottom + 12 }) });
+  }
+  function delayDetails(element: HTMLDivElement) {
+    clearTimeout(tooltipTimer.current);
+    tooltipTimer.current = setTimeout(() => showDetails(element), 500);
+  }
+  function hideDetails() {
+    clearTimeout(tooltipTimer.current);
+    setTooltip(null);
   }
   return <>
     <div
@@ -51,7 +62,7 @@ export function Card({ card, selected, count, onClick, draggable, onPointerDown,
       draggable={false}
       data-draggable={draggable || undefined}
       onDragStart={event => event.preventDefault()}
-      onPointerDown={event => { resetTilt(event.currentTarget); setTooltip(null); onPointerDown?.(event); }}
+      onPointerDown={event => { resetTilt(event.currentTarget); hideDetails(); onPointerDown?.(event); }}
       onPointerEnter={event => {
         if (event.pointerType !== 'mouse') return;
         tiltBounds.current = event.currentTarget.getBoundingClientRect();
@@ -60,10 +71,13 @@ export function Card({ card, selected, count, onClick, draggable, onPointerDown,
       onPointerMove={tiltCard}
       onPointerLeave={event => { if (!dragging) resetTilt(event.currentTarget); }}
       onPointerCancel={event => { if (!dragging) resetTilt(event.currentTarget); }}
-      onMouseEnter={event => showDetails(event.currentTarget)}
-      onMouseLeave={() => setTooltip(null)}
-      onFocus={event => showDetails(event.currentTarget)}
-      onBlur={event => { resetTilt(event.currentTarget); setTooltip(null); }}
+      onMouseEnter={event => delayDetails(event.currentTarget)}
+      onMouseLeave={hideDetails}
+      onTransitionEnd={event => {
+        if (tooltip && event.target === event.currentTarget && event.currentTarget.matches(':hover, :focus-visible')) showDetails(event.currentTarget);
+      }}
+      onFocus={event => { if (event.currentTarget.matches(':focus-visible')) showDetails(event.currentTarget); }}
+      onBlur={event => { resetTilt(event.currentTarget); hideDetails(); }}
       role={onClick ? 'button' : undefined}
       tabIndex={0}
       onKeyDown={event => {

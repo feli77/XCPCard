@@ -58,6 +58,7 @@
   font-size: 21px;
 }
 .match-page {
+  --hand-card-width: clamp(108px, 9.2vw, 145px);
   padding: 0 24px 12px;
   max-width: 1920px;
   margin: auto;
@@ -145,7 +146,7 @@
   grid-template-columns: 200px minmax(430px, 1fr) 280px;
   gap: 16px;
   min-height: 400px;
-  height: calc(100vh - 416px);
+  height: calc(100vh - 293px - var(--hand-card-width) * 183 / 125);
   max-height: 600px;
 }
 .problems-panel,
@@ -646,17 +647,53 @@
   gap: 15px;
 }
 .hand-cards {
+  position: relative;
   display: flex;
-  gap: 13px;
+  justify-content: center;
   align-items: center;
-  padding-top: 3px;
-  min-height: 181px;
+  padding: 24px 110px 28px;
+  min-height: 230px;
+}
+.hand-fan {
+  display: flex;
+  align-items: flex-start;
+  width: calc(var(--hand-card-width) * (1 + (var(--hand-count) - 1) * 0.68));
+  max-width: 100%;
+}
+.hand-fan:has(.empty-hand) {
+  width: 100%;
 }
 .hand-cards .game-card {
-  width: calc((100vw - 330px) / 8);
-  min-width: 91px;
-  max-width: 132px;
+  width: var(--hand-card-width);
+  min-width: var(--hand-card-width);
+  max-width: var(--hand-card-width);
   padding: 6px;
+}
+.hand-card-slot > .game-card:not(.is-dragging) {
+  pointer-events: auto;
+  rotate: var(--fan-angle);
+  translate: var(--hand-spread, 0px) 0;
+  transform-origin: 50% 85%;
+}
+.hand-card-slot > .game-card.selected:not(.is-dragging) {
+  translate: var(--hand-spread, 0px) -13px;
+}
+.hand-card-slot:has(> .game-card:is(:hover, :focus-visible)) {
+  z-index: 20;
+}
+.hand-fan:not(:has(.is-dragging)) .hand-card-slot:has(> .game-card:is(:hover, :focus-visible)) > .game-card {
+  rotate: 0deg;
+  translate: 0 -30px;
+  scale: 1.4;
+}
+.hand-fan:not(:has(.is-dragging)) .hand-card-slot:has(~ .hand-card-slot > .game-card:is(:hover, :focus-visible)) {
+  --hand-spread: -56px;
+}
+.hand-fan:not(:has(.is-dragging)) .hand-card-slot:has(> .game-card:is(:hover, :focus-visible)) ~ .hand-card-slot {
+  --hand-spread: 56px;
+}
+.hand-card-slot:has(> .is-dragging) {
+  z-index: 1000;
 }
 .hand-cards .card-name {
   font-size: 11px;
@@ -665,9 +702,10 @@
   padding-top: 6px;
 }
 .discard-pile {
+  position: absolute;
+  right: 0;
   min-width: 76px;
   height: 145px;
-  margin-left: auto;
   border: 1px dashed #bdb5a0;
   display: flex;
   align-items: center;
@@ -756,7 +794,23 @@
 }
 .hand-card-slot {
   position: relative;
-  flex-shrink: 0;
+  top: var(--fan-drop);
+  flex: 1 1 0;
+  min-width: 0;
+  pointer-events: none;
+}
+.hand-card-slot:last-child {
+  flex: 0 0 var(--hand-card-width);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hand-card-slot > .game-card:not(.is-dragging) {
+    transition:
+      transform 0.25s ease-out,
+      translate 0.24s ease-out,
+      rotate 0.24s ease-out,
+      scale 0.24s cubic-bezier(0.2, 0.7, 0.2, 1),
+      box-shadow 0.15s;
+  }
 }
 .hand-card-slot.is-reserved .game-card {
   opacity: 0.55;
@@ -773,4 +827,5 @@
   padding: 4px;
   font-size: 10px;
   pointer-events: none;
+  translate: var(--hand-spread, 0px) 0;
 }
