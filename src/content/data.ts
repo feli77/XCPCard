@@ -173,11 +173,6 @@ export const cards: CardDefinition[] = [
   { id: 'dice', name: '骰子', type: 'technique', rarity: 3, score: 0, time: 2, categories: [], joke: '证明略，点数如下。', effect: { kind: 'dice', sides: 6, unit: 100 }, effectText: '生效时等概率为本题增加 100～600 分；离桌时销毁并移除加分。', art: 'dice' },
 ];
 
-export const initialDeck: string[] = [
-  'enumerate', 'binary-search', 'quick-sort', 'two-pointers', 'prefix-sum',
-  'gcd', 'sieve', 'bfs', 'dfs', 'knapsack', 'template', 'coffee',
-].flatMap(id => [id, id]);
-
 export const events: EventDefinition[] = [
   { id: 'school', name: '校赛', shortName: '校赛', kind: 'main', problems: 10, minDifficulty: 800, maxDifficulty: 1800, promotion: 0.5, guarantee: 0, description: '前 50% 且至少 1 AC 晋级网络赛。' },
   { id: 'online', name: '网络赛', shortName: '网络赛', kind: 'main', problems: 11, minDifficulty: 1000, maxDifficulty: 2200, promotion: 0.4, guarantee: 0, description: '前 40% 且至少 1 AC 晋级区域赛。' },

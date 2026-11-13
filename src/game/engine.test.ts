@@ -1,10 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { cards, events, initialDeck } from '../content/data';
+import { cards, events } from '../content/data';
 import { acceptanceChance, act, advanceMatch, availableEvents, canSubmit, cardById, collectCard, createProfile, nextSeason, openPack, rollPack, setDeck, setPaused, settleMatch, standings, startMatch, tableScore } from './engine';
 import type { Match, TableCard } from './types';
 
+const testDeck = [
+  'enumerate', 'binary-search', 'quick-sort', 'two-pointers', 'prefix-sum',
+  'gcd', 'sieve', 'bfs', 'dfs', 'knapsack', 'template', 'coffee',
+].flatMap(id => [id, id]);
+function profileWithDeck() {
+  const profile = createProfile();
+  profile.deck = [...testDeck];
+  for (const id of testDeck) profile.collection[id] = (profile.collection[id] ?? 0) + 1;
+  return profile;
+}
+
 function match(): Match {
-  const game = startMatch(createProfile(), 'school', 1234);
+  const game = startMatch(profileWithDeck(), 'school', 1234);
   game.opponents = [];
   return game;
 }
@@ -24,10 +35,10 @@ function rngSequence(values: number[]) {
 }
 
 describe('比赛时间、读题与队列', () => {
-  it('初始卡组正好24张，开场8手牌和16牌库，不减收藏', () => {
-    const profile = createProfile();
+  it('24张卡组开场8手牌和16牌库，不减收藏', () => {
+    const profile = profileWithDeck();
     const game = startMatch(profile, 'school', 1);
-    expect(profile.deck).toEqual(initialDeck);
+    expect(profile.deck).toEqual(testDeck);
     expect(game.hand).toHaveLength(8);
     expect(game.deck).toHaveLength(16);
     expect(new Set([...game.hand, ...game.deck].map(card => card.uid)).size).toBe(24);
@@ -141,7 +152,7 @@ describe('比赛时间、读题与队列', () => {
     expect(game.problems[0].table[0]).toMatchObject({ progress: 0, duration: 5, active: false });
   });
   it('300分钟结束，不再推进或接受动作；整段推进与逐分钟推进一致', () => {
-    const game = startMatch(createProfile(), 'school', 123);
+    const game = startMatch(profileWithDeck(), 'school', 123);
     const whole = advanceMatch(game, 300);
     let stepped = game;
     for (let i = 0; i < 300; i++) stepped = advanceMatch(stepped);
@@ -372,8 +383,17 @@ describe('暂停预排、判题与罚时', () => {
 });
 
 describe('赛季、组卡与开包', () => {
-  it('组卡不超过收藏或24张，允许实际持有的同名复数', () => {
+  it('新玩家获得8个普通卡包，收藏和卡组为空', () => {
     const profile = createProfile();
+    expect(profile.collection).toEqual({});
+    expect(profile.deck).toEqual([]);
+    expect(profile.packs).toHaveLength(8);
+    expect(new Set(profile.packs.map(pack => pack.id)).size).toBe(8);
+    expect(profile.packs.every(pack => pack.eventId === 'starter' && pack.guarantee === 0)).toBe(true);
+    expect(nextSeason(profile)).toBe(profile);
+  });
+  it('组卡不超过收藏或24张，允许实际持有的同名复数', () => {
+    const profile = profileWithDeck();
     expect(setDeck(profile, ['enumerate', 'enumerate']).deck).toHaveLength(2);
     expect(setDeck(profile, ['enumerate', 'enumerate', 'enumerate'])).toBe(profile);
     expect(setDeck(profile, [...profile.deck, 'enumerate'])).toBe(profile);
@@ -384,7 +404,7 @@ describe('赛季、组卡与开包', () => {
     const settled = settleMatch(profile, game);
     expect(settled.result.seasonEnded).toBe(true);
     expect(settled.result.packs).toBe(1);
-    expect(settled.profile.packs).toHaveLength(1);
+    expect(settled.profile.packs).toHaveLength(profile.packs.length + 1);
     expect(settleMatch(settled.profile, game).profile).toBe(settled.profile);
     const next = nextSeason(settled.profile);
     expect(next.season).toBe(2);
@@ -440,11 +460,11 @@ describe('赛季、组卡与开包', () => {
     }
     expect(profile.seasonEnded).toBe(true);
     expect(profile.playedEvents).toEqual(['school', 'online', 'regional', 'ecf', 'wf']);
-    expect(profile.packs).toHaveLength(20);
+    expect(profile.packs).toHaveLength(28);
     profile = nextSeason(profile);
     expect(profile.playedEvents).toEqual([]);
     expect(availableEvents(profile).map(event => event.id)).toEqual(['school']);
-    expect(profile.packs).toHaveLength(20);
+    expect(profile.packs).toHaveLength(28);
   });
   it('保底不会覆盖前四位已达标结果，算法普通档位遵循权重', () => {
     const upper = rollPack(4, rngSequence([0.1, 0.999, 0]));

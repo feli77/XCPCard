@@ -1,7 +1,17 @@
 import { test, expect, type Page } from '@playwright/test';
-import { cardById, createProfile, startMatch } from '../src/game/engine';
+import { cardById, startMatch } from '../src/game/engine';
+
+import { createTestProfile } from './fixtures';
 
 const storageKey = 'xcpcard-save';
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(({ key, profile }) => {
+    if (!localStorage.getItem(key)) {
+      localStorage.setItem(key, JSON.stringify({ profile, match: null, result: null, openedPack: null }));
+    }
+  }, { key: storageKey, profile: createTestProfile() });
+});
+
 async function state(page: Page) { return page.evaluate(key => JSON.parse(localStorage.getItem(key)!), storageKey); }
 async function start(page: Page) {
   await page.clock.install();
@@ -72,7 +82,7 @@ test('lobby and deck edits allow fewer cards and obey owned copies and the 24-ca
 for (const count of [0, 1, 23]) {
   for (const eventId of ['school', 'provincial']) {
     test(`${count}-card decks can enter ${eventId}`, async ({ page }) => {
-      const profile = createProfile();
+      const profile = createTestProfile();
       profile.deck = profile.deck.slice(0, count);
       if (eventId === 'provincial') profile.mainIndex = 1;
       await page.clock.install();
@@ -147,7 +157,7 @@ test('collection drags within the same area or outside both areas leave the deck
 });
 
 test('collection drag and drop supports adding to and removing the last card from an empty deck', async ({ page }) => {
-  const profile = createProfile();
+  const profile = createTestProfile();
   profile.deck = [];
   await page.goto('/');
   await page.evaluate(([key, value]) => localStorage.setItem(key, value), [storageKey, JSON.stringify({ profile, match: null, result: null, openedPack: null })]);
@@ -272,7 +282,7 @@ test('finish, claim reward, reveal one card, reload, reveal rest and start next 
 });
 
 test('settled result survives reload without duplicating rewards', async ({ page }) => {
-  const profile = createProfile();
+  const profile = createTestProfile();
   const match = startMatch(profile, 'school', 111);
   match.time = 299;
   match.paused = true;
@@ -305,7 +315,7 @@ test('resume follows the last paused switch instead of displaying a different ac
 });
 
 test('WA requires a changed table before another submission', async ({ page }) => {
-  const profile = createProfile();
+  const profile = createTestProfile();
   const match = startMatch(profile, 'school', 222);
   const instance = match.hand.shift()!;
   match.problems[0].readProgress = match.problems[0].readTime;
