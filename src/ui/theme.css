@@ -14,6 +14,10 @@
   --line: #d9d5ca;
   --green: #697e55;
   --mono: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  scrollbar-width: none;
+}
+:root::-webkit-scrollbar {
+  display: none;
 }
 * {
   box-sizing: border-box;
