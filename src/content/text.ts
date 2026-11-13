@@ -20,9 +20,3 @@ export const uiText = {
     openingTitle: "今天，谁来拯救你的提交？",
   },
 };
-
-export const hints = {
-  read: "首次进入题目会开始读题，切走后暂停，回来接着读。",
-  play: "选几张算法卡出牌。命中题目任一类别得全分，否则得一半。",
-  submit: "牌桌全部生效后可以提交。WA 后需要增减牌桌卡牌再试。",
-};

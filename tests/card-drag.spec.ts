@@ -11,7 +11,6 @@ async function state(page: Page): Promise<{ profile: Profile; match: Match }> {
 async function load(page: Page, profile = createProfile(), match: Match | null = null) {
   await page.addInitScript(({ key, session }) => {
     localStorage.setItem(key, JSON.stringify(session));
-    localStorage.setItem('xcpcard-hints', JSON.stringify(['read', 'play', 'submit']));
   }, { key: storageKey, session: { profile, match, result: null, openedPack: null } });
   await page.goto('/');
 }
@@ -25,7 +24,7 @@ async function matchFixture(page: Page, tableCount = 0) {
     ...card, progress: 0, duration: 20, active: false,
   }));
   await load(page, profile, match);
-  await expect(page.locator('.pause-banner')).toBeVisible();
+  await expect(page.getByRole('button', { name: '▶ 继续比赛', exact: true })).toBeVisible();
   return match;
 }
 

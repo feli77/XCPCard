@@ -202,7 +202,7 @@ test('reload freezes saved match and preserves cards, queue and per-problem prog
   await elapsed(page, 2);
   const before = await state(page);
   await page.reload();
-  await expect(page.locator('.pause-banner')).toBeVisible();
+  await expect(page.getByRole('button', { name: '▶ 继续比赛', exact: true })).toBeVisible();
   const after = await state(page);
   expect(after.match.paused).toBe(true);
   expect(after.match.time).toBe(before.match.time);

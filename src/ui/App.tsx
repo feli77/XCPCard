@@ -57,18 +57,12 @@ export function App() {
   const [category, setCategory] = useState("全部");
   const [rarity, setRarity] = useState<number | null>(null);
   const [notice, setNotice] = useState("");
-  const [seenHints, setSeenHints] = useState<string[]>(() =>
-    JSON.parse(localStorage.getItem("xcpcard-hints") || "[]"),
-  );
   const previousFeedback = useRef(session.match?.feedback?.id);
   const { profile, match, result, openedPack } = session;
   const playing = match?.status === "playing";
   useEffect(() => {
     localStorage.setItem(SAVE_KEY, JSON.stringify(session));
   }, [session]);
-  useEffect(() => {
-    localStorage.setItem("xcpcard-hints", JSON.stringify(seenHints));
-  }, [seenHints]);
   useEffect(() => {
     if (!match || match.paused || match.status !== "playing") return;
     let last = performance.now();
@@ -129,9 +123,6 @@ export function App() {
     const next = setPaused(match!, !match!.paused);
     setSession(s => ({ ...s, match: next }));
     setViewProblem(next.currentProblem);
-  }
-  function dismissHint(key: string) {
-    setSeenHints((h) => [...h, key]);
   }
   function buyPack(index: number) {
     const eventId = profile.packs[index].eventId;
@@ -288,12 +279,10 @@ export function App() {
           match={match}
           viewProblem={viewProblem}
           selected={selected}
-          seenHints={seenHints}
           onCommand={command}
           onChooseProblem={chooseProblem}
           onToggleSelected={uid => setSelected(ids => ids.includes(uid) ? ids.filter(id => id !== uid) : [...ids, uid])}
           onTogglePause={togglePause}
-          onDismissHint={dismissHint}
         />
       )}
 

@@ -1,4 +1,3 @@
-import { hints } from '../content/text';
 import { canSubmit, cardById, standings, tableScore } from '../game/engine';
 import type { Action, Match, Standing } from '../game/types';
 import { Card } from './Card';
@@ -10,20 +9,18 @@ interface MatchViewProps {
   match: Match;
   viewProblem: number;
   selected: string[];
-  seenHints: string[];
   onCommand: (action: Action) => void;
   onChooseProblem: (index: number) => void;
   onToggleSelected: (uid: string) => void;
   onTogglePause: () => void;
-  onDismissHint: (key: string) => void;
 }
 
 const timeText = (value: number) =>
   `${Math.floor(value / 60).toString().padStart(2, '0')}:${Math.floor(value % 60).toString().padStart(2, '0')}`;
 
 export function MatchView({
-  match, viewProblem, selected, seenHints,
-  onCommand, onChooseProblem, onToggleSelected, onTogglePause, onDismissHint,
+  match, viewProblem, selected,
+  onCommand, onChooseProblem, onToggleSelected, onTogglePause,
 }: MatchViewProps) {
   const leaderboard = standings(match);
   const player = leaderboard.find(team => team.player)!;
@@ -31,10 +28,6 @@ export function MatchView({
   const read = problem.readProgress >= problem.readTime;
   const score = tableScore(match, viewProblem);
   const ready = canSubmit(match, viewProblem);
-  const shownHint = !seenHints.includes('read') ? 'read'
-    : read && !seenHints.includes('play') ? 'play'
-    : problem.table.some(card => card.active) && !seenHints.includes('submit') ? 'submit'
-    : null;
   const reserved = new Set(match.pendingActions.flatMap(action =>
     action.type === 'play' || action.type === 'discard-hand' ? action.uids : []));
   const availableSelected = selected.filter(uid => !reserved.has(uid));
@@ -56,7 +49,7 @@ export function MatchView({
     }
   });
 
-  return <main className={`match-page ${match.paused ? 'paused' : ''}`} onClickCapture={onClickCapture} onPointerDownCapture={onPointerDownCapture}>
+  return <main className="match-page" onClickCapture={onClickCapture} onPointerDownCapture={onPointerDownCapture}>
     <ContestCountdown time={match.time}/>
     <div className="match-toolbar">
       <div className="clock-block">
@@ -81,12 +74,6 @@ export function MatchView({
         {match.paused ? '▶ 继续比赛' : 'Ⅱ 暂停'}
       </button>
     </div>
-
-    {match.paused && <div className="pause-banner">
-      <b>Ⅱ 时钟已暂停</b>
-      <span>可以切题查看、预排出牌和提交，继续后依次执行。</span>
-      {match.pendingActions.length > 0 && <strong>{match.pendingActions.length} 项预排操作</strong>}
-    </div>}
 
     <div className="arena">
       <ProblemMenu match={match} viewProblem={viewProblem} onChoose={onChooseProblem}/>
@@ -169,10 +156,6 @@ export function MatchView({
           </div>
         </>}
 
-        {shownHint && <div className="tutorial-tip">
-          <span>{hints[shownHint]}</span>
-          <button onClick={() => onDismissHint(shownHint)}>知道了 ×</button>
-        </div>}
         {match.feedback?.problem === viewProblem && <div key={match.feedback.id} className={`judge-toast ${match.feedback.result}`}>
           <b>{match.feedback.result}</b><span>{match.feedback.text}</span>
         </div>}
