@@ -120,12 +120,7 @@ function submit(match: Match, index: number) {
     problem.acTime = match.time;
     match.discard.push(...problem.table.filter(card => cardById[card.cardId].type === 'algorithm').map(({ uid, cardId }) => ({ uid, cardId })));
     problem.table = [];
-  } else {
-    problem.waRevision = problem.revision;
-    const remaining = problem.table.filter(card => cardById[card.cardId].type === 'algorithm');
-    if (remaining.length !== problem.table.length) problem.revision++;
-    problem.table = remaining;
-  }
+  } else problem.waRevision = problem.revision;
   problem.submitQueued = false;
   match.feedback = { id: (match.feedback?.id ?? 0) + 1, problem: index, result: accepted ? 'AC' : 'WA', text: accepted ? '过了，别碰它。' : '样例：我尽力了。' };
   return true;
@@ -157,7 +152,7 @@ function runAction(match: Match, action: Action, scheduled = false) {
     case 'discard-table': {
       const discarded = problem.table.filter(card => action.uids.includes(card.uid));
       if (!discarded.length) break;
-      match.discard.push(...discarded.map(({ uid, cardId }) => ({ uid, cardId })));
+      match.discard.push(...discarded.filter(card => cardById[card.cardId].type === 'algorithm').map(({ uid, cardId }) => ({ uid, cardId })));
       problem.table = problem.table.filter(card => !action.uids.includes(card.uid));
       problem.revision++;
       startNextCard(match, index);
@@ -212,13 +207,8 @@ function activate(match: Match, instance: TableCard) {
   instance.active = true;
   const effect = cardById[instance.cardId].effect;
   if (!effect) return;
-  if (effect.kind === 'coffee' || effect.kind === 'draw') {
-    if (effect.kind === 'coffee') match.globalEffects.coffee = { expiresAt: match.time + effect.duration, factor: effect.factor };
-    else match.globalEffects.draw = { expiresAt: match.time + effect.duration, interval: effect.interval };
-    const problem = match.problems[match.currentProblem];
-    problem.table = problem.table.filter(card => card.uid !== instance.uid);
-    problem.revision++;
-  }
+  if (effect.kind === 'coffee') match.globalEffects.coffee = { expiresAt: match.time + effect.duration, factor: effect.factor };
+  else if (effect.kind === 'draw') match.globalEffects.draw = { expiresAt: match.time + effect.duration, interval: effect.interval };
   else if (effect.kind === 'dice') instance.dice = (1 + Math.floor(random(match) * effect.sides)) * effect.unit;
 }
 

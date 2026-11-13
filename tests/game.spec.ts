@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { createProfile, startMatch } from '../src/game/engine';
+import { cardById, createProfile, startMatch } from '../src/game/engine';
 
 const storageKey = 'xcpcard-save';
 async function state(page: Page) { return page.evaluate(key => JSON.parse(localStorage.getItem(key)!), storageKey); }
@@ -175,12 +175,13 @@ test('drag hand card to table and table card to discard', async ({ page }) => {
   await elapsed(page, 9);
   await page.locator('.hand-cards .game-card').first().dragTo(page.locator('.table-panel'));
   await expect(page.locator('.table-cards .game-card')).toHaveCount(1);
-  const initialDiscard = (await state(page)).match.discard.length;
+  const before = (await state(page)).match;
+  const expectedDiscard = before.discard.length + (cardById[before.problems[0].table[0].cardId].type === 'algorithm' ? 1 : 0);
   await page.locator('.table-cards .game-card').first().dragTo(page.locator('.discard-pile'));
   await expect(page.locator('.table-cards .game-card')).toHaveCount(0);
-  expect((await state(page)).match.discard.length).toBe(initialDiscard + 1);
+  expect((await state(page)).match.discard.length).toBe(expectedDiscard);
   await page.locator('.hand-cards .game-card').first().dragTo(page.locator('.discard-pile'));
-  expect((await state(page)).match.discard.length).toBe(initialDiscard + 2);
+  expect((await state(page)).match.discard.length).toBe(expectedDiscard + 1);
 });
 
 test('reload freezes saved match and preserves cards, queue and per-problem progress', async ({ page }) => {
