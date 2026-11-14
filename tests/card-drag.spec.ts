@@ -311,6 +311,7 @@ test('dragging selected cards moves the batch immediately and allows discarding 
   await expectPosition(remainingSlot, remainingBounds);
   await releaseOn(page, page.locator('.table-panel .problem-heading'));
   const played = (await state(page)).match;
+  await expect(page.locator('.card-flight-play')).toHaveCount(0);
   expect(played.pendingActions).toEqual([]);
   expect(played.problems[0].table.map(card => card.uid)).toEqual(initial.hand.slice(0, 3).map(card => card.uid));
   expect(played.hand).toEqual(initial.hand.slice(3));

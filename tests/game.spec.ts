@@ -365,8 +365,8 @@ test('paused played cards leave the hand and can be discarded before resuming', 
   await start(page);
   await elapsed(page, 9);
   await page.getByRole('button', { name: 'Ⅱ 暂停', exact: true }).click();
-  const first = page.locator('.hand-cards .game-card').first();
-  const uid = await first.getAttribute('data-card-uid');
+  const { uid } = (await state(page)).match.hand.find(card => cardById[card.cardId].type === 'algorithm');
+  const first = page.locator(`.hand-cards [data-card-uid="${uid}"]`);
   await first.click();
   await page.getByRole('button', { name: '出牌 →', exact: true }).click();
   await expect(page.getByText('已预排', { exact: true })).toHaveCount(0);

@@ -47,6 +47,7 @@ export function MatchView({
   }>((transfer, target) => {
     const uids = transfer.uids;
     if (!uids.length) return false;
+    captureCards({ skipPlay: true });
     if (target === 'table' && transfer.from === 'hand' && read && problem.acTime === null && uids.length <= remainingSlots) {
       onCommand({ type: 'play', uids, problem: viewProblem });
     } else if (target === 'discard') {
