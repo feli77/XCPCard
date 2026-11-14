@@ -23,6 +23,7 @@ interface CardProps {
 }
 export function Card({ uid, card, selected, count, onClick, draggable, onPointerDown, dragging, progress, active, dice, scoreGain, onDiscard, compact = false }: CardProps) {
   const rarity = rarities[card.rarity];
+  const root = useRef<HTMLDivElement>(null);
   const [tooltip, setTooltip] = useState<CSSProperties | null>(null);
   const tiltBounds = useRef<DOMRect | null>(null);
   const tooltipTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -57,6 +58,7 @@ export function Card({ uid, card, selected, count, onClick, draggable, onPointer
   }
   return <>
     <div
+      ref={root}
       className={`game-card rarity-${card.rarity} ${selected ? 'selected' : ''} ${active ? 'is-active' : ''} ${progress !== undefined && !active ? 'processing' : ''} ${compact ? 'compact' : ''} ${dragging ? 'is-dragging' : ''}`}
       style={{ '--rarity': rarity.color } as CSSProperties}
       onClick={onClick}
@@ -104,6 +106,6 @@ export function Card({ uid, card, selected, count, onClick, draggable, onPointer
       <strong>{card.name} · {rarity.name}</strong>
       {card.effectText && <p>{card.effectText}</p>}
       <p>「{card.joke}」</p>
-    </div>, document.body)}
+    </div>, root.current?.closest('dialog') ?? document.body)}
   </>;
 }

@@ -1,4 +1,55 @@
 /* Overlays */
+.deck-modal {
+  width: min(900px, calc(100vw - 48px));
+  max-height: calc(100dvh - 80px);
+  padding: 0;
+  color: var(--ink);
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  box-shadow: 9px 9px 0 #26291c66;
+  overflow: visible;
+}
+.deck-modal[open] {
+  display: flex;
+  flex-direction: column;
+}
+.deck-modal::backdrop {
+  background: #36372f90;
+  backdrop-filter: blur(3px);
+}
+.deck-modal-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--line);
+}
+.deck-modal-heading h2 {
+  font-size: 20px;
+}
+.deck-modal-heading h2 span {
+  margin-left: 12px;
+  font: 14px var(--mono);
+  color: var(--muted);
+}
+.deck-modal-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(125px, 1fr));
+  grid-auto-rows: max-content;
+  gap: 20px;
+  padding: 24px;
+  overflow-y: auto;
+}
+.deck-modal-cards .game-card {
+  width: 100%;
+}
+.deck-modal-empty {
+  grid-column: 1 / -1;
+  padding: 40px 0;
+  text-align: center;
+  color: var(--muted);
+}
 .modal-backdrop {
   position: fixed;
   inset: 0;

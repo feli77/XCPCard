@@ -1,9 +1,10 @@
-import { useRef, type CSSProperties } from 'react';
+import { useRef, useState, type CSSProperties } from 'react';
 import { canSubmit, cardById, standings, tableScore, TABLE_LIMIT } from '../game/engine';
 import type { Action, Match, Standing } from '../game/types';
 import { Card } from './Card';
 import { CardPile } from './CardPile';
 import { ContestCountdown } from './ContestCountdown';
+import { DeckDialog } from './DeckDialog';
 import { PixelArt } from './PixelArt';
 import { useCardDrag } from './useCardDrag';
 import { useCardTransfers } from './useCardTransfers';
@@ -26,6 +27,7 @@ export function MatchView({
   onCommand, onChooseProblem, onToggleSelected, onTogglePause,
 }: MatchViewProps) {
   const root = useRef<HTMLElement>(null);
+  const [deckOpen, setDeckOpen] = useState(false);
   const captureCards = useCardTransfers(match, root);
   const leaderboard = standings(match);
   const player = leaderboard.find(team => team.player)!;
@@ -231,10 +233,11 @@ export function MatchView({
           })}
           {!match.hand.length && <div className="empty-hand">思路暂时用完了，下一张正在路上。</div>}
         </div>
-        <CardPile cards={match.deck} kind="deck"/>
+        <CardPile cards={match.deck} kind="deck" onClick={() => setDeckOpen(true)}/>
       </div>
     </section>
     {match.pendingActions.length > 0 && <PendingActions match={match}/>}
+    {deckOpen && match.status === 'playing' && <DeckDialog cards={match.deck} onClose={() => setDeckOpen(false)}/>}
   </main>;
 }
 

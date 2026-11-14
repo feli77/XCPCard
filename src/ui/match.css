@@ -703,6 +703,8 @@
 }
 .card-pile {
   position: absolute;
+  padding: 0;
+  text-align: left;
   width: calc(var(--hand-card-width) * 0.82);
   top: 32px;
   color: #8b826d;
@@ -713,8 +715,10 @@
 }
 .deck-pile {
   right: 5px;
+  cursor: pointer;
 }
 .pile-stack {
+  display: block;
   position: relative;
   width: 100%;
   aspect-ratio: 125 / 183;
@@ -798,7 +802,8 @@
   font-size: 7px;
   color: #aaa18b;
 }
-.discard-pile:hover .pile-stack {
+.discard-pile:hover .pile-stack,
+.deck-pile:hover .pile-stack {
   outline: 2px solid #a3ad8c;
   outline-offset: 4px;
 }
