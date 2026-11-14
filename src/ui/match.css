@@ -885,20 +885,3 @@
       box-shadow 0.15s;
   }
 }
-.hand-card-slot.is-reserved .game-card {
-  opacity: 0.55;
-}
-.reserved-label {
-  position: absolute;
-  left: 8px;
-  right: 8px;
-  top: 75px;
-  z-index: 3;
-  background: #302f2a;
-  color: #faf8f2;
-  text-align: center;
-  padding: 4px;
-  font-size: 10px;
-  pointer-events: none;
-  translate: var(--hand-spread, 0px) 0;
-}

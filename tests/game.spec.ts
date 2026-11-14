@@ -172,7 +172,7 @@ test('collection drag and drop supports adding to and removing the last card fro
   expect((await state(page)).profile.collection).toEqual(profile.collection);
 });
 
-test('read, multi-select, paused planned play and submission execute on resume', async ({ page }) => {
+test('paused play moves cards immediately, freezes their timers and submits after resume', async ({ page }) => {
   await start(page);
   expect((await state(page)).match.problems[0].readProgress).toBe(0);
   await elapsed(page, 9);
@@ -183,9 +183,13 @@ test('read, multi-select, paused planned play and submission execute on resume',
   expect((await state(page)).match.time).toBe(paused.match.time);
   for (let i = 0; i < 4; i++) await page.locator('.hand-cards .game-card').nth(i).click();
   await expect(page.locator('.hand-selection')).toHaveText('已选 4 张');
-  await page.getByRole('button', { name: '预排出牌 →', exact: true }).click();
-  expect((await state(page)).match.hand).toHaveLength(8);
-  expect((await state(page)).match.pendingActions).toHaveLength(1);
+  await page.getByRole('button', { name: '出牌 →', exact: true }).click();
+  const played = (await state(page)).match;
+  expect(played.hand).toHaveLength(4);
+  expect(played.pendingActions).toEqual([]);
+  await expect(page.locator('.table-cards .game-card')).toHaveCount(4);
+  await elapsed(page, 12);
+  expect((await state(page)).match).toEqual(played);
   await page.getByRole('button', { name: '预约提交 ↵', exact: true }).click();
   await expect(page.locator('.pending-strip')).toContainText('预约 A 提交');
   await page.getByRole('button', { name: '▶ 继续比赛', exact: true }).click();
@@ -357,20 +361,24 @@ test('PC laptop viewport keeps hand actions and card values accessible', async (
   await page.screenshot({ path: 'test-results/match-laptop.png', fullPage: true });
 });
 
-test('paused hand reservations cannot queue the same physical card twice', async ({ page }) => {
+test('paused played cards leave the hand and can be discarded before resuming', async ({ page }) => {
   await start(page);
   await elapsed(page, 9);
   await page.getByRole('button', { name: 'Ⅱ 暂停', exact: true }).click();
   const first = page.locator('.hand-cards .game-card').first();
+  const uid = await first.getAttribute('data-card-uid');
   await first.click();
-  await page.getByRole('button', { name: '预排出牌 →', exact: true }).click();
-  await expect(page.locator('.reserved-label')).toHaveText('已预排');
-  await expect(first).not.toHaveAttribute('data-draggable', 'true');
-  await first.click();
-  await expect(page.getByRole('button', { name: '预排出牌 →', exact: true })).toBeDisabled();
-  expect((await state(page)).match.pendingActions).toHaveLength(1);
+  await page.getByRole('button', { name: '出牌 →', exact: true }).click();
+  await expect(page.getByText('已预排', { exact: true })).toHaveCount(0);
+  await expect(page.locator(`.hand-cards [data-card-uid="${uid}"]`)).toHaveCount(0);
+  await expect(page.locator(`.table-cards [data-card-uid="${uid}"]`)).toHaveCount(1);
+  await expect(page.getByRole('button', { name: '出牌 →', exact: true })).toBeDisabled();
+  expect((await state(page)).match.pendingActions).toEqual([]);
+  await page.locator('.table-cards .card-discard').click();
+  await expect(page.locator('.table-cards .game-card')).toHaveCount(0);
+  expect((await state(page)).match.discard.map(card => card.uid)).toContain(uid);
   await page.getByRole('button', { name: '▶ 继续比赛', exact: true }).click();
-  await expect(page.locator('.table-cards .game-card')).toHaveCount(1);
+  await expect(page.locator('.table-cards .game-card')).toHaveCount(0);
   expect((await state(page)).match.hand).toHaveLength(7);
 });
 

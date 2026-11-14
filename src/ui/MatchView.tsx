@@ -37,24 +37,15 @@ export function MatchView({
   const read = problem.readProgress >= problem.readTime;
   const score = tableScore(match, viewProblem);
   const ready = canSubmit(match, viewProblem);
-  const reserved = new Set(match.pendingActions.flatMap(action =>
-    action.type === 'play' || action.type === 'discard-hand' ? action.uids : []));
-  const availableSelected = selected.filter(uid => !reserved.has(uid));
-  const tableUids = new Set(problem.table.map(card => card.uid));
-  for (const action of match.pendingActions) {
-    if (!('problem' in action) || action.problem !== viewProblem) continue;
-    if (action.type === 'play') action.uids.forEach(uid => tableUids.add(uid));
-    else if (action.type === 'discard-table') action.uids.forEach(uid => tableUids.delete(uid));
-  }
-  const remainingSlots = Math.max(0, TABLE_LIMIT - tableUids.size);
+  const remainingSlots = Math.max(0, TABLE_LIMIT - problem.table.length);
   const submitDisabled = match.paused
-    ? !problem.table.length && !match.pendingActions.some(action => action.type === 'play' && action.problem === viewProblem)
+    ? !problem.table.length
     : !ready || viewProblem !== match.currentProblem;
 
   const { dragged, startDrag, onClickCapture, onPointerDownCapture } = useCardDrag<{
     from: 'hand' | 'table'; uid: string; uids: string[];
   }>((transfer, target) => {
-    const uids = transfer.from === 'hand' ? transfer.uids.filter(uid => !reserved.has(uid)) : transfer.uids;
+    const uids = transfer.uids;
     if (!uids.length) return false;
     if (target === 'table' && transfer.from === 'hand' && read && problem.acTime === null && uids.length <= remainingSlots) {
       onCommand({ type: 'play', uids, problem: viewProblem });
@@ -109,7 +100,7 @@ export function MatchView({
               <span className="difficulty">难度 <b>{problem.difficulty}</b></span>
             </> : '读完题面，才能知道评测机在想什么。'}</p>
           </div>
-          <span className="table-caption">PROBLEM DESK · {tableUids.size} / {TABLE_LIMIT}</span>
+          <span className="table-caption">PROBLEM DESK · {problem.table.length} / {TABLE_LIMIT}</span>
         </div>
 
         {problem.acTime !== null ? <div className="solved-desk">
@@ -190,21 +181,21 @@ export function MatchView({
         <div>
           <span>下张 {match.hand.length === 8 ? '满手暂停' : `${Math.max(0, (match.globalEffects.draw?.interval || 4) - match.drawProgress).toFixed(0)}′`}</span>
         </div>
-        <span className="hand-selection">{availableSelected.length ? `已选 ${availableSelected.length} 张` : remainingSlots ? '点击多选 · 拖放出牌' : `牌桌已满（最多 ${TABLE_LIMIT} 张）`}</span>
+        <span className="hand-selection">{selected.length ? `已选 ${selected.length} 张` : remainingSlots ? '点击多选 · 拖放出牌' : `牌桌已满（最多 ${TABLE_LIMIT} 张）`}</span>
         <div className="hand-actions">
           <button
             className="secondary"
-            disabled={!availableSelected.length}
-            onClick={() => onCommand({ type: 'discard-hand', uids: availableSelected })}
+            disabled={!selected.length}
+            onClick={() => onCommand({ type: 'discard-hand', uids: selected })}
           >
-            {match.paused ? '预排弃牌' : '弃牌'}
+            弃牌
           </button>
           <button
             className="primary"
-            disabled={!availableSelected.length || availableSelected.length > remainingSlots || !read || problem.acTime !== null}
-            onClick={() => onCommand({ type: 'play', uids: availableSelected, problem: viewProblem })}
+            disabled={!selected.length || selected.length > remainingSlots || !read || problem.acTime !== null}
+            onClick={() => onCommand({ type: 'play', uids: selected, problem: viewProblem })}
           >
-            {match.paused ? '预排出牌' : '出牌'} →
+            出牌 →
           </button>
         </div>
       </div>
@@ -212,28 +203,26 @@ export function MatchView({
         <CardPile cards={match.discard} kind="discard"/>
         <div className="hand-fan" style={{ '--hand-count': Math.max(1, match.hand.length) } as CSSProperties}>
           {match.hand.map((instance, index) => {
-            const isReserved = reserved.has(instance.uid);
             const movingTogether = dragged?.from === 'hand' && dragged.uid !== instance.uid && dragged.uids.includes(instance.uid);
             const offset = index - (match.hand.length - 1) / 2;
             return <div
               key={instance.uid}
               data-card-slot={instance.uid}
-              className={`hand-card-slot ${isReserved ? 'is-reserved' : ''} ${movingTogether ? 'drag-companion' : ''}`}
+              className={`hand-card-slot ${movingTogether ? 'drag-companion' : ''}`}
               style={{ '--fan-angle': `${offset * 2.5}deg`, '--fan-drop': `${offset * offset * 1.8}px` } as CSSProperties}
             >
               <Card
                 uid={instance.uid}
                 card={cardById[instance.cardId]}
-                selected={!isReserved && selected.includes(instance.uid)}
-                onClick={isReserved || (!selected.includes(instance.uid) && availableSelected.length >= remainingSlots) ? undefined : () => onToggleSelected(instance.uid)}
-                draggable={!isReserved}
+                selected={selected.includes(instance.uid)}
+                onClick={!selected.includes(instance.uid) && selected.length >= remainingSlots ? undefined : () => onToggleSelected(instance.uid)}
+                draggable
                 dragging={dragged?.from === 'hand' && dragged.uid === instance.uid}
-                onPointerDown={isReserved ? undefined : event => startDrag(event, {
+                onPointerDown={event => startDrag(event, {
                   from: 'hand', uid: instance.uid,
-                  uids: availableSelected.includes(instance.uid) ? availableSelected : [instance.uid],
+                  uids: selected.includes(instance.uid) ? selected : [instance.uid],
                 })}
               />
-              {isReserved && <span className="reserved-label">已预排</span>}
             </div>;
           })}
           {!match.hand.length && <div className="empty-hand">思路暂时用完了，下一张正在路上。</div>}

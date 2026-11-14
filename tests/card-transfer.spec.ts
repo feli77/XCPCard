@@ -105,17 +105,14 @@ test('draw travels from the deck to the rightmost hand slot before revealing its
   await expect(page.locator('.hand-card-slot').last().locator('.game-card')).toBeVisible();
 });
 
-test('queued batch discard flips in place before flying onto the left pile', async ({ page }) => {
+test('paused batch discard immediately flips in place before flying onto the left pile', async ({ page }) => {
   const match = await load(page);
   const remaining = page.locator(`[data-card-slot="${match.hand[2].uid}"]`);
   const origin = (await remaining.boundingBox())!;
   await page.locator('.hand-card-slot').nth(0).locator('.game-card').click();
   await page.locator('.hand-card-slot').nth(1).locator('.game-card').click();
-  await page.getByRole('button', { name: '预排弃牌', exact: true }).click();
-  await expect(page.locator('.card-flight')).toHaveCount(0);
-  await expect(page.locator('.discard-pile .pile-layer')).toHaveCount(0);
-  await page.mouse.move(10, 100);
-  await page.getByRole('button', { name: '▶ 继续比赛', exact: true }).click();
+  await page.getByRole('button', { name: '弃牌', exact: true }).click();
+  await expect(page.getByRole('button', { name: '▶ 继续比赛', exact: true })).toBeVisible();
   await expect(page.locator('.card-flight-discard')).toHaveCount(2);
   expect((await remaining.boundingBox())!.x).toBeCloseTo(origin.x, 0);
   expect((await remaining.boundingBox())!.y).toBeCloseTo(origin.y, 0);
@@ -125,8 +122,8 @@ test('queued batch discard flips in place before flying onto the left pile', asy
   const settled = (await remaining.boundingBox())!;
   expect(midway.x).toBeLessThan(origin.x);
   expect(midway.x).toBeGreaterThan(settled.x);
-  expect(midway.y).toBeGreaterThan(origin.y);
-  expect(midway.y).toBeLessThan(settled.y);
+  expect(midway.y).toBeLessThan(origin.y);
+  expect(midway.y).toBeGreaterThan(settled.y);
   await expect(page.locator('.discard-pile .pile-layer')).toHaveCount(2);
   const flight = page.locator('.card-flight-discard').first();
   const flightOrigin = (await flight.boundingBox())!;
@@ -179,7 +176,6 @@ test('table cards slide into the gap after a discard', async ({ page }) => {
   const remaining = page.locator(`[data-card-slot="${match.problems[0].table[1].uid}"]`);
   const origin = (await remaining.boundingBox())!;
   await page.locator('.table-cards .card-discard').first().click();
-  await page.getByRole('button', { name: '▶ 继续比赛', exact: true }).click();
   expect((await remaining.boundingBox())!.x).toBeCloseTo(origin.x, 0);
   await remaining.evaluate(element => element.getAnimations().forEach(animation => { animation.currentTime = 180; }));
   const midway = (await remaining.boundingBox())!;

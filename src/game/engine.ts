@@ -133,7 +133,7 @@ function runAction(match: Match, action: Action, scheduled = false) {
       match.currentProblem = action.problem;
       break;
     case 'play': {
-      if (index !== match.currentProblem || problem.acTime !== null || problem.readProgress < problem.readTime) break;
+      if ((!match.paused && index !== match.currentProblem) || problem.acTime !== null || problem.readProgress < problem.readTime) break;
       const playing = [...new Set(action.uids)].map(uid => match.hand.find(card => card.uid === uid)).filter((card): card is CardInstance => !!card);
       if (!playing.length || problem.table.length + playing.length > TABLE_LIMIT) break;
       match.hand = match.hand.filter(card => !playing.some(item => item.uid === card.uid));
@@ -169,7 +169,9 @@ export function act(match: Match, action: Action): Match {
   const next = structuredClone(match);
   if (next.paused) {
     const target = 'problem' in action && action.problem !== undefined ? action.problem : next.pendingActions.reduce((current, item) => item.type === 'switch' ? item.problem : current, next.currentProblem);
-    next.pendingActions.push(action.type === 'play' || action.type === 'discard-table' || action.type === 'submit' ? { ...action, problem: target } : action);
+    if (action.type === 'play' || action.type === 'discard-table') runAction(next, { ...action, problem: target });
+    else if (action.type === 'discard-hand') runAction(next, action);
+    else next.pendingActions.push(action.type === 'submit' ? { ...action, problem: target } : action);
   } else {
     runAction(next, action);
     executeQueuedSubmission(next);
@@ -195,7 +197,7 @@ export function setPaused(match: Match, paused: boolean): Match {
 }
 
 function startNextCard(match: Match, index: number) {
-  if (index !== match.currentProblem) return;
+  if (match.paused || index !== match.currentProblem) return;
   const card = match.problems[index].table.find(item => !item.active);
   if (!card || card.duration !== null) return;
   const coffee = match.globalEffects.coffee;
