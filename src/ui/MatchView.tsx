@@ -7,6 +7,7 @@ import { ContestCountdown } from './ContestCountdown';
 import { DeckDialog } from './DeckDialog';
 import { PixelArt } from './PixelArt';
 import { useCardDrag } from './useCardDrag';
+import { useCardLayout } from './useCardLayout';
 import { useCardTransfers } from './useCardTransfers';
 
 interface MatchViewProps {
@@ -29,6 +30,7 @@ export function MatchView({
   const root = useRef<HTMLElement>(null);
   const [deckOpen, setDeckOpen] = useState(false);
   const captureCards = useCardTransfers(match, root);
+  useCardLayout(root);
   const leaderboard = standings(match);
   const player = leaderboard.find(team => team.player)!;
   const problem = match.problems[viewProblem];
@@ -140,19 +142,20 @@ export function MatchView({
               const scoreGain = card.type === 'algorithm'
                 ? card.score * (card.categories.some(category => problem.categories.includes(category)) ? 1 : 0.5)
                 : instance.dice;
-              return <Card
-                key={instance.uid}
-                uid={instance.uid}
-                card={card}
-                active={instance.active}
-                progress={instance.duration ? instance.progress / instance.duration : 0}
-                dice={instance.dice}
-                scoreGain={scoreGain}
-                draggable
-                dragging={dragged?.from === 'table' && dragged.uid === instance.uid}
-                onPointerDown={event => startDrag(event, { from: 'table', uid: instance.uid, uids: [instance.uid] })}
-                onDiscard={() => onCommand({ type: 'discard-table', uids: [instance.uid], problem: viewProblem })}
-              />;
+              return <div className="table-card-slot" data-card-slot={instance.uid} key={instance.uid}>
+                <Card
+                  uid={instance.uid}
+                  card={card}
+                  active={instance.active}
+                  progress={instance.duration ? instance.progress / instance.duration : 0}
+                  dice={instance.dice}
+                  scoreGain={scoreGain}
+                  draggable
+                  dragging={dragged?.from === 'table' && dragged.uid === instance.uid}
+                  onPointerDown={event => startDrag(event, { from: 'table', uid: instance.uid, uids: [instance.uid] })}
+                  onDiscard={() => onCommand({ type: 'discard-table', uids: [instance.uid], problem: viewProblem })}
+                />
+              </div>;
             }) : <div className="empty-table">
               <span>＋</span><p>把思路放上来</p><small>点击手牌多选后出牌，或拖到这里</small>
             </div>}
@@ -213,6 +216,7 @@ export function MatchView({
             const offset = index - (match.hand.length - 1) / 2;
             return <div
               key={instance.uid}
+              data-card-slot={instance.uid}
               className={`hand-card-slot ${isReserved ? 'is-reserved' : ''} ${movingTogether ? 'drag-companion' : ''}`}
               style={{ '--fan-angle': `${offset * 2.5}deg`, '--fan-drop': `${offset * offset * 1.8}px` } as CSSProperties}
             >

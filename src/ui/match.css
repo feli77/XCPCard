@@ -695,6 +695,10 @@
 .hand-card-slot:has(> .is-dragging) {
   z-index: 1000;
 }
+.hand-card-slot:has(> .is-dragging),
+.table-card-slot:has(> .is-dragging) {
+  transform: none !important;
+}
 .hand-cards .card-name {
   font-size: 11px;
 }
@@ -801,11 +805,6 @@
   margin-top: 5px;
   font-size: 7px;
   color: #aaa18b;
-}
-.discard-pile:hover .pile-stack,
-.deck-pile:hover .pile-stack {
-  outline: 2px solid #a3ad8c;
-  outline-offset: 4px;
 }
 .empty-hand {
   margin: auto;

@@ -37,7 +37,7 @@ async function seek(page: Page, progress: number) {
 }
 
 async function finish(page: Page) {
-  await page.locator('.card-flight').evaluateAll(flights => {
+  await page.locator('.card-flight, [data-card-slot]').evaluateAll(flights => {
     for (const flight of flights) {
       for (const animation of flight.getAnimations({ subtree: true })) animation.finish();
     }
@@ -58,6 +58,10 @@ test('physical card piles flank the hand and contain exactly their real card cou
   expect(deck.x).toBeGreaterThan(hand.x + hand.width);
   const panel = (await page.locator('.hand-panel').boundingBox())!;
   expect(deck.y + deck.height).toBeLessThan(panel.y + panel.height);
+  for (const pile of ['.deck-pile', '.discard-pile']) {
+    await page.locator(pile).hover();
+    await expect(page.locator(`${pile} .pile-stack`)).toHaveCSS('outline-style', 'none');
+  }
   await page.screenshot({ path: 'test-results/hand-piles.png', fullPage: true });
 });
 
@@ -67,10 +71,22 @@ test('draw travels from the deck to the rightmost hand slot before revealing its
     match.discard = match.hand.splice(0, 1);
     match.drawProgress = 3;
   });
+  const remaining = page.locator(`[data-card-slot="${match.hand[0].uid}"]`);
+  const origin = (await remaining.boundingBox())!;
   await page.getByRole('button', { name: '▶ 继续比赛', exact: true }).click();
   await page.clock.runFor(1100);
   const flight = page.locator('.card-flight-draw');
   await expect(flight).toHaveCount(1);
+  expect((await remaining.boundingBox())!.x).toBeCloseTo(origin.x, 0);
+  expect((await remaining.boundingBox())!.y).toBeCloseTo(origin.y, 0);
+  await remaining.evaluate(element => element.getAnimations().forEach(animation => { animation.currentTime = 180; }));
+  const midway = (await remaining.boundingBox())!;
+  await remaining.evaluate(element => element.getAnimations().forEach(animation => animation.finish()));
+  const settled = (await remaining.boundingBox())!;
+  expect(midway.x).toBeLessThan(origin.x);
+  expect(midway.x).toBeGreaterThan(settled.x);
+  expect(midway.y).toBeGreaterThan(origin.y);
+  expect(midway.y).toBeLessThan(settled.y);
   await expect(page.locator('.hand-card-slot').last().locator('.game-card')).toBeHidden();
   await expect(page.locator('.deck-pile .pile-layer')).toHaveCount(match.deck.length - 1);
   const deck = (await page.locator('.deck-pile .pile-stack').boundingBox())!;
@@ -90,7 +106,9 @@ test('draw travels from the deck to the rightmost hand slot before revealing its
 });
 
 test('queued batch discard flips in place before flying onto the left pile', async ({ page }) => {
-  await load(page);
+  const match = await load(page);
+  const remaining = page.locator(`[data-card-slot="${match.hand[2].uid}"]`);
+  const origin = (await remaining.boundingBox())!;
   await page.locator('.hand-card-slot').nth(0).locator('.game-card').click();
   await page.locator('.hand-card-slot').nth(1).locator('.game-card').click();
   await page.getByRole('button', { name: '预排弃牌', exact: true }).click();
@@ -99,16 +117,26 @@ test('queued batch discard flips in place before flying onto the left pile', asy
   await page.mouse.move(10, 100);
   await page.getByRole('button', { name: '▶ 继续比赛', exact: true }).click();
   await expect(page.locator('.card-flight-discard')).toHaveCount(2);
+  expect((await remaining.boundingBox())!.x).toBeCloseTo(origin.x, 0);
+  expect((await remaining.boundingBox())!.y).toBeCloseTo(origin.y, 0);
+  await remaining.evaluate(element => element.getAnimations().forEach(animation => { animation.currentTime = 180; }));
+  const midway = (await remaining.boundingBox())!;
+  await remaining.evaluate(element => element.getAnimations().forEach(animation => animation.finish()));
+  const settled = (await remaining.boundingBox())!;
+  expect(midway.x).toBeLessThan(origin.x);
+  expect(midway.x).toBeGreaterThan(settled.x);
+  expect(midway.y).toBeGreaterThan(origin.y);
+  expect(midway.y).toBeLessThan(settled.y);
   await expect(page.locator('.discard-pile .pile-layer')).toHaveCount(2);
   const flight = page.locator('.card-flight-discard').first();
-  const origin = (await flight.boundingBox())!;
+  const flightOrigin = (await flight.boundingBox())!;
   await seek(page, 0.35);
   for (const back of await page.locator('.card-flight-discard .card-flight-back').all()) {
     await expect(back).toBeVisible();
   }
   const flipped = (await flight.boundingBox())!;
-  expect(flipped.x).toBeCloseTo(origin.x, 0);
-  expect(flipped.y).toBeCloseTo(origin.y - 12, 0);
+  expect(flipped.x).toBeCloseTo(flightOrigin.x, 0);
+  expect(flipped.y).toBeCloseTo(flightOrigin.y - 12, 0);
   await expect(flight.locator('.card-flight-rotor')).toHaveCSS('transform', 'matrix3d(-1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1)');
   await seek(page, 0.88);
   const pile = (await page.locator('.discard-pile .pile-stack').boundingBox())!;
@@ -137,4 +165,43 @@ test('an empty deck reshuffles discard before drawing and reduced motion leaves 
   await expect(page.locator('.card-flight')).toHaveCount(0);
   await expect(page.locator('.card-in-transit')).toHaveCount(0);
   await expect(page.locator('.discard-pile .pile-layer')).toHaveCount(1);
+  expect(await page.locator('[data-card-slot]').evaluateAll(slots => slots.flatMap(slot => slot.getAnimations()).length)).toBe(0);
+});
+
+test('table cards slide into the gap after a discard', async ({ page }) => {
+  const match = await load(page, match => {
+    const problem = match.problems[0];
+    problem.readProgress = problem.readTime;
+    problem.table = match.hand.splice(0, 3).map(card => ({
+      ...card, active: false, progress: 0, duration: 10,
+    }));
+  });
+  const remaining = page.locator(`[data-card-slot="${match.problems[0].table[1].uid}"]`);
+  const origin = (await remaining.boundingBox())!;
+  await page.locator('.table-cards .card-discard').first().click();
+  await page.getByRole('button', { name: '▶ 继续比赛', exact: true }).click();
+  expect((await remaining.boundingBox())!.x).toBeCloseTo(origin.x, 0);
+  await remaining.evaluate(element => element.getAnimations().forEach(animation => { animation.currentTime = 180; }));
+  const midway = (await remaining.boundingBox())!;
+  await finish(page);
+  const settled = (await remaining.boundingBox())!;
+  expect(midway.x).toBeLessThan(origin.x);
+  expect(midway.x).toBeGreaterThan(settled.x);
+});
+
+test('consecutive discards continue the remaining cards from their current position', async ({ page }) => {
+  const match = await load(page);
+  await page.getByRole('button', { name: '▶ 继续比赛', exact: true }).click();
+  await page.locator('.hand-card-slot .game-card').first().click();
+  await page.getByRole('button', { name: '弃牌', exact: true }).click();
+  await page.locator('[data-card-slot]').evaluateAll(slots => {
+    slots.forEach(slot => slot.getAnimations().forEach(animation => { animation.currentTime = 180; }));
+  });
+  const remaining = page.locator(`[data-card-slot="${match.hand[3].uid}"]`);
+  const midway = (await remaining.boundingBox())!;
+  await page.locator('.hand-card-slot .game-card').first().click();
+  await page.getByRole('button', { name: '弃牌', exact: true }).click();
+  expect((await remaining.boundingBox())!.x).toBeCloseTo(midway.x, 0);
+  expect((await remaining.boundingBox())!.y).toBeCloseTo(midway.y, 0);
+  await finish(page);
 });

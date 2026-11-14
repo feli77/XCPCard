@@ -328,6 +328,7 @@ test('table cards keep their positions during dragging and fill the gap only aft
   await expectPosition(next, nextBounds);
   await releaseOn(page, page.locator('.discard-pile'));
   await expect(table).toHaveCount(2);
+  await expect.poll(async () => Math.abs((await table.first().boundingBox())!.x - bounds.x)).toBeLessThan(0.5);
   await expectPosition(table.first(), bounds);
   expect((await state(page)).match.discard.map(card => card.uid)).toContain(initial.problems[0].table[0].uid);
   await table.nth(0).locator('.card-discard').click();
