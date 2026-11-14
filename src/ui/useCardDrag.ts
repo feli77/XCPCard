@@ -3,7 +3,7 @@ import type { MouseEvent, PointerEvent } from 'react';
 
 type DropZone = 'collection' | 'deck' | 'table' | 'discard';
 
-export function useCardDrag<T>(onDrop: (item: T, target: DropZone) => void) {
+export function useCardDrag<T>(onDrop: (item: T, target: DropZone) => boolean) {
   const [dragged, setDragged] = useState<T | null>(null);
   const dropRef = useRef(onDrop);
   const cleanupRef = useRef<(() => void) | null>(null);
@@ -25,6 +25,7 @@ export function useCardDrag<T>(onDrop: (item: T, target: DropZone) => void) {
     const button = (event.target as Element).closest('button');
     if (button && button !== element) return;
     cleanupRef.current?.();
+    setDragged(null);
     sourceRef.current = element;
     suppressClick.current = false;
     const pointerId = event.pointerId;
@@ -37,6 +38,7 @@ export function useCardDrag<T>(onDrop: (item: T, target: DropZone) => void) {
     let tiltX = 0;
     let tiltY = 0;
     let rotation = 0;
+    let returnAnimation: Animation | null = null;
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     function relaxTilt() {
@@ -93,7 +95,7 @@ export function useCardDrag<T>(onDrop: (item: T, target: DropZone) => void) {
       }
     }
 
-    function cleanup() {
+    function stopListening() {
       document.removeEventListener('pointermove', move);
       document.removeEventListener('pointerup', finish);
       document.removeEventListener('pointercancel', cancel);
@@ -101,13 +103,18 @@ export function useCardDrag<T>(onDrop: (item: T, target: DropZone) => void) {
       document.removeEventListener('keydown', keydown);
       window.removeEventListener('blur', cancel);
       cancelAnimationFrame(frame);
+      if (element.hasPointerCapture(pointerId)) element.releasePointerCapture(pointerId);
+    }
+
+    function cleanup() {
+      stopListening();
+      returnAnimation?.cancel();
       placeholder?.remove();
       element.classList.remove('is-dragging');
       document.body.classList.remove('card-dragging');
       for (const property of ['--drag-width', '--drag-height', '--drag-left', '--drag-top', '--tilt-x', '--tilt-y', '--drag-rotation']) {
         element.style.removeProperty(property);
       }
-      if (element.hasPointerCapture(pointerId)) element.releasePointerCapture(pointerId);
       cleanupRef.current = null;
       sourceRef.current = null;
     }
@@ -116,15 +123,63 @@ export function useCardDrag<T>(onDrop: (item: T, target: DropZone) => void) {
       if (pointer.pointerId !== pointerId) return;
       const target = document.elementFromPoint(pointer.clientX, pointer.clientY)
         ?.closest<HTMLElement>('[data-card-drop]')?.dataset.cardDrop as DropZone | undefined;
-      cleanup();
-      setDragged(null);
-      if (lifted && target) dropRef.current(item, target);
+      if (lifted && target && dropRef.current(item, target)) {
+        cleanup();
+        setDragged(null);
+      } else {
+        cancel();
+      }
     }
 
     function cancel(event?: Event) {
       if (event && 'pointerId' in event && event.pointerId !== pointerId) return;
-      cleanup();
-      setDragged(null);
+      stopListening();
+      if (!lifted || reducedMotion || !element.isConnected) {
+        cleanup();
+        setDragged(null);
+        return;
+      }
+
+      // A temporary copy measures the resting pose without pointer capture or hover.
+      const bounds = placeholder!.getBoundingClientRect();
+      const draggedStyle = getComputedStyle(element);
+      const start = {
+        transform: draggedStyle.transform,
+        transformOrigin: draggedStyle.transformOrigin,
+        translate: draggedStyle.translate,
+        rotate: draggedStyle.rotate,
+        scale: draggedStyle.scale,
+      };
+      const probe = element.cloneNode(false) as HTMLElement;
+      probe.classList.remove('is-dragging');
+      probe.style.transition = 'none';
+      probe.style.pointerEvents = 'none';
+      probe.style.width = placeholder!.style.width;
+      probe.style.height = placeholder!.style.height;
+      probe.style.removeProperty('--tilt-x');
+      probe.style.removeProperty('--tilt-y');
+      probe.style.removeProperty('--drag-rotation');
+      placeholder!.replaceWith(probe);
+      const style = getComputedStyle(probe);
+      const destination = {
+        width: placeholder!.style.width,
+        height: placeholder!.style.height,
+        transform: style.transform,
+        transformOrigin: style.transformOrigin,
+        translate: style.translate,
+        rotate: style.rotate,
+        scale: style.scale,
+      };
+      probe.replaceWith(placeholder!);
+
+      returnAnimation = element.animate([
+        start,
+        { left: `${bounds.left}px`, top: `${bounds.top}px`, minWidth: destination.width, maxWidth: destination.width, ...destination },
+      ], { duration: 180, easing: 'cubic-bezier(.22,.7,.25,1)', fill: 'forwards' });
+      returnAnimation.onfinish = () => {
+        cleanup();
+        setDragged(null);
+      };
     }
 
     function keydown(key: KeyboardEvent) {

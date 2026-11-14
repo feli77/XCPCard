@@ -31,9 +31,11 @@ export function Collection({
   onAdd,
 }: CollectionProps) {
   const { dragged: draggedCard, startDrag, onClickCapture, onPointerDownCapture } = useCardDrag<{ from: CardZone; id: string }>((item, target) => {
-    if (item.from === target) return;
+    if (item.from === target) return false;
     if (target === "deck") onAdd(item.id);
     else if (target === "collection") onRemove(item.id);
+    else return false;
+    return true;
   });
   const collectionCount = Object.values(profile.collection).reduce(
     (a, b) => a + b,

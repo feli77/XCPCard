@@ -36,12 +36,68 @@ async function center(locator: Locator) {
 }
 
 async function lift(page: Page, source: Locator, dx = 90, dy = -55) {
-  const origin = await center(source);
+  const bounds = (await source.boundingBox())!;
+  const origin = { x: bounds.x + 25, y: bounds.y + 20 };
   await page.mouse.move(origin.x, origin.y);
   await page.mouse.down();
   await page.mouse.move(origin.x + dx, origin.y + dy);
   await expect(source).toHaveClass(/is-dragging/);
   return origin;
+}
+
+for (const zone of ['collection', 'deck', 'hand', 'table'] as const) {
+  test(`${zone} card smoothly returns from its released position on cancellation`, async ({ page }) => {
+    if (zone === 'hand' || zone === 'table') await matchFixture(page, zone === 'table' ? 2 : 0);
+    else {
+      await load(page);
+      await page.getByRole('button', { name: '我的卡组', exact: true }).click();
+    }
+    const source = page.locator({
+      collection: '.collection-cards .game-card',
+      deck: '.deck-entry',
+      hand: '.hand-cards .game-card',
+      table: '.table-cards .game-card',
+    }[zone]).first();
+    const before = await state(page);
+    await lift(page, source);
+    await page.mouse.move(20, 120);
+    const positions = await source.evaluate((element, zone) => {
+      const released = element.getBoundingClientRect().toJSON();
+      if (zone === 'hand') {
+        document.dispatchEvent(new PointerEvent('pointerup', { pointerId: 1, clientX: 20, clientY: 120, bubbles: true }));
+      } else if (zone === 'table') {
+        document.dispatchEvent(new PointerEvent('pointercancel', { pointerId: 1, bubbles: true }));
+      } else {
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      }
+      const animation = element.getAnimations().find(animation =>
+        (animation.effect as KeyframeEffect).getKeyframes().some(frame => 'left' in frame));
+      if (!animation) throw new Error('Cancelled drag did not animate back');
+      animation.pause();
+      const duration = animation.effect!.getTiming().duration as number;
+      const sample = (time: number) => {
+        animation.currentTime = time;
+        return element.getBoundingClientRect().toJSON();
+      };
+      const start = sample(0);
+      const middle = sample(duration / 2);
+      const end = sample(duration);
+      animation.play();
+      return { released, start, middle, end, duration };
+    }, zone);
+    expect(positions.duration).toBeLessThanOrEqual(250);
+    expect(positions.start.x).toBeCloseTo(positions.released.x, 0);
+    expect(positions.start.y).toBeCloseTo(positions.released.y, 0);
+    const distance = (a: typeof positions.start, b: typeof positions.start) => Math.hypot(a.x - b.x, a.y - b.y);
+    expect(distance(positions.start, positions.middle)).toBeGreaterThan(5);
+    expect(distance(positions.middle, positions.end)).toBeGreaterThan(1);
+    expect(distance(positions.middle, positions.end)).toBeLessThan(distance(positions.start, positions.end));
+    await page.mouse.up();
+    await expect(page.locator('.is-dragging')).toHaveCount(0);
+    await expect(page.locator('.card-drag-placeholder')).toHaveCount(0);
+    await expectPosition(source, positions.end);
+    expect(await state(page)).toEqual(before);
+  });
 }
 
 async function releaseOn(page: Page, target: Locator) {

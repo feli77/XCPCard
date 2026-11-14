@@ -55,14 +55,15 @@ export function MatchView({
     from: 'hand' | 'table'; uid: string; uids: string[];
   }>((transfer, target) => {
     const uids = transfer.from === 'hand' ? transfer.uids.filter(uid => !reserved.has(uid)) : transfer.uids;
-    if (!uids.length) return;
+    if (!uids.length) return false;
     if (target === 'table' && transfer.from === 'hand' && read && problem.acTime === null && uids.length <= remainingSlots) {
       onCommand({ type: 'play', uids, problem: viewProblem });
     } else if (target === 'discard') {
       onCommand(transfer.from === 'hand'
         ? { type: 'discard-hand', uids }
         : { type: 'discard-table', uids, problem: viewProblem });
-    }
+    } else return false;
+    return true;
   });
 
   return <main className="match-page" ref={root}
