@@ -48,9 +48,30 @@ describe('比赛时间、读题与队列', () => {
     for (const event of events) {
       const game = startMatch(createProfile(), event.id, 777);
       expect(game.problems).toHaveLength(event.problems);
-      expect(game.problems.every(p => p.difficulty >= event.minDifficulty && p.difficulty <= event.maxDifficulty && p.readTime >= 3 && p.readTime <= 8)).toBe(true);
+      expect(game.problems.every(p => p.difficulty >= event.minDifficulty && p.difficulty <= event.maxDifficulty && Number.isInteger(p.readTime) && p.readTime >= 2 && p.readTime <= 5)).toBe(true);
       expect(game.problems.map(p => p.difficulty)).not.toEqual(game.problems.map(p => p.difficulty).sort((a, b) => a - b));
     }
+  });
+  it('难题平均读题更久，各难度仍能抽到全部时长，并可出现难题读得更快', () => {
+    const easy: number[] = [];
+    const hard: number[] = [];
+    let hasInversion = false;
+    for (let seed = 0; seed < 500; seed++) {
+      for (const eventId of ['school', 'wf']) {
+        const game = startMatch(createProfile(), eventId, seed);
+        for (const problem of game.problems) {
+          if (problem.difficulty <= 1200) easy.push(problem.readTime);
+          if (problem.difficulty >= 3000) hard.push(problem.readTime);
+          if (game.problems.some(other => other.difficulty < problem.difficulty && other.readTime > problem.readTime)) hasInversion = true;
+        }
+      }
+    }
+    const mean = (values: number[]) => values.reduce((sum, value) => sum + value, 0) / values.length;
+    expect(mean(hard) - mean(easy)).toBeGreaterThan(1);
+    expect([...new Set(easy)].sort()).toEqual([2, 3, 4, 5]);
+    expect([...new Set(hard)].sort()).toEqual([2, 3, 4, 5]);
+    expect(hasInversion).toBe(true);
+    expect(startMatch(createProfile(), 'school', 1234).problems).toEqual(startMatch(createProfile(), 'school', 1234).problems);
   });
   it('读题前不能打牌；切题仅暂停当前题局部时间', () => {
     let game = match();

@@ -199,18 +199,18 @@ test('read, multi-select, paused planned play and submission execute on resume',
 
 test('switching keeps independent reading progress and opponents keep moving', async ({ page }) => {
   await start(page);
-  await elapsed(page, 2);
+  await elapsed(page, 1);
   await page.locator('.problem-button').nth(1).click();
-  await elapsed(page, 2);
+  await elapsed(page, 1);
   const b = await state(page);
-  expect(b.match.problems[0].readProgress).toBe(2);
-  expect(b.match.problems[1].readProgress).toBe(2);
+  expect(b.match.problems[0].readProgress).toBe(1);
+  expect(b.match.problems[1].readProgress).toBe(1);
   await page.locator('.problem-button').nth(0).click();
   await elapsed(page, 9);
-  expect((await state(page)).match.problems[1].readProgress).toBe(2);
+  expect((await state(page)).match.problems[1].readProgress).toBe(1);
   await page.locator('.problem-button').nth(1).click();
   await elapsed(page, 9);
-  expect((await state(page)).match.problems[1].readProgress).toBeGreaterThan(2);
+  expect((await state(page)).match.problems[1].readProgress).toBeGreaterThan(1);
   await elapsed(page, 40);
   expect((await state(page)).match.opponents.some((team: any) => team.results.some((p: any) => p.attempts > 0))).toBe(true);
 });

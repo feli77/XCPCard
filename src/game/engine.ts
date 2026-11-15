@@ -25,6 +25,15 @@ function shuffle<T>(list: T[], state: { randomState: number }): T[] {
 const seed = () => Math.floor(Math.random() * 4294967296);
 const uniqueId = () => crypto.randomUUID();
 
+function readingTime(difficulty: number, rng: { randomState: number }): number {
+  const chance = 0.25 + 0.5 * (difficulty - 800) / (3500 - 800);
+  let minutes = 2;
+  for (let i = 0; i < 3; i++) {
+    if (random(rng) < chance) minutes++;
+  }
+  return minutes;
+}
+
 export function createProfile(): Profile {
   const packs: Pack[] = Array.from({ length: 8 }, () => ({ id: uniqueId(), eventId: 'starter', guarantee: 0 }));
   return { collection: {}, deck: [], season: 1, mainIndex: 0, seasonEnded: false, playedEvents: [], packs, history: [] };
@@ -59,7 +68,7 @@ export function startMatch(profile: Profile, eventId: string, randomSeed = seed(
   const problems = shuffle(difficulties, rng).map((difficulty, i) => ({
     id: `problem-${i}`, label: String.fromCharCode(65 + i), name: names[i % names.length], difficulty,
     categories: shuffle(categories, rng).slice(0, random(rng) < 0.25 ? 2 : 1),
-    readTime: 3 + Math.floor(random(rng) * 6), readProgress: 0, table: [], attempts: [], acTime: null,
+    readTime: readingTime(difficulty, rng), readProgress: 0, table: [], attempts: [], acTime: null,
     revision: 0, waRevision: null, submitQueued: false,
   }));
   const deck = shuffle(profile.deck.map((cardId, i) => ({ uid: `card-${i}`, cardId })), rng);
