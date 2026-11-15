@@ -1,0 +1,7 @@
+.award-badges { display: inline-flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.award-badge { display: inline-block; padding: 5px 10px; border: 1px solid currentColor; font-size: 12px; font-weight: 700; }
+.medal-gold { color: #896415; background: #f7eccb; }
+.medal-silver { color: #5f6b77; background: #e9edf0; }
+.medal-bronze { color: #935d3c; background: #f3e4d7; }
+.title-champion, .title-runner-up, .title-third-place { color: #78618d; background: #eee7f4; }
+.result-awards { margin: 18px 0; }

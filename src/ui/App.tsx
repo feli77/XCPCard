@@ -16,6 +16,8 @@ import {
   startMatch,
 } from "../game/engine";
 import type { Action, Match, MatchResult, Profile } from "../game/types";
+import { contestAwards } from "../game/honors";
+import { AwardBadges } from "./AwardBadges";
 import { MatchView } from "./MatchView";
 import { PixelArt } from "./PixelArt";
 import { sound } from "./audio";
@@ -43,6 +45,8 @@ function load(): Session {
       openedPack: null,
     };
   const session: Session = JSON.parse(saved);
+  session.profile.history = session.profile.history.map(result => ({ ...result, ...contestAwards(result.eventId, result.rank, result.teams) }));
+  if (session.result) session.result = { ...session.result, ...contestAwards(session.result.eventId, session.result.rank, session.result.teams) };
   if (session.match?.status === "playing") session.match.paused = true;
   return session;
 }
@@ -315,6 +319,7 @@ export function App() {
                 <span>总罚时</span>
               </div>
             </div>
+            {(result.medal || result.title) && <div className="result-awards"><AwardBadges medal={result.medal} title={result.title} /></div>}
             <p>
               {eventById[result.eventId].kind === "side"
                 ? "支线完赛，主线门票依然有效。"

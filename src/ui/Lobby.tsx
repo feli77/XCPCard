@@ -5,6 +5,7 @@ import { availableEvents, cardById, DECK_SIZE } from "../game/engine";
 import type { Match, Profile } from "../game/types";
 import { Card } from "./Card";
 import { PixelArt } from "./PixelArt";
+import { AwardBadges } from "./AwardBadges";
 
 interface LobbyProps {
   profile: Profile;
@@ -223,6 +224,7 @@ export function Lobby({
         <div className="last-result">
           上一场 · {eventById[lastResult.eventId].name}　{lastResult.solved}{" "}
           AC　排名 #{lastResult.rank}　奖励 {lastResult.packs} 包
+          {"　"}<AwardBadges medal={lastResult.medal} title={lastResult.title} />
         </div>
       )}
       <footer>

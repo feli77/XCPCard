@@ -1,6 +1,7 @@
 import { cards, events, problemNames, teamNames, rarityWeights } from '../content/data';
 import type { Category, CardDefinition } from '../content/types';
 import type { Action, CardInstance, Match, MatchResult, Opponent, Pack, Profile, Standing, TableCard } from './types';
+import { contestAwards } from './honors';
 
 export const MATCH_DURATION = 300;
 export const HAND_LIMIT = 8;
@@ -353,7 +354,8 @@ export function settleMatch(profile: Profile, match: Match): { profile: Profile;
   const promoted = event.kind === 'main' && player.solved > 0 && event.promotion !== undefined && percentile <= event.promotion;
   const seasonEnded = event.kind === 'main' && (!promoted || event.id === mainEvents[mainEvents.length - 1].id);
   const result: MatchResult = { matchId: match.id, eventId: match.eventId, rank: player.rank, teams: ranking.length,
-    solved: player.solved, penalty: player.penalty, packs: count, promoted, seasonEnded };
+    solved: player.solved, penalty: player.penalty, packs: count, promoted, seasonEnded,
+    ...contestAwards(event.id, player.rank, ranking.length) };
   const packs: Pack[] = Array.from({ length: count }, () => ({ id: uniqueId(), eventId: event.id, guarantee: event.guarantee }));
   return { profile: { ...profile, mainIndex: event.kind === 'main' && promoted ? profile.mainIndex + 1 : profile.mainIndex,
     seasonEnded: profile.seasonEnded || seasonEnded, playedEvents: [...profile.playedEvents, event.id], packs: [...profile.packs, ...packs],

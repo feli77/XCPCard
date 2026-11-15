@@ -83,7 +83,11 @@ export interface MatchResult {
   packs: number;
   promoted: boolean;
   seasonEnded: boolean;
+  medal: Medal | null;
+  title: PodiumTitle | null;
 }
+export type Medal = 'gold' | 'silver' | 'bronze';
+export type PodiumTitle = 'champion' | 'runner-up' | 'third-place';
 export interface Profile {
   collection: Record<string, number>;
   deck: string[];
