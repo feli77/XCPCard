@@ -1,5 +1,5 @@
 import { useRef, useState, type CSSProperties } from 'react';
-import { canSubmit, cardById, standings, tableScore, TABLE_LIMIT } from '../game/engine';
+import { canQueueSubmit, cardById, standings, tableScore, TABLE_LIMIT } from '../game/engine';
 import type { Action, Match, Standing } from '../game/types';
 import { Card } from './Card';
 import { CardPile } from './CardPile';
@@ -39,11 +39,12 @@ export function MatchView({
   const problem = match.problems[viewProblem];
   const read = problem.readProgress >= problem.readTime;
   const score = tableScore(match, viewProblem);
-  const ready = canSubmit(match, viewProblem);
+  const waitingForCards = problem.table.some(card => !card.active);
+  const submitQueued = problem.submitQueued || match.pendingActions.some(action =>
+    action.type === 'submit' && (action.problem ?? match.currentProblem) === viewProblem);
   const remainingSlots = Math.max(0, TABLE_LIMIT - problem.table.length);
-  const submitDisabled = match.paused
-    ? !problem.table.length
-    : !ready || viewProblem !== match.currentProblem;
+  const submitDisabled = !canQueueSubmit(match, viewProblem) || submitQueued ||
+    (!match.paused && viewProblem !== match.currentProblem);
 
   const { dragged, startDrag, onClickCapture, onPointerDownCapture } = useCardDrag<{
     from: 'hand' | 'table'; uid: string; uids: string[];
@@ -173,7 +174,7 @@ export function MatchView({
           </div>
           <div className="table-bottom">
             <span>
-              {problem.submitQueued ? '◷ 已预约提交'
+              {submitQueued ? '◷ 已设为自动提交'
                 : problem.attempts.length ? `提交记录 ${problem.attempts.map(attempt => `${attempt.verdict ?? attempt.result} ${Math.floor(attempt.time)}′`).join(' · ')}`
                 : '卡牌依次生效，全部就绪后可提交。'}
             </span>
@@ -182,7 +183,7 @@ export function MatchView({
               disabled={submitDisabled}
               onClick={() => onCommand({ type: 'submit', problem: viewProblem })}
             >
-              {match.paused ? '预约提交' : '提交'} <span>↵</span>
+              {waitingForCards ? '自动提交' : match.paused ? '预约提交' : '提交'} <span>↵</span>
             </button>
           </div>
         </>}

@@ -272,7 +272,7 @@ test('paused play moves cards immediately, freezes their timers and submits afte
   await expect(page.locator('.table-cards .game-card')).toHaveCount(4);
   await elapsed(page, 12);
   expect((await state(page)).match).toEqual(played);
-  await page.getByRole('button', { name: '预约提交 ↵', exact: true }).click();
+  await page.getByRole('button', { name: '自动提交 ↵', exact: true }).click();
   await expect(page.locator('.pending-strip')).toContainText('预约 A 提交');
   await page.getByRole('button', { name: '▶ 继续比赛', exact: true }).click();
   await expect(page.locator('.table-cards .game-card')).toHaveCount(4);
@@ -281,6 +281,42 @@ test('paused play moves cards immediately, freezes their timers and submits afte
   expect(after.match.problems[0].attempts).toHaveLength(1);
   expect(after.match.problems[0].submitQueued).toBe(false);
   await page.screenshot({ path: 'test-results/match.png', fullPage: true });
+});
+
+test('automatic submission survives reload and switching and waits for all cards', async ({ page }) => {
+  const profile = createTestProfile();
+  const match = startMatch(profile, 'school', 222);
+  match.hand = [{ uid: 'auto-first', cardId: 'enumerate' }, { uid: 'auto-last', cardId: 'binary-search' }];
+  match.problems[0].readProgress = match.problems[0].readTime;
+  match.problems[0].difficulty = 3500;
+  await page.clock.install();
+  await page.goto('/');
+  await page.evaluate(([key, value]) => localStorage.setItem(key, value), [storageKey, JSON.stringify({ profile, match, result: null, openedPack: null })]);
+  await page.reload();
+  await page.getByRole('button', { name: '▶ 继续比赛', exact: true }).click();
+  for (const card of match.hand) await page.locator(`.hand-cards [data-card-uid="${card.uid}"]`).click();
+  await page.getByRole('button', { name: '出牌 →', exact: true }).click();
+  const autoSubmit = page.getByRole('button', { name: '自动提交 ↵', exact: true });
+  await expect(autoSubmit).toBeEnabled();
+  await elapsed(page, 3);
+  await autoSubmit.click();
+  await expect(autoSubmit).toBeDisabled();
+  expect((await state(page)).match.problems[0].submitQueued).toBe(true);
+  await expect(page.locator('.table-bottom')).toContainText('已设为自动提交');
+  await page.reload();
+  await expect(autoSubmit).toBeDisabled();
+  await page.locator('.problem-button').nth(1).click();
+  await page.getByRole('button', { name: '▶ 继续比赛', exact: true }).click();
+  await elapsed(page, 5);
+  expect((await state(page)).match.problems[0].attempts).toHaveLength(0);
+  await elapsed(page, 1);
+  const after = (await state(page)).match;
+  expect(after.currentProblem).toBe(1);
+  expect(after.problems[0].attempts).toHaveLength(1);
+  expect(after.problems[0].attempts[0].time).toBe(9);
+  expect(after.problems[0].submitQueued).toBe(false);
+  await elapsed(page, 20);
+  expect((await state(page)).match.problems[0].attempts).toHaveLength(1);
 });
 
 test('switching keeps independent reading progress and opponents keep moving', async ({ page }) => {
@@ -447,6 +483,7 @@ test('WA requires a changed table before another submission', async ({ page }) =
   await expect(page.getByRole('button', { name: '提交 ↵', exact: true })).toBeDisabled();
   await page.locator('.hand-cards .game-card').first().click();
   await page.getByRole('button', { name: '出牌 →', exact: true }).click();
+  await expect(page.getByRole('button', { name: '自动提交 ↵', exact: true })).toBeEnabled();
   await elapsed(page, 7);
   await expect(page.getByRole('button', { name: '提交 ↵', exact: true })).toBeEnabled();
   await page.getByRole('button', { name: '提交 ↵', exact: true }).click();

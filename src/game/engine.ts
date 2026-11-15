@@ -112,11 +112,15 @@ export function tableScore(match: Match, problemIndex = match.currentProblem): n
   return Math.floor(sum * (100 + multiplier) / 100);
 }
 
-export function canSubmit(match: Match, problemIndex = match.currentProblem): boolean {
+export function canQueueSubmit(match: Match, problemIndex = match.currentProblem): boolean {
   const problem = match.problems[problemIndex];
   return match.status === 'playing' && match.time < MATCH_DURATION && problem.acTime === null &&
-    problem.readProgress >= problem.readTime && problem.table.length > 0 && problem.table.every(card => card.active) &&
+    problem.readProgress >= problem.readTime && problem.table.length > 0 &&
     problem.waRevision !== problem.revision;
+}
+
+export function canSubmit(match: Match, problemIndex = match.currentProblem): boolean {
+  return canQueueSubmit(match, problemIndex) && match.problems[problemIndex].table.every(card => card.active);
 }
 
 // 800 at equal score, 950 at +400, capped at 980 (per thousand).
@@ -125,7 +129,7 @@ export function acceptanceChance(score: number, difficulty: number): number {
 }
 
 function submit(match: Match, index: number) {
-  if (index !== match.currentProblem || !canSubmit(match, index)) return false;
+  if (!canSubmit(match, index)) return false;
   const problem = match.problems[index];
   const score = tableScore(match, index);
   const accepted = random(match) < acceptanceChance(score, problem.difficulty);
@@ -176,8 +180,7 @@ function runAction(match: Match, action: Action, scheduled = false) {
       break;
     }
     case 'submit':
-      if (scheduled) problem.submitQueued = true;
-      else submit(match, index);
+      if (scheduled || (index === match.currentProblem && canQueueSubmit(match, index))) problem.submitQueued = true;
       break;
   }
 }
@@ -232,7 +235,9 @@ function activate(match: Match, instance: TableCard) {
 }
 
 function executeQueuedSubmission(match: Match) {
-  if (match.problems[match.currentProblem].submitQueued && canSubmit(match)) submit(match, match.currentProblem);
+  match.problems.forEach((problem, index) => {
+    if (problem.submitQueued) submit(match, index);
+  });
 }
 
 function drawCard(match: Match) {
