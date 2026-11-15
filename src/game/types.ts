@@ -7,7 +7,8 @@ export interface TableCard extends CardInstance {
   active: boolean;
   dice?: number;
 }
-export interface Attempt { time: number; result: 'AC' | 'WA'; score: number }
+export type Verdict = 'AC' | 'WA' | 'TLE' | 'MLE' | 'RE';
+export interface Attempt { time: number; result: 'AC' | 'WA'; verdict?: Verdict; score: number }
 export interface Problem {
   id: string;
   label: string;
@@ -59,7 +60,7 @@ export interface Match {
   opponents: Opponent[];
   pendingActions: Action[];
   randomState: number;
-  feedback: { id: number; problem: number; result: 'AC' | 'WA'; text: string } | null;
+  feedback: { id: number; problem: number; result: 'AC' | 'WA'; verdict?: Verdict; text: string } | null;
 }
 export interface Pack { id: string; eventId: string; guarantee: number }
 export interface Standing {
