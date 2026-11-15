@@ -18,6 +18,7 @@ export interface EventDefinition {
   name: string;
   shortName: string;
   kind: 'main' | 'side';
+  teams: number;
   problems: number;
   minDifficulty: number;
   maxDifficulty: number;

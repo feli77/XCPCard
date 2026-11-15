@@ -79,7 +79,7 @@ export function startMatch(profile: Profile, eventId: string, randomSeed = seed(
     revision: 0, waRevision: null, submitQueued: false,
   }));
   const deck = shuffle(profile.deck.map((cardId, i) => ({ uid: `card-${i}`, cardId })), rng);
-  const opponentNames = shuffle(teamNames, rng).slice(0, 19);
+  const opponentNames = shuffle(teamNames, rng).slice(0, event.teams - 1);
   const opponents: Opponent[] = opponentNames.map((name, i) => {
     const preference = categories[Math.floor(random(rng) * categories.length)];
     const strength = event.minDifficulty + 50 + (event.maxDifficulty - event.minDifficulty) * random(rng) * 0.9;

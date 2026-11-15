@@ -105,6 +105,7 @@ export function Lobby({
                     : mainEvent?.description}
               </p>
               <div className="ticket-facts">
+                <span><b>{playing ? match.opponents.length + 1 : mainEvent?.teams || 40}</b> 支队伍</span>
                 <span>
                   <b>
                     {playing
@@ -206,7 +207,7 @@ export function Lobby({
                         ? "本季已参加"
                         : profile.mainIndex === 0
                           ? "校赛后开放"
-                          : `保底${rarities[event.guarantee].name}卡 · 不影响主线资格`}
+                          : `${event.teams} 队 · 保底${rarities[event.guarantee].name}卡 · 不影响主线资格`}
                     </small>
                   </span>
                   <b>→</b>

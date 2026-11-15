@@ -48,6 +48,8 @@ describe('比赛时间、读题与队列', () => {
     for (const event of events) {
       const game = startMatch(createProfile(), event.id, 777);
       expect(game.problems).toHaveLength(event.problems);
+      expect(game.opponents).toHaveLength(event.teams - 1);
+      expect(new Set(game.opponents.map(team => team.name)).size).toBe(event.teams - 1);
       expect(game.problems.every(p => p.difficulty >= event.minDifficulty && p.difficulty <= event.maxDifficulty && Number.isInteger(p.readTime) && p.readTime >= 2 && p.readTime <= 5)).toBe(true);
       expect(game.problems.map(p => p.difficulty)).not.toEqual(game.problems.map(p => p.difficulty).sort((a, b) => a - b));
     }
