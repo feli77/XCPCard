@@ -63,7 +63,7 @@ test('contest speed switches between 1x, 2x and 4x and respects pause', async ({
   expect((await state(page)).match.time).toBe(300);
   await expect(slider).toBeDisabled();
   await page.getByRole('button', { name: '领取卡包 →', exact: true }).click();
-  await page.getByRole('button', { name: '赛事大厅', exact: true }).click();
+  await page.getByRole('button', { name: '大厅', exact: true }).click();
   await page.getByRole('button', { name: '开启下一季' }).click();
   await page.getByRole('button', { name: '参加比赛' }).click();
   await expect(slider).toHaveAttribute('aria-valuetext', '1x');
@@ -139,13 +139,13 @@ test('lobby and deck edits allow fewer cards and obey owned copies and the 32-ca
   await page.goto('/');
   await expect(page.getByRole('heading', { name: /下一站，校赛/ })).toBeVisible();
   await page.screenshot({ path: 'test-results/lobby.png', fullPage: true });
-  await page.getByRole('button', { name: '我的卡组', exact: true }).click();
+  await page.getByRole('button', { name: '收藏', exact: true }).click();
   await page.locator('.deck-slots button').filter({ hasText: '枚举' }).click();
   await expect(page.locator('.deck-count')).toHaveText('23 / 32');
   await expect(page.locator('.deck-state')).toHaveText('■ 可以参赛');
-  await page.getByRole('button', { name: '赛事大厅', exact: true }).click();
+  await page.getByRole('button', { name: '大厅', exact: true }).click();
   await expect(page.getByRole('button', { name: '参加比赛' })).toBeEnabled();
-  await page.getByRole('button', { name: '我的卡组', exact: true }).click();
+  await page.getByRole('button', { name: '收藏', exact: true }).click();
   await page.locator('.collection-cards').getByRole('button', { name: /^枚举，/ }).click();
   await expect(page.locator('.deck-count')).toHaveText('24 / 32');
   await expect(page.locator('.collection-item').filter({ hasText: '枚举' })).toContainText('已带 2 / 2');
@@ -181,7 +181,7 @@ for (const count of [0, 1, 23]) {
 
 test('collection drag and drop moves one copy in either direction and persists the deck', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: '我的卡组', exact: true }).click();
+  await page.getByRole('button', { name: '收藏', exact: true }).click();
   const before = await state(page);
   const deckCard = page.locator('.deck-slots button').filter({ hasText: '枚举' });
   const collectionCard = page.locator('.collection-cards').getByRole('button', { name: /^枚举，/ });
@@ -207,7 +207,7 @@ test('collection drag and drop respects deck capacity and owned copies', async (
   await page.goto('/');
   await page.evaluate(([key, value]) => localStorage.setItem(key, value), [storageKey, JSON.stringify({ profile, match: null, result: null, openedPack: null })]);
   await page.reload();
-  await page.getByRole('button', { name: '我的卡组', exact: true }).click();
+  await page.getByRole('button', { name: '收藏', exact: true }).click();
   const before = await state(page);
   const deck = page.locator('.deck-editor .section-heading');
   const collectionCard = page.locator('.collection-cards').getByRole('button', { name: /^枚举，/ });
@@ -226,7 +226,7 @@ test('collection drag and drop respects deck capacity and owned copies', async (
 
 test('collection drags within the same area or outside both areas leave the deck unchanged', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: '我的卡组', exact: true }).click();
+  await page.getByRole('button', { name: '收藏', exact: true }).click();
   const before = await state(page);
   const deckCard = page.locator('.deck-slots button').filter({ hasText: '枚举' });
   await page.locator('.collection-cards').getByRole('button', { name: /^枚举，/ }).dragTo(page.locator('.collection-toolbar h3'));
@@ -244,7 +244,7 @@ test('collection drag and drop supports adding to and removing the last card fro
   await page.goto('/');
   await page.evaluate(([key, value]) => localStorage.setItem(key, value), [storageKey, JSON.stringify({ profile, match: null, result: null, openedPack: null })]);
   await page.reload();
-  await page.getByRole('button', { name: '我的卡组', exact: true }).click();
+  await page.getByRole('button', { name: '收藏', exact: true }).click();
   await page.locator('.collection-cards').getByRole('button', { name: /^枚举，/ }).dragTo(page.locator('.deck-editor .empty-copy'));
   await expect(page.locator('.deck-count')).toHaveText('1 / 32');
   await expect(page.locator('.deck-slots button')).toHaveCount(1);
@@ -418,7 +418,7 @@ test('finish, claim reward, reveal one card, reload, reveal rest and start next 
   expect(count((await state(page)).profile)).toBe(29);
   await page.screenshot({ path: 'test-results/opened-pack.png', fullPage: true, animations: 'disabled' });
   await page.getByRole('button', { name: '收好，下一包。 →', exact: true }).click();
-  await page.getByRole('button', { name: '赛事大厅', exact: true }).click();
+  await page.getByRole('button', { name: '大厅', exact: true }).click();
   await page.getByRole('button', { name: '开启下一季' }).click();
   const next = await state(page);
   expect(next.profile.season).toBe(2027);

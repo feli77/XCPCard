@@ -10,7 +10,7 @@ async function openHonors(page: Page, profile: Profile) {
     }
   }, profile);
   await page.goto('/');
-  await page.getByRole('button', { name: '收藏', exact: true }).click();
+  await page.getByRole('button', { name: '成就', exact: true }).click();
   await expect(page.locator('.honors-page')).toBeVisible();
 }
 
@@ -87,14 +87,14 @@ test('collection totals, highest honor and history persist across seasons and re
 
   await page.screenshot({ path: 'test-results/honors-desktop.png', fullPage: true, animations: 'disabled' });
   await page.reload();
-  await page.getByRole('button', { name: '收藏', exact: true }).click();
+  await page.getByRole('button', { name: '成就', exact: true }).click();
   await expect(rows).toHaveCount(profile.history.length);
   await expect(highest).toContainText('铜牌');
   const savedHistory = await page.evaluate(() => JSON.parse(localStorage.getItem('xcpcard-save')!).profile.history);
   expect(savedHistory).toEqual(profile.history);
 
   await page.setViewportSize({ width: 1040, height: 844 });
-  await expect(page.getByRole('button', { name: '收藏', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: '成就', exact: true })).toBeVisible();
   await expect(highest).toBeVisible();
   await page.screenshot({ path: 'test-results/honors-compact.png', fullPage: true, animations: 'disabled' });
 });

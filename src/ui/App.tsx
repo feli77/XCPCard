@@ -194,7 +194,7 @@ export function App() {
         <button
           className="brand"
           onClick={() => navigate("lobby")}
-          aria-label="返回赛事大厅"
+          aria-label="返回大厅"
         >
           <span className="brand-icon">X</span>
           <strong>
@@ -206,10 +206,10 @@ export function App() {
           <nav>
             {(
               [
-                ["lobby", "赛事大厅"],
-                ["deck", "我的卡组"],
-                ["packs", "卡包仓库"],
-                ["honors", "收藏"],
+                ["lobby", "大厅"],
+                ["deck", "收藏"],
+                ["packs", "卡包"],
+                ["honors", "成就"],
               ] as const
             ).map(([key, label]) => (
               <button

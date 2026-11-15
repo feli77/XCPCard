@@ -31,7 +31,7 @@ for (const recordedSeasons of [false, true]) {
     expect(saved.match).toEqual({ ...match, paused: true });
     await page.getByRole('button', { name: '保存并离场' }).click();
     await expect(page.locator('.ticket-top')).toContainText('2028');
-    await page.getByRole('button', { name: '收藏', exact: true }).click();
+    await page.getByRole('button', { name: '成就', exact: true }).click();
     await expect(page.locator('.highest-honor')).toContainText('2027 赛季 EC-Final');
     await expect(page.locator('.highest-honor')).toContainText('银牌');
     await expect(page.locator('.history-table tbody tr').last()).toContainText('2026 赛季');

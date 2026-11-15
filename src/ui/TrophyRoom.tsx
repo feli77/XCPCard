@@ -12,7 +12,7 @@ export function TrophyRoom({ profile }: { profile: Profile }) {
   return <main className="honors-page">
     <div className="honors-heading">
       <span className="eyebrow">THE TROPHY ROOM</span>
-      <h1>收藏</h1>
+      <h1>成就</h1>
       <p>每一块奖牌，都有一场比赛的故事。</p>
     </div>
     <section className="highest-honor panel" aria-label="最高荣誉">

@@ -50,7 +50,7 @@ for (const zone of ['collection', 'deck', 'hand', 'table'] as const) {
     if (zone === 'hand' || zone === 'table') await matchFixture(page, zone === 'table' ? 2 : 0);
     else {
       await load(page);
-      await page.getByRole('button', { name: '我的卡组', exact: true }).click();
+      await page.getByRole('button', { name: '收藏', exact: true }).click();
     }
     const source = page.locator({
       collection: '.collection-cards .game-card',
@@ -117,7 +117,7 @@ async function expectPosition(locator: Locator, expected: { x: number; y: number
 
 test('collection lifts the original card while keeping its grid position and restores it on cancel', async ({ page }) => {
   await load(page);
-  await page.getByRole('button', { name: '我的卡组', exact: true }).click();
+  await page.getByRole('button', { name: '收藏', exact: true }).click();
   const slots = page.locator('.collection-item');
   const source = slots.nth(0).locator('.game-card');
   const original = await source.elementHandle();
@@ -147,7 +147,7 @@ test('deck entry becomes a full card and the next entry fills its position after
   const profile = createTestProfile();
   profile.deck = ['enumerate', 'quick-sort', 'two-pointers'];
   await load(page, profile);
-  await page.getByRole('button', { name: '我的卡组', exact: true }).click();
+  await page.getByRole('button', { name: '收藏', exact: true }).click();
   const source = page.locator('.deck-entry').filter({ hasText: '枚举' });
   const next = page.locator('.deck-entry').filter({ hasText: '快速排序' });
   const initialTop = (await source.boundingBox())!.y;
@@ -174,7 +174,7 @@ test('a collection drop adds exactly one copy and an ordinary click still adds a
   const profile = createTestProfile();
   profile.deck = [];
   await load(page, profile);
-  await page.getByRole('button', { name: '我的卡组', exact: true }).click();
+  await page.getByRole('button', { name: '收藏', exact: true }).click();
   const source = page.locator('.collection-cards').getByRole('button', { name: /^枚举，/ });
   await lift(page, source);
   await releaseOn(page, page.locator('.deck-editor .section-heading'));

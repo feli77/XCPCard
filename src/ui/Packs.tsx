@@ -25,7 +25,7 @@ export function Packs({ profile, onOpen, onContest }: PacksProps) {
         <div>
           <span className="eyebrow">A LITTLE RANDOMNESS</span>
           <h1>
-            卡包仓库 <small>{profile.packs.length} 包</small>
+            卡包 <small>{profile.packs.length} 包</small>
           </h1>
           <p>{uiText.packs.description}</p>
         </div>
