@@ -73,7 +73,7 @@ describe('比赛时间、读题与队列', () => {
     expect(hasInversion).toBe(true);
     expect(startMatch(createProfile(), 'school', 1234).problems).toEqual(startMatch(createProfile(), 'school', 1234).problems);
   });
-  it('读题前不能打牌；切题仅暂停当前题局部时间', () => {
+  it('读题前不能打牌；切题暂停原题读题进度', () => {
     let game = match();
     const hand = game.hand.map(card => card.uid);
     game = act(game, { type: 'play', uids: hand });
@@ -87,7 +87,7 @@ describe('比赛时间、读题与队列', () => {
     game = advanceMatch(game, 20);
     expect(game.problems[0].readProgress).toBe(game.problems[0].readTime);
   });
-  it('算法与技巧严格串行，完成后才计分，暂停题目队列保留进度', () => {
+  it('算法与技巧严格串行，完成后才计分，切题后继续生效', () => {
     let game = withHand(match(), ['enumerate', 'template', 'binary-search']);
     ready(game);
     game.problems[0].categories = ['基础算法'];
@@ -96,15 +96,34 @@ describe('比赛时间、读题与队列', () => {
     expect(tableScore(game)).toBe(0);
     expect(game.problems[0].table[1].progress).toBe(0);
     game = act(game, { type: 'switch', problem: 1 });
-    game = advanceMatch(game, 20);
-    expect(game.problems[0].table[0].progress).toBe(3);
-    game = act(game, { type: 'switch', problem: 0 });
     game = advanceMatch(game, 1);
+    expect(game.problems[0].table[0].active).toBe(true);
+    game = act(game, { type: 'switch', problem: 0 });
     expect(tableScore(game)).toBe(300);
     game = advanceMatch(game, 3);
     expect(tableScore(game)).toBe(360);
     game = advanceMatch(game, 5);
     expect(tableScore(game)).toBe(840);
+  });
+  it('各题队列独立推进，后台技巧生效后影响后续卡牌，暂停冻结所有题目', () => {
+    let game = withHand(match(), ['coffee', 'enumerate', 'enumerate', 'binary-search']);
+    ready(game);
+    ready(game, 1);
+    game = act(game, { type: 'play', uids: ['test-0', 'test-1'] });
+    game = act(game, { type: 'switch', problem: 1 });
+    game = act(game, { type: 'play', uids: ['test-2', 'test-3'] });
+    game = advanceMatch(game, 2);
+    expect(game.problems[0].table[0].active).toBe(true);
+    expect(game.globalEffects.coffee).toBeDefined();
+    game = setPaused(game, true);
+    expect(advanceMatch(game, 20)).toBe(game);
+    game = setPaused(game, false);
+    expect(game.problems[0].table[1].duration).toBe(3);
+    expect(game.problems[1].table[0].duration).toBe(4);
+    const whole = advanceMatch(game, 12);
+    for (let i = 0; i < 12; i++) game = advanceMatch(game, 1);
+    expect(game).toEqual(whole);
+    expect(game.problems.slice(0, 2).every(problem => problem.table.every(card => card.active))).toBe(true);
   });
   it('每题牌桌最多5张，超额出牌整批保留在手牌，弃牌后释放空位', () => {
     let game = withHand(match(), Array(8).fill('enumerate'));
@@ -271,15 +290,18 @@ describe('得分与技巧效果', () => {
     game = advanceMatch(game, 1);
     expect(game.problems[0].table[1]).toMatchObject({ duration: 3, progress: 1 });
     game = act(game, { type: 'switch', problem: 1 });
-    game = advanceMatch(game, 70);
-    expect(game.globalEffects.coffee).toBeUndefined();
-    game = act(game, { type: 'switch', problem: 0 });
-    game = advanceMatch(game, 2);
+    game = advanceMatch(game, 3.5);
     expect(game.problems[0].table[1].active).toBe(true);
-    game = advanceMatch(game, 2);
-    expect(game.globalEffects.coffee?.expiresAt).toBe(137);
+    expect(game.globalEffects.coffee?.expiresAt).toBe(66.5);
     game = advanceMatch(game, 0.5);
     expect(game.problems[0].table[3].duration).toBe(3.75);
+    game = advanceMatch(game, 58.5);
+    game = act(game, { type: 'switch', problem: 0 });
+    game.hand = [{ uid: 'late-card', cardId: 'binary-search' }];
+    game = act(game, { type: 'play', uids: ['late-card'] });
+    game = advanceMatch(game, 2);
+    expect(game.globalEffects.coffee).toBeUndefined();
+    expect(game.problems[0].table[4]).toMatchObject({ duration: 3.75, progress: 2, active: false });
   });
   it('咖啡生效后留桌，同名刷新不叠加，移出牌桌不影响持续效果', () => {
     let game = withHand(match(), ['coffee', 'coffee']);
@@ -450,6 +472,56 @@ describe('暂停预排、判题与罚时', () => {
     expect(game.problems[1].table.map(card => card.uid)).toEqual(['test-0']);
     expect(game.problems[0]).toEqual(submitted);
   });
+  it('自动提交等待各题全部卡牌生效，切题后按完成时间各提交一次', () => {
+    let game = withHand(match(), ['enumerate', 'binary-search', 'enumerate']);
+    ready(game);
+    ready(game, 1);
+    game.problems[0].difficulty = game.problems[1].difficulty = 100000;
+    game = act(game, { type: 'play', uids: ['test-0', 'test-1'] });
+    expect(canSubmit(game)).toBe(false);
+    game = act(game, { type: 'submit' });
+    expect(game.problems[0].submitQueued).toBe(true);
+    expect(game.problems[0].attempts).toHaveLength(0);
+    game = advanceMatch(game, 1);
+    game = act(game, { type: 'switch', problem: 1 });
+    game = act(game, { type: 'play', uids: ['test-2'] });
+    game = act(game, { type: 'submit' });
+    game = advanceMatch(game, 3);
+    expect(game.problems.slice(0, 2).every(problem => !problem.attempts.length)).toBe(true);
+    game = advanceMatch(game, 1);
+    expect(game.problems[1].judging?.attempt).toMatchObject({ time: 5, result: 'WA' });
+    expect(game.problems[1].attempts).toHaveLength(0);
+    expect(game.problems[0].attempts).toHaveLength(0);
+    game = advanceMatch(game, 4);
+    expect(game.problems[0].judging?.attempt).toMatchObject({ time: 9, result: 'WA' });
+    expect(game.problems[0].attempts).toHaveLength(0);
+    expect(game.problems.slice(0, 2).every(problem => !problem.submitQueued)).toBe(true);
+    game = act(game, { type: 'submit' });
+    game = advanceJudging(game, 5000);
+    expect(game.problems[0].attempts[0]).toMatchObject({ time: 9, result: 'WA' });
+    expect(game.problems[1].attempts[0]).toMatchObject({ time: 5, result: 'WA' });
+    game = advanceMatch(game, 20);
+    game = advanceJudging(game, 5000);
+    expect(game.problems.slice(0, 2).every(problem => problem.attempts.length === 1)).toBe(true);
+  });
+  it('自动提交按最新牌桌等待，追加卡牌延后提交，弃掉未生效卡后可立即提交', () => {
+    let game = withHand(match(), ['enumerate', 'binary-search']);
+    ready(game);
+    game.problems[0].difficulty = 100000;
+    game = act(game, { type: 'play', uids: ['test-0'] });
+    game = act(game, { type: 'submit' });
+    game = advanceMatch(game, 2);
+    game = act(game, { type: 'play', uids: ['test-1'] });
+    game = advanceMatch(game, 2);
+    expect(game.problems[0].attempts).toHaveLength(0);
+    expect(game.problems[0].submitQueued).toBe(true);
+    game = act(game, { type: 'discard-table', uids: ['test-1'] });
+    expect(game.problems[0].judging?.attempt).toMatchObject({ time: 4, result: 'WA' });
+    expect(game.problems[0].attempts).toHaveLength(0);
+    game = advanceJudging(game, 5000);
+    expect(game.problems[0].attempts[0]).toMatchObject({ time: 4, result: 'WA' });
+    expect(game.problems[0].submitQueued).toBe(false);
+  });
   it('暂停立即出牌并冻结计时，恢复后提交预约等待当前题准备好仅执行一次', () => {
     let game = withHand(match(), ['enumerate']);
     ready(game);
@@ -537,7 +609,7 @@ describe('暂停预排、判题与罚时', () => {
     expect(game.problems[1].table.map(card => card.uid)).toEqual(['test-1']);
     expect(game.discard.map(card => card.uid)).toEqual(['test-0', 'test-2']);
   });
-  it('预约随题保存，题目非当前不提交；恢复队列顺序执行', () => {
+  it('预约随题保存，恢复后切到别题仍自动提交且只执行一次', () => {
     let game = withHand(match(), ['enumerate']);
     ready(game);
     game.problems[0].difficulty = 100000;
@@ -546,11 +618,17 @@ describe('暂停预排、判题与罚时', () => {
     game = act(game, { type: 'submit' });
     game = act(game, { type: 'switch', problem: 1 });
     game = setPaused(game, false);
-    game = advanceMatch(game, 20);
+    game = advanceMatch(game, 3);
     expect(game.problems[0].attempts).toHaveLength(0);
-    game = act(game, { type: 'switch', problem: 0 });
-    game = advanceMatch(game, 4);
+    game = advanceMatch(game, 1);
+    expect(game.problems[0].judging?.attempt.time).toBe(4);
+    expect(game.problems[0].attempts).toHaveLength(0);
     game = advanceJudging(game, 5000);
+    expect(game.problems[0].attempts).toHaveLength(1);
+    expect(game.problems[0].attempts[0].time).toBe(4);
+    expect(game.currentProblem).toBe(1);
+    expect(game.problems[0].submitQueued).toBe(false);
+    game = advanceMatch(game, 20);
     expect(game.problems[0].attempts).toHaveLength(1);
   });
   it('预约提交在恢复时重新检查即时弃牌后的牌桌', () => {
@@ -624,11 +702,14 @@ describe('赛季、组卡与开包', () => {
     expect(profile.packs.every(pack => pack.eventId === 'starter' && pack.guarantee === 0)).toBe(true);
     expect(nextSeason(profile)).toBe(profile);
   });
-  it('组卡不超过收藏或24张，允许实际持有的同名复数', () => {
+  it('组卡不超过收藏或32张，允许实际持有的同名复数', () => {
     const profile = profileWithDeck();
     expect(setDeck(profile, ['enumerate', 'enumerate']).deck).toHaveLength(2);
     expect(setDeck(profile, ['enumerate', 'enumerate', 'enumerate'])).toBe(profile);
     expect(setDeck(profile, [...profile.deck, 'enumerate'])).toBe(profile);
+    profile.collection.enumerate = 33;
+    expect(setDeck(profile, Array(32).fill('enumerate')).deck).toHaveLength(32);
+    expect(setDeck(profile, Array(33).fill('enumerate'))).toBe(profile);
   });
   it('零AC结束赛季，结算仅发一次奖励；新赛季保留收藏和卡组', () => {
     const profile = createProfile();

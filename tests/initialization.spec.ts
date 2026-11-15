@@ -37,9 +37,9 @@ test('new players receive eight packs and opening cards persists without grantin
   expect(collectionSize((await state(page)).profile)).toBe(5);
   await page.getByRole('button', { name: '收好，下一包。 →', exact: true }).click();
   await page.getByRole('button', { name: '我的卡组', exact: true }).click();
-  await expect(page.locator('.deck-count')).toHaveText('0 / 24');
+  await expect(page.locator('.deck-count')).toHaveText('0 / 32');
   await page.locator('.collection-cards .game-card').first().click();
-  await expect(page.locator('.deck-count')).toHaveText('1 / 24');
+  await expect(page.locator('.deck-count')).toHaveText('1 / 32');
   const assembled = (await state(page)).profile;
   await page.reload();
   expect((await state(page)).profile).toEqual(assembled);

@@ -132,7 +132,7 @@ test('screen-edge countdown follows contest time, pause, warning thresholds and 
   await expect(page.locator('.result-modal')).toBeVisible();
 });
 
-test('lobby and deck edits allow fewer cards and obey owned copies and the 24-card limit', async ({ page }) => {
+test('lobby and deck edits allow fewer cards and obey owned copies and the 32-card limit', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', e => errors.push(e.message));
   await page.goto('/');
@@ -140,13 +140,13 @@ test('lobby and deck edits allow fewer cards and obey owned copies and the 24-ca
   await page.screenshot({ path: 'test-results/lobby.png', fullPage: true });
   await page.getByRole('button', { name: '我的卡组', exact: true }).click();
   await page.locator('.deck-slots button').filter({ hasText: '枚举' }).click();
-  await expect(page.locator('.deck-count')).toHaveText('23 / 24');
+  await expect(page.locator('.deck-count')).toHaveText('23 / 32');
   await expect(page.locator('.deck-state')).toHaveText('■ 可以参赛');
   await page.getByRole('button', { name: '赛事大厅', exact: true }).click();
   await expect(page.getByRole('button', { name: '参加比赛' })).toBeEnabled();
   await page.getByRole('button', { name: '我的卡组', exact: true }).click();
   await page.locator('.collection-cards').getByRole('button', { name: /^枚举，/ }).click();
-  await expect(page.locator('.deck-count')).toHaveText('24 / 24');
+  await expect(page.locator('.deck-count')).toHaveText('24 / 32');
   await expect(page.locator('.collection-item').filter({ hasText: '枚举' })).toContainText('已带 2 / 2');
   await page.locator('.collection-cards').getByRole('button', { name: /^枚举，/ }).click();
   expect((await state(page)).profile.deck).toHaveLength(24);
@@ -185,12 +185,12 @@ test('collection drag and drop moves one copy in either direction and persists t
   const deckCard = page.locator('.deck-slots button').filter({ hasText: '枚举' });
   const collectionCard = page.locator('.collection-cards').getByRole('button', { name: /^枚举，/ });
   await deckCard.dragTo(page.locator('.collection-library'), { targetPosition: { x: 10, y: 10 } });
-  await expect(page.locator('.deck-count')).toHaveText('23 / 24');
+  await expect(page.locator('.deck-count')).toHaveText('23 / 32');
   await expect(deckCard.locator('b')).toHaveText('×1');
   await expect(collectionCard.locator('.card-count')).toHaveText('×2');
   expect((await state(page)).profile.collection).toEqual(before.profile.collection);
   await collectionCard.dragTo(page.locator('.deck-editor .section-heading'));
-  await expect(page.locator('.deck-count')).toHaveText('24 / 24');
+  await expect(page.locator('.deck-count')).toHaveText('24 / 32');
   await expect(deckCard.locator('b')).toHaveText('×2');
   await expect(page.locator('.collection-item').filter({ hasText: '枚举' })).toContainText('已带 2 / 2');
   const after = await state(page);
@@ -200,7 +200,12 @@ test('collection drag and drop moves one copy in either direction and persists t
 });
 
 test('collection drag and drop respects deck capacity and owned copies', async ({ page }) => {
+  const profile = createTestProfile();
+  profile.deck.push(...Array(8).fill('enumerate'));
+  profile.collection.enumerate += 8;
   await page.goto('/');
+  await page.evaluate(([key, value]) => localStorage.setItem(key, value), [storageKey, JSON.stringify({ profile, match: null, result: null, openedPack: null })]);
+  await page.reload();
   await page.getByRole('button', { name: '我的卡组', exact: true }).click();
   const before = await state(page);
   const deck = page.locator('.deck-editor .section-heading');
@@ -209,13 +214,13 @@ test('collection drag and drop respects deck capacity and owned copies', async (
   await expect(page.getByRole('status')).toHaveText('卡组已满，先移出一张。');
   expect((await state(page)).profile.deck).toEqual(before.profile.deck);
   await page.locator('.deck-slots button').filter({ hasText: '枚举' }).dragTo(page.locator('.collection-library'), { targetPosition: { x: 10, y: 10 } });
-  await expect(page.locator('.deck-count')).toHaveText('23 / 24');
+  await expect(page.locator('.deck-count')).toHaveText('31 / 32');
   const reducedDeck = (await state(page)).profile.deck;
   await page.locator('.collection-cards').getByRole('button', { name: /^快速排序，/ }).dragTo(deck);
   await expect(page.getByRole('status')).toHaveText('这张卡已经全部带上了。');
   expect((await state(page)).profile.deck).toEqual(reducedDeck);
   await collectionCard.dragTo(deck);
-  await expect(page.locator('.deck-count')).toHaveText('24 / 24');
+  await expect(page.locator('.deck-count')).toHaveText('32 / 32');
 });
 
 test('collection drags within the same area or outside both areas leave the deck unchanged', async ({ page }) => {
@@ -229,7 +234,7 @@ test('collection drags within the same area or outside both areas leave the deck
   expect((await state(page)).profile.deck).toEqual(before.profile.deck);
   await deckCard.dragTo(page.locator('.header-meta'));
   expect((await state(page)).profile.deck).toEqual(before.profile.deck);
-  await expect(page.locator('.deck-count')).toHaveText('24 / 24');
+  await expect(page.locator('.deck-count')).toHaveText('24 / 32');
 });
 
 test('collection drag and drop supports adding to and removing the last card from an empty deck', async ({ page }) => {
@@ -240,10 +245,10 @@ test('collection drag and drop supports adding to and removing the last card fro
   await page.reload();
   await page.getByRole('button', { name: '我的卡组', exact: true }).click();
   await page.locator('.collection-cards').getByRole('button', { name: /^枚举，/ }).dragTo(page.locator('.deck-editor .empty-copy'));
-  await expect(page.locator('.deck-count')).toHaveText('1 / 24');
+  await expect(page.locator('.deck-count')).toHaveText('1 / 32');
   await expect(page.locator('.deck-slots button')).toHaveCount(1);
   await page.locator('.deck-slots button').dragTo(page.locator('.collection-library'), { targetPosition: { x: 10, y: 10 } });
-  await expect(page.locator('.deck-count')).toHaveText('0 / 24');
+  await expect(page.locator('.deck-count')).toHaveText('0 / 32');
   await expect(page.locator('.deck-editor .empty-copy')).toBeVisible();
   expect((await state(page)).profile.collection).toEqual(profile.collection);
 });
@@ -266,7 +271,7 @@ test('paused play moves cards immediately, freezes their timers and submits afte
   await expect(page.locator('.table-cards .game-card')).toHaveCount(4);
   await elapsed(page, 12);
   expect((await state(page)).match).toEqual(played);
-  await page.getByRole('button', { name: '预约提交 ↵', exact: true }).click();
+  await page.getByRole('button', { name: '自动提交 ↵', exact: true }).click();
   await expect(page.locator('.pending-strip')).toContainText('预约 A 提交');
   await page.getByRole('button', { name: '▶ 继续比赛', exact: true }).click();
   await expect(page.locator('.table-cards .game-card')).toHaveCount(4);
@@ -275,6 +280,48 @@ test('paused play moves cards immediately, freezes their timers and submits afte
   expect(after.match.problems[0].attempts).toHaveLength(1);
   expect(after.match.problems[0].submitQueued).toBe(false);
   await page.screenshot({ path: 'test-results/match.png', fullPage: true });
+});
+
+test('automatic submission survives reload and switching and waits for all cards', async ({ page }) => {
+  const profile = createTestProfile();
+  const match = startMatch(profile, 'school', 222);
+  match.hand = [{ uid: 'auto-first', cardId: 'enumerate' }, { uid: 'auto-last', cardId: 'binary-search' }];
+  match.problems[0].readProgress = match.problems[0].readTime;
+  match.problems[0].difficulty = 3500;
+  await page.clock.install();
+  await page.goto('/');
+  await page.evaluate(([key, value]) => localStorage.setItem(key, value), [storageKey, JSON.stringify({ profile, match, result: null, openedPack: null })]);
+  await page.reload();
+  await page.getByRole('button', { name: '▶ 继续比赛', exact: true }).click();
+  for (const card of match.hand) await page.locator(`.hand-cards [data-card-uid="${card.uid}"]`).click();
+  await page.getByRole('button', { name: '出牌 →', exact: true }).click();
+  const autoSubmit = page.getByRole('button', { name: '自动提交 ↵', exact: true });
+  await expect(autoSubmit).toBeEnabled();
+  await elapsed(page, 3);
+  await autoSubmit.click();
+  await expect(autoSubmit).toBeDisabled();
+  expect((await state(page)).match.problems[0].submitQueued).toBe(true);
+  await expect(page.locator('.table-bottom')).toContainText('已设为自动提交');
+  await page.reload();
+  await expect(autoSubmit).toBeDisabled();
+  await page.locator('.problem-button').nth(1).click();
+  await page.getByRole('button', { name: '▶ 继续比赛', exact: true }).click();
+  await elapsed(page, 5);
+  expect((await state(page)).match.problems[0].attempts).toHaveLength(0);
+  await elapsed(page, 1);
+  const judging = (await state(page)).match;
+  expect(judging.currentProblem).toBe(1);
+  expect(judging.problems[0].judging?.attempt.time).toBe(9);
+  expect(judging.problems[0].attempts).toHaveLength(0);
+  expect(judging.problems[0].submitQueued).toBe(false);
+  await elapsed(page, 5);
+  const after = (await state(page)).match;
+  expect(after.currentProblem).toBe(1);
+  expect(after.problems[0].attempts).toHaveLength(1);
+  expect(after.problems[0].attempts[0].time).toBe(9);
+  expect(after.problems[0].submitQueued).toBe(false);
+  await elapsed(page, 20);
+  expect((await state(page)).match.problems[0].attempts).toHaveLength(1);
 });
 
 test('switching keeps independent reading progress and opponents keep moving', async ({ page }) => {
@@ -307,6 +354,30 @@ test('drag hand card to table and table card to discard', async ({ page }) => {
   expect((await state(page)).match.discard.length).toBe(expectedDiscard);
   await page.locator('.hand-cards .game-card').first().dragTo(page.locator('.discard-pile'));
   expect((await state(page)).match.discard.length).toBe(expectedDiscard + 1);
+});
+
+test('cards keep resolving in order after switching problems and freeze while paused', async ({ page }) => {
+  await start(page);
+  await elapsed(page, 9);
+  const game = (await state(page)).match;
+  const cards = game.hand.filter((card: { cardId: string }) => cardById[card.cardId].type === 'algorithm').slice(0, 2);
+  for (const card of cards) await page.locator(`.hand-cards [data-card-uid="${card.uid}"]`).click();
+  await page.getByRole('button', { name: '出牌 →', exact: true }).click();
+  await elapsed(page, 1);
+  await page.locator('.problem-button').nth(1).click();
+  await elapsed(page, 1);
+  expect((await state(page)).match.problems[0].table.map((card: { progress: number }) => card.progress)).toEqual([2, 0]);
+  await page.getByRole('button', { name: 'Ⅱ 暂停', exact: true }).click();
+  const paused = (await state(page)).match;
+  await elapsed(page, 10);
+  expect((await state(page)).match).toEqual(paused);
+  await page.getByRole('button', { name: '▶ 继续比赛', exact: true }).click();
+  await elapsed(page, cards.reduce((sum: number, card: { cardId: string }) => sum + cardById[card.cardId].time, 0));
+  const resolved = (await state(page)).match.problems[0];
+  expect(resolved.table.every((card: { active: boolean }) => card.active)).toBe(true);
+  expect(resolved.attempts).toHaveLength(0);
+  await page.locator('.problem-button').first().click();
+  await expect(page.locator('.score-note')).toHaveText('2 / 2 张已生效');
 });
 
 test('reload freezes saved match and preserves cards, queue and per-problem progress', async ({ page }) => {
@@ -418,6 +489,7 @@ test('WA requires a changed table before another submission', async ({ page }) =
   await expect(page.getByRole('button', { name: '提交 ↵', exact: true })).toBeDisabled();
   await page.locator('.hand-cards .game-card').first().click();
   await page.getByRole('button', { name: '出牌 →', exact: true }).click();
+  await expect(page.getByRole('button', { name: '自动提交 ↵', exact: true })).toBeEnabled();
   await elapsed(page, 7);
   await expect(page.getByRole('button', { name: '提交 ↵', exact: true })).toBeEnabled();
   await page.getByRole('button', { name: '提交 ↵', exact: true }).click();

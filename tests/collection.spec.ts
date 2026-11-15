@@ -48,9 +48,9 @@ test('rarity filters show owned cards and combine with category filters', async 
   expect(saved.profile).toEqual(profile);
 
   await page.locator('.collection-cards .game-card').click();
-  await expect(page.locator('.deck-count')).toHaveText('1 / 24');
+  await expect(page.locator('.deck-count')).toHaveText('1 / 32');
   await page.locator('.deck-entry').click();
-  await expect(page.locator('.deck-count')).toHaveText('0 / 24');
+  await expect(page.locator('.deck-count')).toHaveText('0 / 32');
   await expect(names).toHaveText(['祖传模板']);
   await categoryFilter.getByRole('button', { name: '全部', exact: true }).click();
   await rarityFilter.getByRole('button', { name: '全部', exact: true }).click();

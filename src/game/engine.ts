@@ -5,7 +5,7 @@ import type { Action, CardInstance, Match, MatchResult, Opponent, Pack, Profile,
 export const MATCH_DURATION = 300;
 export const HAND_LIMIT = 8;
 export const TABLE_LIMIT = 5;
-export const DECK_SIZE = 24;
+export const DECK_SIZE = 32;
 export const cardById = Object.fromEntries(cards.map(card => [card.id, card]));
 const categories: Category[] = ['基础算法', '图论', '数学', 'DP', '数据结构', '字符串', '计算几何'];
 const mainEvents = events.filter(event => event.kind === 'main');
@@ -112,12 +112,16 @@ export function tableScore(match: Match, problemIndex = match.currentProblem): n
   return Math.floor(sum * (100 + multiplier) / 100);
 }
 
-export function canSubmit(match: Match, problemIndex = match.currentProblem): boolean {
+export function canQueueSubmit(match: Match, problemIndex = match.currentProblem): boolean {
   const problem = match.problems[problemIndex];
   return match.status === 'playing' && match.time < MATCH_DURATION && problem.acTime === null &&
     !problem.judging &&
-    problem.readProgress >= problem.readTime && problem.table.length > 0 && problem.table.every(card => card.active) &&
+    problem.readProgress >= problem.readTime && problem.table.length > 0 &&
     problem.waRevision !== problem.revision;
+}
+
+export function canSubmit(match: Match, problemIndex = match.currentProblem): boolean {
+  return canQueueSubmit(match, problemIndex) && match.problems[problemIndex].table.every(card => card.active);
 }
 
 // 800 at equal score, 950 at +400, capped at 980 (per thousand).
@@ -126,7 +130,7 @@ export function acceptanceChance(score: number, difficulty: number): number {
 }
 
 function submit(match: Match, index: number) {
-  if (index !== match.currentProblem || !canSubmit(match, index)) return false;
+  if (!canSubmit(match, index)) return false;
   const problem = match.problems[index];
   const score = tableScore(match, index);
   const accepted = random(match) < acceptanceChance(score, problem.difficulty);
@@ -206,8 +210,7 @@ function runAction(match: Match, action: Action, scheduled = false) {
     }
     case 'submit':
       if (problem.judging) break;
-      if (scheduled) problem.submitQueued = true;
-      else submit(match, index);
+      if (scheduled || (index === match.currentProblem && canQueueSubmit(match, index))) problem.submitQueued = true;
       break;
   }
 }
@@ -238,14 +241,14 @@ export function setPaused(match: Match, paused: boolean): Match {
       runAction(next, action, true);
       executeQueuedSubmission(next);
     }
-    startNextCard(next, next.currentProblem);
+    next.problems.forEach((_, index) => startNextCard(next, index));
     executeQueuedSubmission(next);
   }
   return next;
 }
 
 function startNextCard(match: Match, index: number) {
-  if (match.paused || index !== match.currentProblem) return;
+  if (match.paused) return;
   const card = match.problems[index].table.find(item => !item.active);
   if (!card || card.duration !== null) return;
   const coffee = match.globalEffects.coffee;
@@ -262,7 +265,9 @@ function activate(match: Match, instance: TableCard) {
 }
 
 function executeQueuedSubmission(match: Match) {
-  if (match.problems[match.currentProblem].submitQueued && canSubmit(match)) submit(match, match.currentProblem);
+  match.problems.forEach((problem, index) => {
+    if (problem.submitQueued) submit(match, index);
+  });
 }
 
 function drawCard(match: Match) {
@@ -300,13 +305,14 @@ export function advanceMatch(match: Match, minutes = 1): Match {
   const next = structuredClone(match);
   let remaining = Math.min(minutes, MATCH_DURATION - next.time);
   while (remaining > 0.000001) {
-    startNextCard(next, next.currentProblem);
+    next.problems.forEach((_, index) => startNextCard(next, index));
     const problem = next.problems[next.currentProblem];
-    const processing = problem.table.find(card => !card.active);
+    const processing = next.problems.map(problem => problem.table.find(card => !card.active))
+      .filter((card): card is TableCard => !!card && card.duration !== null);
     const drawInterval = next.globalEffects.draw && next.globalEffects.draw.expiresAt > next.time ? next.globalEffects.draw.interval : 4;
     const boundaries = [remaining, MATCH_DURATION - next.time];
     if (problem.acTime === null && problem.readProgress < problem.readTime) boundaries.push(problem.readTime - problem.readProgress);
-    if (processing?.duration !== null && processing) boundaries.push(processing.duration - processing.progress);
+    for (const card of processing) boundaries.push(card.duration! - card.progress);
     if (next.hand.length < HAND_LIMIT && (next.deck.length || next.discard.length)) boundaries.push(Math.max(0, drawInterval - next.drawProgress));
     for (const effect of Object.values(next.globalEffects)) if (effect.expiresAt > next.time) boundaries.push(effect.expiresAt - next.time);
     for (const team of next.opponents) {
@@ -316,12 +322,12 @@ export function advanceMatch(match: Match, minutes = 1): Match {
     next.time += dt;
     remaining -= dt;
     if (problem.acTime === null && problem.readProgress < problem.readTime) problem.readProgress = Math.min(problem.readTime, problem.readProgress + dt);
-    if (processing && processing.duration !== null) processing.progress = Math.min(processing.duration, processing.progress + dt);
+    for (const card of processing) card.progress = Math.min(card.duration!, card.progress + dt);
     next.drawProgress = next.hand.length < HAND_LIMIT ? next.drawProgress + dt : 0;
     for (const key of ['coffee', 'draw'] as const) {
       if (next.globalEffects[key] && next.globalEffects[key]!.expiresAt <= next.time) delete next.globalEffects[key];
     }
-    if (processing && processing.duration !== null && processing.progress >= processing.duration) activate(next, processing);
+    for (const card of processing) if (card.progress >= card.duration!) activate(next, card);
     if (next.hand.length < HAND_LIMIT && next.drawProgress >= drawInterval) {
       drawCard(next);
       next.drawProgress = 0;
