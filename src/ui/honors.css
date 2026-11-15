@@ -5,3 +5,31 @@
 .medal-bronze { color: #935d3c; background: #f3e4d7; }
 .title-champion, .title-runner-up, .title-third-place { color: #78618d; background: #eee7f4; }
 .result-awards { margin: 18px 0; }
+.honors-page { max-width: 1500px; margin: 0 auto; padding: 40px 4.5% 60px; }
+.honors-heading { margin-bottom: 28px; }
+.honors-heading h1 { margin: 8px 0 12px; }
+.honors-heading p, .highest-honor p, .achievements p { font-size: 12px; color: #787568; line-height: 1.8; }
+.highest-honor { display: flex; align-items: center; gap: 36px; padding: 32px; background: linear-gradient(115deg, #f3ebd7, var(--paper) 65%); }
+.honor-illustration { display: grid; place-items: center; width: 120px; height: 120px; border: 1px solid #c8b57b; background: #f8f1dc; flex-shrink: 0; }
+.honor-illustration .pixel-art { width: 80px; height: 80px; }
+.highest-honor h2 { font-size: 28px; margin: 10px 0 16px; }
+.highest-honor p { margin-top: 12px; }
+.honor-stats { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; margin: 24px 0; }
+.honor-stat { border: 1px solid currentColor; padding: 20px; display: flex; flex-direction: column; align-items: flex-start; }
+.honor-stat > span { font-size: 13px; font-weight: 700; }
+.honor-stat strong { font: 36px var(--mono); margin: 12px 0; }
+.honor-stat small { opacity: .8; }
+.contest-history { padding: 24px; }
+.contest-history .section-heading, .achievements .section-heading { margin-bottom: 20px; }
+.history-scroll { overflow-x: auto; }
+.history-table { width: 100%; border-collapse: collapse; text-align: left; white-space: nowrap; }
+.history-table th { font-size: 11px; color: #787568; font-weight: 400; padding: 0 12px 14px; border-bottom: 2px solid var(--ink); }
+.history-table td { padding: 16px 12px; font-size: 13px; border-bottom: 1px solid var(--line); }
+.history-table tbody tr:last-child td { border-bottom: 0; }
+.history-table small, .honor-muted { color: #787568; }
+.achievements { margin-top: 24px; padding: 24px; }
+@media (max-width: 1200px) {
+  .honors-page { padding: 35px 30px; }
+  .honor-stats { gap: 12px; }
+  .honor-stat { padding: 16px; }
+}

@@ -76,6 +76,7 @@ export interface Standing {
 export interface MatchResult {
   matchId: string;
   eventId: string;
+  season: number;
   rank: number;
   teams: number;
   solved: number;

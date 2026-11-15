@@ -353,7 +353,7 @@ export function settleMatch(profile: Profile, match: Match): { profile: Profile;
   const count = 1 + (player.solved > 0 ? 1 : 0) + (percentile <= 0.3 ? 1 : 0) + (percentile <= 0.1 ? 1 : 0) + Math.min(firstBloods, 3);
   const promoted = event.kind === 'main' && player.solved > 0 && event.promotion !== undefined && percentile <= event.promotion;
   const seasonEnded = event.kind === 'main' && (!promoted || event.id === mainEvents[mainEvents.length - 1].id);
-  const result: MatchResult = { matchId: match.id, eventId: match.eventId, rank: player.rank, teams: ranking.length,
+  const result: MatchResult = { matchId: match.id, eventId: match.eventId, season: profile.season, rank: player.rank, teams: ranking.length,
     solved: player.solved, penalty: player.penalty, packs: count, promoted, seasonEnded,
     ...contestAwards(event.id, player.rank, ranking.length) };
   const packs: Pack[] = Array.from({ length: count }, () => ({ id: uniqueId(), eventId: event.id, guarantee: event.guarantee }));

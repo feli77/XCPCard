@@ -16,8 +16,9 @@ import {
   startMatch,
 } from "../game/engine";
 import type { Action, Match, MatchResult, Profile } from "../game/types";
-import { contestAwards } from "../game/honors";
+import { contestAwards, restoreHistory } from "../game/honors";
 import { AwardBadges } from "./AwardBadges";
+import { TrophyRoom } from "./TrophyRoom";
 import { MatchView } from "./MatchView";
 import { PixelArt } from "./PixelArt";
 import { sound } from "./audio";
@@ -26,7 +27,7 @@ import { Collection } from "./Collection";
 import { Packs, PackReveal } from "./Packs";
 import type { OpenedPack } from "./Packs";
 
-type Screen = "lobby" | "deck" | "packs" | "match";
+type Screen = "lobby" | "deck" | "packs" | "honors" | "match";
 interface Session {
   profile: Profile;
   match: Match | null;
@@ -45,8 +46,9 @@ function load(): Session {
       openedPack: null,
     };
   const session: Session = JSON.parse(saved);
-  session.profile.history = session.profile.history.map(result => ({ ...result, ...contestAwards(result.eventId, result.rank, result.teams) }));
-  if (session.result) session.result = { ...session.result, ...contestAwards(session.result.eventId, session.result.rank, session.result.teams) };
+  session.profile = restoreHistory(session.profile);
+  if (session.result) session.result = session.profile.history.find(result => result.matchId === session.result!.matchId)
+    ?? { ...session.result, season: session.result.season ?? session.profile.season, ...contestAwards(session.result.eventId, session.result.rank, session.result.teams) };
   if (session.match?.status === "playing") session.match.paused = true;
   return session;
 }
@@ -206,6 +208,7 @@ export function App() {
                 ["lobby", "赛事大厅"],
                 ["deck", "我的卡组"],
                 ["packs", "卡包仓库"],
+                ["honors", "收藏"],
               ] as const
             ).map(([key, label]) => (
               <button
@@ -279,6 +282,7 @@ export function App() {
               onContest={() => navigate("lobby")}
             />
           )}
+          {screen === "honors" && <TrophyRoom profile={profile} />}
         </div>
       )}
 
