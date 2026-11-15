@@ -137,15 +137,72 @@
   font: 11px var(--mono);
 }
 .speed-control {
-  display: flex;
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 36px);
   flex-shrink: 0;
-  gap: 4px;
+  padding: 3px;
+  border: 1px solid #c5c1b5;
+  border-radius: 6px;
+  background: #e9e6da;
 }
-.speed-control button {
-  width: 36px;
-  min-height: 35px;
-  padding: 8px 0;
+.speed-control > span:not(.speed-thumb) {
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  height: 29px;
   font: 11px var(--mono);
+  color: #8a836e;
+  pointer-events: none;
+  transition: color 0.24s;
+}
+.speed-control > span.selected {
+  color: var(--paper);
+}
+.speed-thumb {
+  position: absolute;
+  inset: 3px auto 3px 3px;
+  width: 36px;
+  border-radius: 3px;
+  background: var(--ink);
+  box-shadow: 1px 2px 3px #302f2a26;
+  transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.speed-control input {
+  position: absolute;
+  inset: 3px;
+  z-index: 2;
+  width: 108px;
+  height: 29px;
+  margin: 0;
+  appearance: none;
+  opacity: 0;
+  cursor: pointer;
+}
+.speed-control input::-webkit-slider-thumb {
+  appearance: none;
+  width: 36px;
+  height: 29px;
+}
+.speed-control input::-moz-range-thumb {
+  width: 36px;
+  height: 29px;
+  border: 0;
+}
+.speed-control:has(input:focus-visible) {
+  outline: 3px solid #829c60;
+  outline-offset: 4px;
+}
+.speed-control:has(input:disabled) {
+  opacity: 0.4;
+}
+.speed-control input:disabled {
+  cursor: not-allowed;
+}
+@media (prefers-reduced-motion: reduce) {
+  .speed-control > span {
+    transition: none;
+  }
 }
 .pause-button {
   width: 119px;

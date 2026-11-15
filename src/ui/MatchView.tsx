@@ -24,6 +24,7 @@ interface MatchViewProps {
 
 const timeText = (value: number) =>
   `${Math.floor(value / 60).toString().padStart(2, '0')}:${Math.floor(value % 60).toString().padStart(2, '0')}`;
+const speeds = [1, 2, 4] as const;
 
 export function MatchView({
   match, speed, viewProblem, selected,
@@ -79,14 +80,20 @@ export function MatchView({
         <b>{player.solved}<span> AC</span></b>
         <small>#{player.rank} / {leaderboard.length}</small>
       </div>
-      <div className="speed-control" role="group" aria-label="比赛速度">
-        {([1, 2, 4] as const).map(value => <button
-          key={value}
-          className={speed === value ? 'primary' : 'secondary'}
-          aria-pressed={speed === value}
+      <div className="speed-control">
+        <span className="speed-thumb" style={{ transform: `translateX(${speeds.indexOf(speed) * 100}%)` }}/>
+        {speeds.map(value => <span key={value} className={speed === value ? 'selected' : ''}>{value}x</span>)}
+        <input
+          type="range"
+          min={0}
+          max={2}
+          step={1}
+          value={speeds.indexOf(speed)}
+          aria-label="比赛速度"
+          aria-valuetext={`${speed}x`}
           disabled={match.status === 'finished'}
-          onClick={() => onChangeSpeed(value)}
-        >{value}x</button>)}
+          onChange={event => onChangeSpeed(speeds[Number(event.currentTarget.value)])}
+        />
       </div>
       <button
         className={match.paused ? 'primary pause-button' : 'secondary pause-button'}
