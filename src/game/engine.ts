@@ -9,6 +9,12 @@ export const DECK_SIZE = 24;
 export const cardById = Object.fromEntries(cards.map(card => [card.id, card]));
 const categories: Category[] = ['基础算法', '图论', '数学', 'DP', '数据结构', '字符串', '计算几何'];
 const mainEvents = events.filter(event => event.kind === 'main');
+const failureFeedback = [
+  { verdict: 'WA', text: '样例：我尽力了。' },
+  { verdict: 'TLE', text: '思路没问题，就是等不到结果。' },
+  { verdict: 'MLE', text: '思路装得下，内存装不下。' },
+  { verdict: 'RE', text: '程序先退场了。' },
+] as const;
 
 function random(state: { randomState: number }): number {
   state.randomState = (Math.imul(state.randomState, 1664525) + 1013904223) >>> 0;
@@ -123,14 +129,17 @@ function submit(match: Match, index: number) {
   const problem = match.problems[index];
   const score = tableScore(match, index);
   const accepted = random(match) < acceptanceChance(score, problem.difficulty);
-  problem.attempts.push({ time: match.time, result: accepted ? 'AC' : 'WA', score });
+  // Cosmetic randomness must not advance the gameplay RNG.
+  const feedback = accepted ? { verdict: 'AC' as const, text: '过了，别碰它。' }
+    : failureFeedback[Math.floor(random({ randomState: match.randomState }) * failureFeedback.length)];
+  problem.attempts.push({ time: match.time, result: accepted ? 'AC' : 'WA', verdict: feedback.verdict, score });
   if (accepted) {
     problem.acTime = match.time;
     match.discard.push(...problem.table.filter(card => cardById[card.cardId].type === 'algorithm').map(({ uid, cardId }) => ({ uid, cardId })));
     problem.table = [];
   } else problem.waRevision = problem.revision;
   problem.submitQueued = false;
-  match.feedback = { id: (match.feedback?.id ?? 0) + 1, problem: index, result: accepted ? 'AC' : 'WA', text: accepted ? '过了，别碰它。' : '样例：我尽力了。' };
+  match.feedback = { id: (match.feedback?.id ?? 0) + 1, problem: index, result: accepted ? 'AC' : 'WA', ...feedback };
   return true;
 }
 

@@ -108,7 +108,7 @@ export function MatchView({
           <div className="ac-stamp">ACCEPTED</div>
           <div className="balloons"><i/><i/><i/></div>
           <h3>过了，别碰它。</h3>
-          <p>{Math.floor(problem.acTime)} 分钟 · {problem.attempts.filter(attempt => attempt.result === 'WA').length} 次 WA</p>
+          <p>{Math.floor(problem.acTime)} 分钟 · {problem.attempts.filter(attempt => attempt.result === 'WA').length} 次未通过</p>
           <span>看看下一道题？</span>
         </div> : !read ? <div className="reading-desk">
           <PixelArt kind="template"/>
@@ -156,7 +156,7 @@ export function MatchView({
           <div className="table-bottom">
             <span>
               {problem.submitQueued ? '◷ 已预约提交'
-                : problem.attempts.length ? `提交记录 ${problem.attempts.map(attempt => `${attempt.result} ${Math.floor(attempt.time)}′`).join(' · ')}`
+                : problem.attempts.length ? `提交记录 ${problem.attempts.map(attempt => `${attempt.verdict ?? attempt.result} ${Math.floor(attempt.time)}′`).join(' · ')}`
                 : '卡牌依次生效，全部就绪后可提交。'}
             </span>
             <button
@@ -170,7 +170,7 @@ export function MatchView({
         </>}
 
         {match.feedback?.problem === viewProblem && <div key={match.feedback.id} className={`judge-toast ${match.feedback.result}`}>
-          <b>{match.feedback.result}</b><span>{match.feedback.text}</span>
+          <b>{match.feedback.verdict ?? match.feedback.result}</b><span>{match.feedback.text}</span>
         </div>}
       </section>
       <LiveRanking match={match} rows={leaderboard} onChoose={onChooseProblem}/>
@@ -287,7 +287,7 @@ function LiveRanking({ match, rows, onChoose }: {
               <div className="team-problems">
                 {team.problems.map((problem, index) => <button
                   key={index}
-                  title={`${match.problems[index].label} · ${problem.result || '未提交'}${problem.firstBlood ? ' · 一血' : ''}${problem.attempts ? ` · ${problem.attempts} 次提交` : ''}`}
+                  title={`${match.problems[index].label} · ${(team.player ? match.problems[index].attempts.at(-1)?.verdict : null) ?? problem.result ?? '未提交'}${problem.firstBlood ? ' · 一血' : ''}${problem.attempts ? ` · ${problem.attempts} 次提交` : ''}`}
                   className={`${problem.result || ''}${problem.firstBlood ? ' first-blood' : ''}`}
                   onClick={() => onChoose(index)}
                 >
@@ -301,7 +301,7 @@ function LiveRanking({ match, rows, onChoose }: {
         </tbody>
       </table>
     </div>
-    <div className="rank-legend"><span>■ AC</span><span>■ WA</span><span className="first-blood">■ 一血</span><small>看大家在过哪题，也是一种算法。</small></div>
+    <div className="rank-legend"><span>■ AC</span><span>■ 未通过</span><span className="first-blood">■ 一血</span><small>看大家在过哪题，也是一种算法。</small></div>
   </aside>;
 }
 
