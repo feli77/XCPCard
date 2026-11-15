@@ -73,7 +73,7 @@ describe('比赛时间、读题与队列', () => {
     expect(hasInversion).toBe(true);
     expect(startMatch(createProfile(), 'school', 1234).problems).toEqual(startMatch(createProfile(), 'school', 1234).problems);
   });
-  it('读题前不能打牌；切题仅暂停当前题局部时间', () => {
+  it('读题前不能打牌；切题暂停原题读题进度', () => {
     let game = match();
     const hand = game.hand.map(card => card.uid);
     game = act(game, { type: 'play', uids: hand });
@@ -87,7 +87,7 @@ describe('比赛时间、读题与队列', () => {
     game = advanceMatch(game, 20);
     expect(game.problems[0].readProgress).toBe(game.problems[0].readTime);
   });
-  it('算法与技巧严格串行，完成后才计分，暂停题目队列保留进度', () => {
+  it('算法与技巧严格串行，完成后才计分，切题后继续生效', () => {
     let game = withHand(match(), ['enumerate', 'template', 'binary-search']);
     ready(game);
     game.problems[0].categories = ['基础算法'];
@@ -96,15 +96,34 @@ describe('比赛时间、读题与队列', () => {
     expect(tableScore(game)).toBe(0);
     expect(game.problems[0].table[1].progress).toBe(0);
     game = act(game, { type: 'switch', problem: 1 });
-    game = advanceMatch(game, 20);
-    expect(game.problems[0].table[0].progress).toBe(3);
-    game = act(game, { type: 'switch', problem: 0 });
     game = advanceMatch(game, 1);
+    expect(game.problems[0].table[0].active).toBe(true);
+    game = act(game, { type: 'switch', problem: 0 });
     expect(tableScore(game)).toBe(300);
     game = advanceMatch(game, 3);
     expect(tableScore(game)).toBe(360);
     game = advanceMatch(game, 5);
     expect(tableScore(game)).toBe(840);
+  });
+  it('各题队列独立推进，后台技巧生效后影响后续卡牌，暂停冻结所有题目', () => {
+    let game = withHand(match(), ['coffee', 'enumerate', 'enumerate', 'binary-search']);
+    ready(game);
+    ready(game, 1);
+    game = act(game, { type: 'play', uids: ['test-0', 'test-1'] });
+    game = act(game, { type: 'switch', problem: 1 });
+    game = act(game, { type: 'play', uids: ['test-2', 'test-3'] });
+    game = advanceMatch(game, 2);
+    expect(game.problems[0].table[0].active).toBe(true);
+    expect(game.globalEffects.coffee).toBeDefined();
+    game = setPaused(game, true);
+    expect(advanceMatch(game, 20)).toBe(game);
+    game = setPaused(game, false);
+    expect(game.problems[0].table[1].duration).toBe(3);
+    expect(game.problems[1].table[0].duration).toBe(4);
+    const whole = advanceMatch(game, 12);
+    for (let i = 0; i < 12; i++) game = advanceMatch(game, 1);
+    expect(game).toEqual(whole);
+    expect(game.problems.slice(0, 2).every(problem => problem.table.every(card => card.active))).toBe(true);
   });
   it('每题牌桌最多5张，超额出牌整批保留在手牌，弃牌后释放空位', () => {
     let game = withHand(match(), Array(8).fill('enumerate'));
@@ -218,15 +237,18 @@ describe('得分与技巧效果', () => {
     game = advanceMatch(game, 1);
     expect(game.problems[0].table[1]).toMatchObject({ duration: 3, progress: 1 });
     game = act(game, { type: 'switch', problem: 1 });
-    game = advanceMatch(game, 70);
-    expect(game.globalEffects.coffee).toBeUndefined();
-    game = act(game, { type: 'switch', problem: 0 });
-    game = advanceMatch(game, 2);
+    game = advanceMatch(game, 3.5);
     expect(game.problems[0].table[1].active).toBe(true);
-    game = advanceMatch(game, 2);
-    expect(game.globalEffects.coffee?.expiresAt).toBe(137);
+    expect(game.globalEffects.coffee?.expiresAt).toBe(66.5);
     game = advanceMatch(game, 0.5);
     expect(game.problems[0].table[3].duration).toBe(3.75);
+    game = advanceMatch(game, 58.5);
+    game = act(game, { type: 'switch', problem: 0 });
+    game.hand = [{ uid: 'late-card', cardId: 'binary-search' }];
+    game = act(game, { type: 'play', uids: ['late-card'] });
+    game = advanceMatch(game, 2);
+    expect(game.globalEffects.coffee).toBeUndefined();
+    expect(game.problems[0].table[4]).toMatchObject({ duration: 3.75, progress: 2, active: false });
   });
   it('咖啡生效后留桌，同名刷新不叠加，移出牌桌不影响持续效果', () => {
     let game = withHand(match(), ['coffee', 'coffee']);

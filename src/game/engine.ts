@@ -208,14 +208,14 @@ export function setPaused(match: Match, paused: boolean): Match {
       runAction(next, action, true);
       executeQueuedSubmission(next);
     }
-    startNextCard(next, next.currentProblem);
+    next.problems.forEach((_, index) => startNextCard(next, index));
     executeQueuedSubmission(next);
   }
   return next;
 }
 
 function startNextCard(match: Match, index: number) {
-  if (match.paused || index !== match.currentProblem) return;
+  if (match.paused) return;
   const card = match.problems[index].table.find(item => !item.active);
   if (!card || card.duration !== null) return;
   const coffee = match.globalEffects.coffee;
@@ -270,13 +270,14 @@ export function advanceMatch(match: Match, minutes = 1): Match {
   const next = structuredClone(match);
   let remaining = Math.min(minutes, MATCH_DURATION - next.time);
   while (remaining > 0.000001) {
-    startNextCard(next, next.currentProblem);
+    next.problems.forEach((_, index) => startNextCard(next, index));
     const problem = next.problems[next.currentProblem];
-    const processing = problem.table.find(card => !card.active);
+    const processing = next.problems.map(problem => problem.table.find(card => !card.active))
+      .filter((card): card is TableCard => !!card && card.duration !== null);
     const drawInterval = next.globalEffects.draw && next.globalEffects.draw.expiresAt > next.time ? next.globalEffects.draw.interval : 4;
     const boundaries = [remaining, MATCH_DURATION - next.time];
     if (problem.acTime === null && problem.readProgress < problem.readTime) boundaries.push(problem.readTime - problem.readProgress);
-    if (processing?.duration !== null && processing) boundaries.push(processing.duration - processing.progress);
+    for (const card of processing) boundaries.push(card.duration! - card.progress);
     if (next.hand.length < HAND_LIMIT && (next.deck.length || next.discard.length)) boundaries.push(Math.max(0, drawInterval - next.drawProgress));
     for (const effect of Object.values(next.globalEffects)) if (effect.expiresAt > next.time) boundaries.push(effect.expiresAt - next.time);
     for (const team of next.opponents) {
@@ -286,12 +287,12 @@ export function advanceMatch(match: Match, minutes = 1): Match {
     next.time += dt;
     remaining -= dt;
     if (problem.acTime === null && problem.readProgress < problem.readTime) problem.readProgress = Math.min(problem.readTime, problem.readProgress + dt);
-    if (processing && processing.duration !== null) processing.progress = Math.min(processing.duration, processing.progress + dt);
+    for (const card of processing) card.progress = Math.min(card.duration!, card.progress + dt);
     next.drawProgress = next.hand.length < HAND_LIMIT ? next.drawProgress + dt : 0;
     for (const key of ['coffee', 'draw'] as const) {
       if (next.globalEffects[key] && next.globalEffects[key]!.expiresAt <= next.time) delete next.globalEffects[key];
     }
-    if (processing && processing.duration !== null && processing.progress >= processing.duration) activate(next, processing);
+    for (const card of processing) if (card.progress >= card.duration!) activate(next, card);
     if (next.hand.length < HAND_LIMIT && next.drawProgress >= drawInterval) {
       drawCard(next);
       next.drawProgress = 0;

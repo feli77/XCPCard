@@ -315,6 +315,30 @@ test('drag hand card to table and table card to discard', async ({ page }) => {
   expect((await state(page)).match.discard.length).toBe(expectedDiscard + 1);
 });
 
+test('cards keep resolving in order after switching problems and freeze while paused', async ({ page }) => {
+  await start(page);
+  await elapsed(page, 9);
+  const game = (await state(page)).match;
+  const cards = game.hand.filter((card: { cardId: string }) => cardById[card.cardId].type === 'algorithm').slice(0, 2);
+  for (const card of cards) await page.locator(`.hand-cards [data-card-uid="${card.uid}"]`).click();
+  await page.getByRole('button', { name: '出牌 →', exact: true }).click();
+  await elapsed(page, 1);
+  await page.locator('.problem-button').nth(1).click();
+  await elapsed(page, 1);
+  expect((await state(page)).match.problems[0].table.map((card: { progress: number }) => card.progress)).toEqual([2, 0]);
+  await page.getByRole('button', { name: 'Ⅱ 暂停', exact: true }).click();
+  const paused = (await state(page)).match;
+  await elapsed(page, 10);
+  expect((await state(page)).match).toEqual(paused);
+  await page.getByRole('button', { name: '▶ 继续比赛', exact: true }).click();
+  await elapsed(page, cards.reduce((sum: number, card: { cardId: string }) => sum + cardById[card.cardId].time, 0));
+  const resolved = (await state(page)).match.problems[0];
+  expect(resolved.table.every((card: { active: boolean }) => card.active)).toBe(true);
+  expect(resolved.attempts).toHaveLength(0);
+  await page.locator('.problem-button').first().click();
+  await expect(page.locator('.score-note')).toHaveText('2 / 2 张已生效');
+});
+
 test('reload freezes saved match and preserves cards, queue and per-problem progress', async ({ page }) => {
   await start(page);
   await elapsed(page, 9);
