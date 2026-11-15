@@ -1,3 +1,4 @@
+import { PackModel, packHoverProps } from './PackModel';
 import type { Category } from '../content/types';
 import type { CSSProperties } from "react";
 import { events, rarities } from "../content/data";
@@ -36,46 +37,12 @@ export function Packs({ profile, onOpen, onContest }: PacksProps) {
         <div className="pack-grid">
           {profile.packs.map((pack, index) => (
             <button
-              className="pack-item"
+              className="pack-item pack-hover"
               key={pack.id}
               onClick={() => onOpen(index)}
-              onPointerMove={(event) => {
-                if (event.pointerType === "touch") return;
-                const bounds = event.currentTarget.getBoundingClientRect();
-                const x = (event.clientX - bounds.left) / bounds.width;
-                const y = (event.clientY - bounds.top) / bounds.height;
-                event.currentTarget.style.setProperty("--pack-x", `${x - 0.5}`);
-                event.currentTarget.style.setProperty("--pack-y", `${y - 0.5}`);
-                event.currentTarget.style.setProperty("--shine-x", `${x * 100}%`);
-                event.currentTarget.style.setProperty("--shine-y", `${y * 100}%`);
-              }}
-              onPointerLeave={(event) => {
-                for (const property of ["--pack-x", "--pack-y", "--shine-x", "--shine-y"]) {
-                  event.currentTarget.style.removeProperty(property);
-                }
-              }}
+              {...packHoverProps}
             >
-              <div
-                className="pack-object"
-                style={
-                  {
-                    "--rarity": rarities[pack.guarantee].color,
-                  } as CSSProperties
-                }
-              >
-                <div className={`sealed-pack rarity-${pack.guarantee}`}>
-                  <i className="pack-seal pack-seal-top" aria-hidden="true" />
-                  <i className="pack-seal pack-seal-bottom" aria-hidden="true" />
-                  <span>XCPCard</span>
-                  <PixelArt kind="trophy" />
-                  <b>
-                    ALGORITHM
-                    <br />
-                    BOOSTER PACK
-                  </b>
-                  <small>5 CARDS / ONE MORE AC</small>
-                </div>
-              </div>
+              <PackModel guarantee={pack.guarantee} />
               <h3>
                 {pack.category ? `${pack.category}专项包` : pack.guarantee
                   ? `保底${rarities[pack.guarantee].name}卡包`

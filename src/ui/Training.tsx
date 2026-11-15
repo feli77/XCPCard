@@ -3,7 +3,7 @@ import { rarities } from '../content/data';
 import { cardById } from '../game/engine';
 import type { Profile } from '../game/types';
 import { Card } from './Card';
-import { PixelArt } from './PixelArt';
+import { PackModel, packHoverProps } from './PackModel';
 
 export function Training({ profile, onPurchase }: { profile: Profile; onPurchase: (id: string) => void }) {
   return <main className="training-page">
@@ -13,8 +13,8 @@ export function Training({ profile, onPurchase }: { profile: Profile; onPurchase
     </div></div>
     <h2>打包补课</h2>
     <div className="training-packs">
-      {profile.trainingOffers.filter(offer => offer.kind === 'pack').map(offer => <section className="training-item panel" key={offer.id}>
-        <div className="training-pack-art"><PixelArt kind={offer.category ? 'template' : 'trophy'} /></div>
+      {profile.trainingOffers.filter(offer => offer.kind === 'pack').map(offer => <section className="training-item panel pack-hover" key={offer.id} {...packHoverProps}>
+        <div className="training-pack-art"><PackModel /></div>
         <h3>{offer.category ? `${offer.category}专项包` : '普通通用包'}</h3>
         <p>{offer.category ? `5 张${offer.category}算法卡，偏科也要偏得专业。` : '5 张随机卡，知识面主打一个随缘。'}</p>
         <Exchange purchased={offer.purchased} affordable={profile.trainingPoints >= offer.price} price={offer.price} onClick={() => onPurchase(offer.id)} />

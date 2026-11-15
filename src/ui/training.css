@@ -8,8 +8,7 @@
 .training-item p, .training-note, .recycle-zone small { font-size: 12px; color: var(--muted); }
 .training-item .primary { margin-top: auto; width: 100%; font-size: 12px; }
 .training-item .game-card { flex-shrink: 0; }
-.training-pack-art { padding: 16px; }
-.training-pack-art svg { width: 64px; height: 64px; }
+.training-pack-art { padding: 16px; perspective: 800px; }
 .training-balance { white-space: nowrap; font-size: 18px; font-weight: 700; line-height: 1; margin-right: 54px; }
 .collection-sidebar { min-width: 0; display: flex; flex-direction: column; gap: 16px; position: sticky; top: 28px; }
 .recycle-zone { padding: 22px; text-align: center; border: 2px dashed var(--muted); }
