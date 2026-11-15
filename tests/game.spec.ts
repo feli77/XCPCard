@@ -21,6 +21,54 @@ async function start(page: Page) {
 }
 async function elapsed(page: Page, seconds: number) { await page.clock.runFor(seconds * 1000); }
 
+test('contest speed switches between 1x, 2x and 4x and respects pause', async ({ page }) => {
+  await start(page);
+  const slider = page.getByRole('slider', { name: '比赛速度' });
+  await expect(slider).toHaveAttribute('aria-valuetext', '1x');
+  await elapsed(page, 2);
+  expect((await state(page)).match.time).toBe(2);
+
+  await slider.click();
+  await elapsed(page, 2);
+  expect((await state(page)).match.time).toBe(6);
+  const problem = (await state(page)).match.problems[0];
+  expect(problem.readProgress).toBe(Math.min(6, problem.readTime));
+
+  const bounds = (await slider.boundingBox())!;
+  await page.mouse.move(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(bounds.x + bounds.width * 5 / 6, bounds.y + bounds.height / 2, { steps: 5 });
+  await page.mouse.up();
+  await expect(slider).toHaveAttribute('aria-valuetext', '4x');
+  await elapsed(page, 2);
+  expect((await state(page)).match.time).toBe(14);
+  await expect(page.locator('.score-strip')).toBeVisible();
+  await page.screenshot({ path: 'test-results/match-speed.png', fullPage: true });
+
+  await page.getByRole('button', { name: 'Ⅱ 暂停', exact: true }).click();
+  const paused = (await state(page)).match;
+  await slider.press('ArrowLeft');
+  await elapsed(page, 2);
+  expect((await state(page)).match).toEqual(paused);
+  await page.getByRole('button', { name: '▶ 继续比赛', exact: true }).click();
+  await elapsed(page, 2);
+  expect((await state(page)).match.time).toBe(18);
+
+  await slider.press('Home');
+  await elapsed(page, 2);
+  expect((await state(page)).match.time).toBe(20);
+  await slider.press('End');
+  await elapsed(page, 70);
+  await expect(page.locator('.result-modal')).toBeVisible();
+  expect((await state(page)).match.time).toBe(300);
+  await expect(slider).toBeDisabled();
+  await page.getByRole('button', { name: '领取卡包 →', exact: true }).click();
+  await page.getByRole('button', { name: '赛事大厅', exact: true }).click();
+  await page.getByRole('button', { name: '开启下一季' }).click();
+  await page.getByRole('button', { name: '参加比赛' }).click();
+  await expect(slider).toHaveAttribute('aria-valuetext', '1x');
+});
+
 test('leaderboard highlights first blood and preserves tied winners after reload', async ({ page }) => {
   const profile = createTestProfile();
   const match = startMatch(profile, 'school', 7);

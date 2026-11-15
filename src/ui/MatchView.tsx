@@ -12,12 +12,14 @@ import { useCardTransfers } from './useCardTransfers';
 
 interface MatchViewProps {
   match: Match;
+  speed: 1 | 2 | 4;
   viewProblem: number;
   selected: string[];
   onCommand: (action: Action) => void;
   onChooseProblem: (index: number) => void;
   onToggleSelected: (uid: string) => void;
   onTogglePause: () => void;
+  onChangeSpeed: (speed: 1 | 2 | 4) => void;
 }
 
 const timeText = (value: number) =>
@@ -26,10 +28,11 @@ const verdicts = ['AC', 'WA'] as const;
 const judgingVerdict = (judging: Problem['judging']) => judging
   ? verdicts[Math.floor(Math.round(judging.duration - judging.remaining) / 250) % verdicts.length]
   : undefined;
+const speeds = [1, 2, 4] as const;
 
 export function MatchView({
-  match, viewProblem, selected,
-  onCommand, onChooseProblem, onToggleSelected, onTogglePause,
+  match, speed, viewProblem, selected,
+  onCommand, onChooseProblem, onToggleSelected, onTogglePause, onChangeSpeed,
 }: MatchViewProps) {
   const root = useRef<HTMLElement>(null);
   const [deckOpen, setDeckOpen] = useState(false);
@@ -90,6 +93,21 @@ export function MatchView({
       <div className="player-record">
         <b>{player.solved}<span> AC</span></b>
         <small>#{player.rank} / {leaderboard.length}</small>
+      </div>
+      <div className="speed-control">
+        <span className="speed-thumb" style={{ transform: `translateX(${speeds.indexOf(speed) * 100}%)` }}/>
+        {speeds.map(value => <span key={value} className={speed === value ? 'selected' : ''}>{value}x</span>)}
+        <input
+          type="range"
+          min={0}
+          max={2}
+          step={1}
+          value={speeds.indexOf(speed)}
+          aria-label="比赛速度"
+          aria-valuetext={`${speed}x`}
+          disabled={match.status === 'finished'}
+          onChange={event => onChangeSpeed(speeds[Number(event.currentTarget.value)])}
+        />
       </div>
       <button
         className={match.paused ? 'primary pause-button' : 'secondary pause-button'}
