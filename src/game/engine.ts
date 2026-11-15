@@ -1,3 +1,4 @@
+import { createTrainingOffers, MATCH_POINTS } from './economy';
 import { cards, events, problemNames, teamNames, rarityWeights } from '../content/data';
 import type { Category, CardDefinition } from '../content/types';
 import type { Action, CardInstance, Match, MatchResult, Opponent, Pack, Profile, Standing, TableCard } from './types';
@@ -44,7 +45,7 @@ function readingTime(difficulty: number, rng: { randomState: number }): number {
 
 export function createProfile(): Profile {
   const packs: Pack[] = Array.from({ length: 8 }, () => ({ id: uniqueId(), eventId: 'starter', guarantee: 0 }));
-  return { collection: {}, deck: [], season: FIRST_SEASON_YEAR, mainIndex: 0, seasonEnded: false, playedEvents: [], packs, history: [] };
+  return { trainingPoints: 0, trainingOffers: createTrainingOffers(), collection: {}, deck: [], season: FIRST_SEASON_YEAR, mainIndex: 0, seasonEnded: false, playedEvents: [], packs, history: [] };
 }
 
 export function availableEvents(profile: Profile) {
@@ -355,11 +356,12 @@ export function settleMatch(profile: Profile, match: Match): { profile: Profile;
   const promoted = event.kind === 'main' && player.solved > 0 && event.promotion !== undefined && percentile <= event.promotion;
   const seasonEnded = event.kind === 'main' && (!promoted || event.id === mainEvents[mainEvents.length - 1].id);
   const result: MatchResult = { matchId: match.id, eventId: match.eventId, season: profile.season, rank: player.rank, teams: ranking.length,
-    solved: player.solved, penalty: player.penalty, packs: count, promoted, seasonEnded,
+    solved: player.solved, penalty: player.penalty, packs: count, trainingPoints: MATCH_POINTS, promoted, seasonEnded,
     ...contestAwards(event.id, player.rank, ranking.length) };
   const packs: Pack[] = Array.from({ length: count }, () => ({ id: uniqueId(), eventId: event.id, guarantee: event.guarantee }));
   return { profile: { ...profile, mainIndex: event.kind === 'main' && promoted ? profile.mainIndex + 1 : profile.mainIndex,
     seasonEnded: profile.seasonEnded || seasonEnded, playedEvents: [...profile.playedEvents, event.id], packs: [...profile.packs, ...packs],
+    trainingPoints: profile.trainingPoints + MATCH_POINTS, trainingOffers: createTrainingOffers(),
     history: [...profile.history, result] }, result };
 }
 
@@ -400,10 +402,22 @@ export function rollPack(guarantee: number, randomValue: () => number = Math.ran
 
 export function openPack(profile: Profile, index = 0): { profile: Profile; cards: string[] } {
   const pack = profile.packs[index];
-  const opened = rollPack(pack.guarantee);
+  const opened = pack.category ? rollCategoryPack(pack.category) : rollPack(pack.guarantee);
   return { profile: { ...profile, packs: profile.packs.filter((_, i) => i !== index) }, cards: opened };
 }
 
 export function collectCard(profile: Profile, cardId: string): Profile {
   return { ...profile, collection: { ...profile.collection, [cardId]: (profile.collection[cardId] ?? 0) + 1 } };
+}
+
+export function rollCategoryPack(category: Category, randomValue: () => number = Math.random): string[] {
+  const pool = cards.filter(card => card.type === 'algorithm' && card.categories.includes(category));
+  const tiers = [...new Set(pool.map(card => card.rarity))];
+  const total = tiers.reduce((sum, rarity) => sum + rarityWeights[rarity], 0);
+  return Array.from({ length: 5 }, () => {
+    let point = randomValue() * total;
+    const rarity = tiers.find(tier => { point -= rarityWeights[tier]; return point < 0; })!;
+    const candidates = pool.filter(card => card.rarity === rarity);
+    return candidates[Math.floor(randomValue() * candidates.length)].id;
+  });
 }

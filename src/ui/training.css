@@ -1,0 +1,34 @@
+.training-page { padding: 36px 4vw; max-width: 1440px; margin: auto; }
+.training-page h2 { margin: 28px 0 16px; }
+.training-packs, .training-cards { display: grid; gap: 16px; }
+.training-packs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.training-cards { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.training-item { padding: 22px 14px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; }
+.training-item h3, .training-item p { margin: 0; }
+.training-item p, .training-note, .recycle-zone small { font-size: 12px; color: var(--muted); }
+.training-item .primary { margin-top: auto; width: 100%; font-size: 12px; }
+.training-item .game-card { flex-shrink: 0; }
+.training-pack-art { padding: 16px; }
+.training-pack-art svg { width: 64px; height: 64px; }
+.training-balance { white-space: nowrap; font-size: 12px; font-weight: 700; }
+.collection-sidebar { min-width: 0; display: flex; flex-direction: column; gap: 16px; position: sticky; top: 28px; }
+.recycle-zone { padding: 22px; text-align: center; border: 2px dashed var(--muted); }
+.recycle-zone.drop-target { border-color: var(--green); background: #bd8a5012; }
+.recycle-zone h3 { margin: 8px 0; }
+.recycle-zone p { font-size: 13px; line-height: 1.6; }
+.recycle-icon { font-size: 32px; }
+.recycle-dialog { padding: 28px; width: min(440px, 92vw); border: 1px solid var(--line); background: var(--paper); color: var(--ink); }
+.recycle-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+@media (max-width: 1100px) { .training-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 650px) {
+  .training-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .training-packs { grid-template-columns: 1fr; }
+  .training-item { padding: 16px 8px; }
+  .training-balance { font-size: 10px; }
+}
+
+.collection-sidebar .deck-editor { position: static; max-height: calc(100vh - 370px); }
+.recycle-dialog::backdrop { background: #302f2a88; }
+.recycle-dialog p { margin-top: 12px; }
+
+.training-note { margin-top: 20px; }

@@ -1,3 +1,4 @@
+import type { Category } from '../content/types';
 import type { CSSProperties } from "react";
 import { events, rarities } from "../content/data";
 import { uiText } from "../content/text";
@@ -10,6 +11,7 @@ export interface OpenedPack {
   cards: string[];
   revealed: number[];
   eventId: string;
+  category?: Category;
 }
 interface PacksProps {
   profile: Profile;
@@ -75,11 +77,11 @@ export function Packs({ profile, onOpen, onContest }: PacksProps) {
                 </div>
               </div>
               <h3>
-                {pack.guarantee
+                {pack.category ? `${pack.category}专项包` : pack.guarantee
                   ? `保底${rarities[pack.guarantee].name}卡包`
                   : "普通卡包"}
               </h3>
-              <span>{pack.eventId === "starter" ? "新手礼包" : `${eventById[pack.eventId].name}奖励`}</span>
+              <span>{pack.eventId === "training" ? `加训兑换${pack.category ? ` · ${pack.category}专项包` : ""}` : pack.eventId === "starter" ? "新手礼包" : `${eventById[pack.eventId].name}奖励`}</span>
               <strong>拆开看看 ↗</strong>
             </button>
           ))}
@@ -113,7 +115,7 @@ export function PackReveal({
     <div className="pack-overlay">
       <div className="pack-open-heading">
         <span className="eyebrow">
-          {pack.eventId === "starter" ? "新手礼包" : `${eventById[pack.eventId].name} · 比赛奖励`}
+          {pack.eventId === "training" ? `加训兑换${pack.category ? ` · ${pack.category}专项包` : ""}` : pack.eventId === "starter" ? "新手礼包" : `${eventById[pack.eventId].name} · 比赛奖励`}
         </span>
         <h2>{uiText.packs.openingTitle}</h2>
         <p>点击翻开卡牌　{pack.revealed.length} / 5</p>

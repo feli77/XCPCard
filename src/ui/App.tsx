@@ -1,3 +1,5 @@
+import { purchaseOffer, recycleCard, restoreEconomy } from '../game/economy';
+import { Training } from './Training';
 import { useEffect, useRef, useState } from "react";
 import { events } from "../content/data";
 import { uiText } from "../content/text";
@@ -28,7 +30,7 @@ import { Collection } from "./Collection";
 import { Packs, PackReveal } from "./Packs";
 import type { OpenedPack } from "./Packs";
 
-type Screen = "lobby" | "deck" | "packs" | "honors" | "match";
+type Screen = "lobby" | "deck" | "packs" | "honors" | "training" | "match";
 interface Session {
   profile: Profile;
   match: Match | null;
@@ -47,7 +49,7 @@ function load(): Session {
       openedPack: null,
     };
   const session: Session = JSON.parse(saved);
-  session.profile = restoreHistory(session.profile);
+  session.profile = restoreEconomy(restoreHistory(session.profile));
   if (session.result) session.result = session.profile.history.find(result => result.matchId === session.result!.matchId)
     ?? { ...session.result, season: seasonYear(session.result.season ?? session.profile.season), ...contestAwards(session.result.eventId, session.result.rank, session.result.teams) };
   if (session.match?.status === "playing") session.match.paused = true;
@@ -136,12 +138,12 @@ export function App() {
     setViewProblem(next.currentProblem);
   }
   function buyPack(index: number) {
-    const eventId = profile.packs[index].eventId;
+    const { eventId, category } = profile.packs[index];
     const opened = openPack(profile, index);
     setSession((s) => ({
       ...s,
       profile: opened.profile,
-      openedPack: { cards: opened.cards, revealed: [], eventId },
+      openedPack: { cards: opened.cards, revealed: [], eventId, category },
     }));
   }
   function reveal(indices: number[]) {
@@ -209,6 +211,7 @@ export function App() {
                 ["lobby", "大厅"],
                 ["deck", "收藏"],
                 ["packs", "卡包"],
+                ["training", "加训"],
                 ["honors", "成就"],
               ] as const
             ).map(([key, label]) => (
@@ -232,6 +235,7 @@ export function App() {
           </div>
         )}
         <div className="header-meta">
+          <span className="training-balance">{profile.trainingPoints} 训练点</span>
           {screen === "match" ? (
             <button className="text-button" onClick={() => navigate("lobby")}>
               保存并离场 ↗
@@ -273,6 +277,7 @@ export function App() {
               onRarity={setRarity}
               onRemove={removeCard}
               onAdd={addCard}
+              onRecycle={(id) => setSession(s => ({ ...s, profile: recycleCard(s.profile, id) }))}
             />
           )}
 
@@ -283,6 +288,7 @@ export function App() {
               onContest={() => navigate("lobby")}
             />
           )}
+          {screen === "training" && <Training profile={profile} onPurchase={(id) => setSession(s => ({ ...s, profile: purchaseOffer(s.profile, id) }))} />}
           {screen === "honors" && <TrophyRoom profile={profile} />}
         </div>
       )}
@@ -340,7 +346,7 @@ export function App() {
             <div className="reward-label">
               <PixelArt kind="trophy" />
               <span>
-                带回 <b>{result.packs} 包</b> 比赛奖励
+                带回 <b>{result.packs} 包</b> 比赛奖励 · <b>+{result.trainingPoints ?? 0} 训练点</b>
               </span>
             </div>
             <button
