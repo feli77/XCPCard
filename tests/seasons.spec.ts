@@ -22,7 +22,7 @@ for (const recordedSeasons of [false, true]) {
       if (!localStorage.getItem('xcpcard-save')) localStorage.setItem('xcpcard-save', JSON.stringify(session));
     }, { profile: legacyProfile, match, result: null, openedPack: null });
     await page.goto('/');
-    await expect(page.locator('.match-title')).toContainText('2028 赛季');
+    await expect(page.locator('.header-season')).toContainText('2028');
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('xcpcard-save')!));
     expect(saved.profile.season).toBe(2028);
     expect(saved.profile.history.map((result: { season: number }) => result.season)).toEqual([2026, 2027]);
