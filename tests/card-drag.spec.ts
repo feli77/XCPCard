@@ -1,5 +1,5 @@
 import { test, expect, type Locator, type Page } from '@playwright/test';
-import { startMatch } from '../src/game/engine';
+import { cardById, startMatch } from '../src/game/engine';
 import { createTestProfile } from './fixtures';
 import type { Match, Profile } from '../src/game/types';
 
@@ -390,10 +390,11 @@ test('table cards keep their positions during dragging and fill the gap only aft
   await expect(table).toHaveCount(2);
   await expect.poll(async () => Math.abs((await table.first().boundingBox())!.x - bounds.x)).toBeLessThan(0.5);
   await expectPosition(table.first(), bounds);
-  expect((await state(page)).match.discard.map(card => card.uid)).toContain(initial.problems[0].table[0].uid);
   await table.nth(0).locator('.card-discard').click();
   await expect(table).toHaveCount(1);
-  expect((await state(page)).match.discard).toHaveLength(2);
+  expect((await state(page)).match.discard.map(card => card.uid)).toEqual(
+    initial.problems[0].table.slice(0, 2).filter(card => cardById[card.cardId].type === 'algorithm').map(card => card.uid),
+  );
   await expect(page.locator('.is-dragging')).toHaveCount(0);
 });
 

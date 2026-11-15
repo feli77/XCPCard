@@ -287,8 +287,8 @@ function LiveRanking({ match, rows, onChoose }: {
               <div className="team-problems">
                 {team.problems.map((problem, index) => <button
                   key={index}
-                  title={`${match.problems[index].label} · ${problem.result || '未提交'}${problem.attempts ? ` · ${problem.attempts} 次提交` : ''}`}
-                  className={problem.result || ''}
+                  title={`${match.problems[index].label} · ${problem.result || '未提交'}${problem.firstBlood ? ' · 一血' : ''}${problem.attempts ? ` · ${problem.attempts} 次提交` : ''}`}
+                  className={`${problem.result || ''}${problem.firstBlood ? ' first-blood' : ''}`}
                   onClick={() => onChoose(index)}
                 >
                   {match.problems[index].label}
@@ -301,7 +301,7 @@ function LiveRanking({ match, rows, onChoose }: {
         </tbody>
       </table>
     </div>
-    <div className="rank-legend"><span>■ AC</span><span>■ WA</span><small>看大家在过哪题，也是一种算法。</small></div>
+    <div className="rank-legend"><span>■ AC</span><span>■ WA</span><span className="first-blood">■ 一血</span><small>看大家在过哪题，也是一种算法。</small></div>
   </aside>;
 }
 

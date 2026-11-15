@@ -70,7 +70,7 @@ export interface Standing {
   penalty: number;
   lastAc: number;
   rank: number;
-  problems: { result: 'AC' | 'WA' | null; attempts: number; time: number | null }[];
+  problems: { result: 'AC' | 'WA' | null; attempts: number; time: number | null; firstBlood: boolean }[];
 }
 export interface MatchResult {
   matchId: string;

@@ -21,6 +21,35 @@ async function start(page: Page) {
 }
 async function elapsed(page: Page, seconds: number) { await page.clock.runFor(seconds * 1000); }
 
+test('leaderboard highlights first blood and preserves tied winners after reload', async ({ page }) => {
+  const profile = createTestProfile();
+  const match = startMatch(profile, 'school', 7);
+  match.time = 90;
+  match.problems[0].acTime = 30;
+  match.problems[0].attempts = [{ time: 30, result: 'AC', score: 1000 }];
+  match.problems[1].acTime = 90;
+  match.problems[1].attempts = [{ time: 90, result: 'AC', score: 1000 }];
+  for (const opponent of match.opponents.slice(0, 2)) {
+    opponent.results[0] = { acTime: 30, attempts: 1 };
+    opponent.results[1] = { acTime: 60, attempts: 1 };
+  }
+  await page.goto('/');
+  await page.evaluate(([key, value]) => localStorage.setItem(key, value), [storageKey, JSON.stringify({ profile, match, result: null, openedPack: null })]);
+  await page.reload();
+  const firstBloods = page.locator('.team-problems button.first-blood');
+  await expect(firstBloods).toHaveCount(2);
+  const playerFirst = page.locator('.rank-table .you .team-problems button').nth(0);
+  await expect(playerFirst).toHaveAttribute('title', /一血/);
+  await expect(playerFirst).toHaveCSS('background-color', 'rgb(79, 112, 61)');
+  await expect(page.locator('.rank-table .you .team-problems button').nth(1)).toHaveCSS('background-color', 'rgb(153, 170, 125)');
+  await expect(page.locator('.rank-legend')).toContainText('■ 一血');
+  const winner = await firstBloods.evaluateAll(buttons => buttons.map(button => button.closest('tr')!.textContent));
+  await page.screenshot({ path: 'test-results/first-blood.png', fullPage: true });
+  await page.reload();
+  await expect(firstBloods).toHaveCount(2);
+  expect(await firstBloods.evaluateAll(buttons => buttons.map(button => button.closest('tr')!.textContent))).toEqual(winner);
+});
+
 test('screen-edge countdown follows contest time, pause, warning thresholds and viewport size', async ({ page }) => {
   await start(page);
   const frame = page.locator('.contest-countdown');
@@ -203,18 +232,18 @@ test('paused play moves cards immediately, freezes their timers and submits afte
 
 test('switching keeps independent reading progress and opponents keep moving', async ({ page }) => {
   await start(page);
-  await elapsed(page, 2);
+  await elapsed(page, 1);
   await page.locator('.problem-button').nth(1).click();
-  await elapsed(page, 2);
+  await elapsed(page, 1);
   const b = await state(page);
-  expect(b.match.problems[0].readProgress).toBe(2);
-  expect(b.match.problems[1].readProgress).toBe(2);
+  expect(b.match.problems[0].readProgress).toBe(1);
+  expect(b.match.problems[1].readProgress).toBe(1);
   await page.locator('.problem-button').nth(0).click();
   await elapsed(page, 9);
-  expect((await state(page)).match.problems[1].readProgress).toBe(2);
+  expect((await state(page)).match.problems[1].readProgress).toBe(1);
   await page.locator('.problem-button').nth(1).click();
   await elapsed(page, 9);
-  expect((await state(page)).match.problems[1].readProgress).toBeGreaterThan(2);
+  expect((await state(page)).match.problems[1].readProgress).toBeGreaterThan(1);
   await elapsed(page, 40);
   expect((await state(page)).match.opponents.some((team: any) => team.results.some((p: any) => p.attempts > 0))).toBe(true);
 });

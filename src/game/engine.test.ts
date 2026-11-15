@@ -48,9 +48,30 @@ describe('比赛时间、读题与队列', () => {
     for (const event of events) {
       const game = startMatch(createProfile(), event.id, 777);
       expect(game.problems).toHaveLength(event.problems);
-      expect(game.problems.every(p => p.difficulty >= event.minDifficulty && p.difficulty <= event.maxDifficulty && p.readTime >= 3 && p.readTime <= 8)).toBe(true);
+      expect(game.problems.every(p => p.difficulty >= event.minDifficulty && p.difficulty <= event.maxDifficulty && Number.isInteger(p.readTime) && p.readTime >= 2 && p.readTime <= 5)).toBe(true);
       expect(game.problems.map(p => p.difficulty)).not.toEqual(game.problems.map(p => p.difficulty).sort((a, b) => a - b));
     }
+  });
+  it('难题平均读题更久，各难度仍能抽到全部时长，并可出现难题读得更快', () => {
+    const easy: number[] = [];
+    const hard: number[] = [];
+    let hasInversion = false;
+    for (let seed = 0; seed < 500; seed++) {
+      for (const eventId of ['school', 'wf']) {
+        const game = startMatch(createProfile(), eventId, seed);
+        for (const problem of game.problems) {
+          if (problem.difficulty <= 1200) easy.push(problem.readTime);
+          if (problem.difficulty >= 3000) hard.push(problem.readTime);
+          if (game.problems.some(other => other.difficulty < problem.difficulty && other.readTime > problem.readTime)) hasInversion = true;
+        }
+      }
+    }
+    const mean = (values: number[]) => values.reduce((sum, value) => sum + value, 0) / values.length;
+    expect(mean(hard) - mean(easy)).toBeGreaterThan(1);
+    expect([...new Set(easy)].sort()).toEqual([2, 3, 4, 5]);
+    expect([...new Set(hard)].sort()).toEqual([2, 3, 4, 5]);
+    expect(hasInversion).toBe(true);
+    expect(startMatch(createProfile(), 'school', 1234).problems).toEqual(startMatch(createProfile(), 'school', 1234).problems);
   });
   it('读题前不能打牌；切题仅暂停当前题局部时间', () => {
     let game = match();
@@ -502,7 +523,7 @@ describe('赛季、组卡与开包', () => {
     game.problems[0].attempts = [{ time: 30, result: 'AC', score: 1000 }];
     const settled = settleMatch(profile, game);
     expect(settled.result.promoted).toBe(true);
-    expect(settled.result.packs).toBe(4);
+    expect(settled.result.packs).toBe(5);
     profile = settled.profile;
     expect(availableEvents(profile).map(e => e.id)).toEqual(['online', 'provincial', 'invitational']);
     const side = startMatch(profile, 'provincial', 1);
@@ -511,6 +532,78 @@ describe('赛季、组卡与开包', () => {
     expect(profile.mainIndex).toBe(1);
     expect(profile.seasonEnded).toBe(false);
     expect(availableEvents(profile).map(e => e.id)).toEqual(['online', 'invitational']);
+  });
+  it.each([
+    { times: [], bonus: 2 },
+    { times: [[null, null, null]], bonus: 2 },
+    { times: [[40, 70, 10]], bonus: 2 },
+    { times: [[20, 70, null]], bonus: 1 },
+    { times: [[30, 60, null]], bonus: 2 },
+    { times: [[20, 70, null], [40, 50, null]], bonus: 0 },
+  ])('每道一血额外发一包：对手 AC 时间 $times，奖励 $bonus 包', ({ times, bonus }) => {
+    const profile = createProfile();
+    const game = startMatch(profile, 'regional', 7);
+    game.status = 'finished';
+    game.problems[0].acTime = 30;
+    game.problems[1].acTime = 60;
+    game.opponents = times.map((acTimes, index) => ({
+      ...game.opponents[index],
+      results: game.problems.map((_, i) => ({ attempts: acTimes[i] == null ? 0 : 1, acTime: acTimes[i] ?? null })),
+    }));
+    const settled = settleMatch(profile, game);
+    expect(settled.result.packs).toBe(2 + bonus);
+    const rewards = settled.profile.packs.slice(profile.packs.length);
+    expect(rewards).toHaveLength(2 + bonus);
+    expect(rewards.every(pack => pack.eventId === 'regional' && pack.guarantee === 2)).toBe(true);
+    expect(settleMatch(settled.profile, game).profile).toBe(settled.profile);
+  });
+  it.each([1, 3, 4, 6])('%i 道一血的额外卡包最多三包，排行榜保留全部一血', count => {
+    const profile = createProfile();
+    const game = startMatch(profile, 'school', 7);
+    for (const problem of game.problems.slice(0, count)) {
+      problem.acTime = 30;
+      problem.attempts = [{ time: 30, result: 'AC', score: 1000 }];
+    }
+    expect(standings(game).find(row => row.player)!.problems.filter(problem => problem.firstBlood)).toHaveLength(count);
+    const settled = settleMatch(profile, game);
+    expect(settled.result.packs).toBe(4 + Math.min(count, 3));
+    expect(settled.profile.packs).toHaveLength(profile.packs.length + settled.result.packs);
+  });
+  it('并列最早 AC 优先玩家，较晚 AC 和未通过不获得一血', () => {
+    const game = startMatch(createProfile(), 'school', 7);
+    game.problems[0].acTime = 30;
+    game.problems[1].acTime = 40;
+    game.opponents[0].results[0].acTime = 30;
+    game.opponents[0].results[1].acTime = 30;
+    const rows = standings(game);
+    expect(rows.find(row => row.player)!.problems.map(problem => problem.firstBlood)).toEqual([true, false, ...Array(8).fill(false)]);
+    expect(rows.find(row => row.id === game.opponents[0].id)!.problems[1].firstBlood).toBe(true);
+    for (let index = 0; index < game.problems.length; index++) {
+      expect(rows.filter(row => row.problems[index].firstBlood)).toHaveLength(index < 2 ? 1 : 0);
+    }
+  });
+  it('电脑队并列一血随机指定一队，刷新、读档和比赛推进保持归属', () => {
+    const game = startMatch(createProfile(), 'school', 7);
+    game.opponents[0].results[0].acTime = 30;
+    game.opponents[1].results[0].acTime = 30;
+    game.opponents[2].results[0].acTime = 40;
+    const winners = new Set<string>();
+    for (let i = 0; i < 24; i++) {
+      game.id = `tie-${i}`;
+      const before = JSON.stringify(game);
+      const rows = standings(game);
+      const awarded = rows.filter(row => row.problems[0].firstBlood);
+      expect(awarded).toHaveLength(1);
+      expect(game.opponents.slice(0, 2).map(team => team.id)).toContain(awarded[0].id);
+      winners.add(awarded[0].id);
+      expect(standings(game)).toEqual(rows);
+      expect(standings(JSON.parse(before))).toEqual(rows);
+      expect(JSON.stringify(game)).toBe(before);
+      game.randomState++;
+      game.time++;
+      expect(standings(game)).toEqual(rows);
+    }
+    expect(winners.size).toBe(2);
   });
   it('开包每包5张、保底满足，技巧只取固定卡池，卡片逐张入藏', () => {
     for (const guarantee of [0, 2, 3, 4]) {
@@ -541,11 +634,11 @@ describe('赛季、组卡与开包', () => {
     }
     expect(profile.seasonEnded).toBe(true);
     expect(profile.playedEvents).toEqual(['school', 'online', 'regional', 'ecf', 'wf']);
-    expect(profile.packs).toHaveLength(28);
+    expect(profile.packs).toHaveLength(33);
     profile = nextSeason(profile);
     expect(profile.playedEvents).toEqual([]);
     expect(availableEvents(profile).map(event => event.id)).toEqual(['school']);
-    expect(profile.packs).toHaveLength(28);
+    expect(profile.packs).toHaveLength(33);
   });
   it('保底不会覆盖前四位已达标结果，算法普通档位遵循权重', () => {
     const upper = rollPack(4, rngSequence([0.1, 0.999, 0]));

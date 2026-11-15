@@ -25,6 +25,15 @@ function shuffle<T>(list: T[], state: { randomState: number }): T[] {
 const seed = () => Math.floor(Math.random() * 4294967296);
 const uniqueId = () => crypto.randomUUID();
 
+function readingTime(difficulty: number, rng: { randomState: number }): number {
+  const chance = 0.25 + 0.5 * (difficulty - 800) / (3500 - 800);
+  let minutes = 2;
+  for (let i = 0; i < 3; i++) {
+    if (random(rng) < chance) minutes++;
+  }
+  return minutes;
+}
+
 export function createProfile(): Profile {
   const packs: Pack[] = Array.from({ length: 8 }, () => ({ id: uniqueId(), eventId: 'starter', guarantee: 0 }));
   return { collection: {}, deck: [], season: 1, mainIndex: 0, seasonEnded: false, playedEvents: [], packs, history: [] };
@@ -59,7 +68,7 @@ export function startMatch(profile: Profile, eventId: string, randomSeed = seed(
   const problems = shuffle(difficulties, rng).map((difficulty, i) => ({
     id: `problem-${i}`, label: String.fromCharCode(65 + i), name: names[i % names.length], difficulty,
     categories: shuffle(categories, rng).slice(0, random(rng) < 0.25 ? 2 : 1),
-    readTime: 3 + Math.floor(random(rng) * 6), readProgress: 0, table: [], attempts: [], acTime: null,
+    readTime: readingTime(difficulty, rng), readProgress: 0, table: [], attempts: [], acTime: null,
     revision: 0, waRevision: null, submitQueued: false,
   }));
   const deck = shuffle(profile.deck.map((cardId, i) => ({ uid: `card-${i}`, cardId })), rng);
@@ -295,10 +304,21 @@ export function standings(match: Match): Standing[] {
     result: problem.acTime !== null ? 'AC' as const : problem.attempts.length ? 'WA' as const : null,
     attempts: problem.attempts.length,
     time: problem.acTime,
+    firstBlood: false,
   }));
   const rows = [{ id: 'player', name: '我交我自己', player: true, problems: playerProblems },
     ...match.opponents.map(team => ({ id: team.id, name: team.name, player: false,
-      problems: team.results.map(result => ({ result: result.acTime !== null ? 'AC' as const : result.attempts ? 'WA' as const : null, attempts: result.attempts, time: result.acTime })) }))];
+      problems: team.results.map(result => ({ result: result.acTime !== null ? 'AC' as const : result.attempts ? 'WA' as const : null, attempts: result.attempts, time: result.acTime, firstBlood: false })) }))];
+  match.problems.forEach((problem, index) => {
+    const earliest = Math.min(...rows.map(row => row.problems[index].time ?? Infinity));
+    if (earliest === Infinity) return;
+    const tied = rows.filter(row => row.problems[index].time === earliest);
+    // 每场每题固定随机种子，避免刷新排行榜时一血归属变化。
+    const rng = { randomState: 2166136261 };
+    for (const char of `${match.id}:${problem.id}`) rng.randomState = Math.imul(rng.randomState ^ char.charCodeAt(0), 16777619) >>> 0;
+    const winner = tied.find(row => row.player) ?? tied[Math.floor(random(rng) * tied.length)];
+    winner.problems[index].firstBlood = true;
+  });
   return rows.map(row => ({ ...row,
     solved: row.problems.filter(problem => problem.result === 'AC').length,
     penalty: row.problems.reduce((sum, problem) => sum + (problem.time !== null ? Math.floor(problem.time) + (problem.attempts - 1) * 20 : 0), 0),
@@ -313,7 +333,8 @@ export function settleMatch(profile: Profile, match: Match): { profile: Profile;
   const ranking = standings(match);
   const player = ranking.find(row => row.player)!;
   const percentile = player.rank / ranking.length;
-  const count = 1 + (player.solved > 0 ? 1 : 0) + (percentile <= 0.3 ? 1 : 0) + (percentile <= 0.1 ? 1 : 0);
+  const firstBloods = player.problems.filter(problem => problem.firstBlood).length;
+  const count = 1 + (player.solved > 0 ? 1 : 0) + (percentile <= 0.3 ? 1 : 0) + (percentile <= 0.1 ? 1 : 0) + Math.min(firstBloods, 3);
   const promoted = event.kind === 'main' && player.solved > 0 && event.promotion !== undefined && percentile <= event.promotion;
   const seasonEnded = event.kind === 'main' && (!promoted || event.id === mainEvents[mainEvents.length - 1].id);
   const result: MatchResult = { matchId: match.id, eventId: match.eventId, rank: player.rank, teams: ranking.length,

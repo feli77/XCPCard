@@ -583,6 +583,9 @@
   background: #99aa7d;
   color: white;
 }
+.team-problems button.first-blood {
+  background: #4f703d;
+}
 .team-problems button.WA {
   background: #c38e7d;
   color: white;
@@ -598,6 +601,9 @@
 }
 .rank-legend > span:nth-child(2) {
   color: #b17e6c;
+}
+.rank-legend > .first-blood {
+  color: #4f703d;
 }
 .rank-legend > small {
   font-size: 8px;
