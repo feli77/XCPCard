@@ -17,6 +17,7 @@ import {
 } from "../game/engine";
 import type { Action, Match, MatchResult, Profile } from "../game/types";
 import { contestAwards, restoreHistory } from "../game/honors";
+import { seasonYear } from "../game/season";
 import { AwardBadges } from "./AwardBadges";
 import { TrophyRoom } from "./TrophyRoom";
 import { MatchView } from "./MatchView";
@@ -48,7 +49,7 @@ function load(): Session {
   const session: Session = JSON.parse(saved);
   session.profile = restoreHistory(session.profile);
   if (session.result) session.result = session.profile.history.find(result => result.matchId === session.result!.matchId)
-    ?? { ...session.result, season: session.result.season ?? session.profile.season, ...contestAwards(session.result.eventId, session.result.rank, session.result.teams) };
+    ?? { ...session.result, season: seasonYear(session.result.season ?? session.profile.season), ...contestAwards(session.result.eventId, session.result.rank, session.result.teams) };
   if (session.match?.status === "playing") session.match.paused = true;
   return session;
 }
@@ -227,7 +228,7 @@ export function App() {
           <div className="match-title">
             <span className="live-dot" />
             {match && eventById[match.eventId].name}
-            <span>第 {profile.season} 赛季</span>
+            <span>{profile.season} 赛季</span>
           </div>
         )}
         <div className="header-meta">
@@ -238,7 +239,7 @@ export function App() {
           ) : (
             <>
               <span className="tiny-label">SEASON</span>
-              <b>{String(profile.season).padStart(2, "0")}</b>
+              <b>{profile.season}</b>
             </>
           )}
         </div>

@@ -556,6 +556,7 @@ describe('暂停预排、判题与罚时', () => {
 describe('赛季、组卡与开包', () => {
   it('新玩家获得8个普通卡包，收藏和卡组为空', () => {
     const profile = createProfile();
+    expect(profile.season).toBe(2026);
     expect(profile.collection).toEqual({});
     expect(profile.deck).toEqual([]);
     expect(profile.packs).toHaveLength(8);
@@ -581,7 +582,7 @@ describe('赛季、组卡与开包', () => {
     expect(settled.profile.packs).toHaveLength(profile.packs.length + 1);
     expect(settleMatch(settled.profile, game).profile).toBe(settled.profile);
     const next = nextSeason(settled.profile);
-    expect(next.season).toBe(2);
+    expect(next.season).toBe(2027);
     expect(next.collection).toEqual(profile.collection);
     expect(next.deck).toEqual(profile.deck);
     expect(availableEvents(next).map(e => e.id)).toEqual(['school']);

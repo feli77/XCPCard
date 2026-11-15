@@ -81,7 +81,7 @@ export function Lobby({
         <section className="contest-ticket">
           <div className="ticket-top">
             <span>
-              ENTRY TICKET / {String(profile.season).padStart(2, "0")}
+              ENTRY TICKET / {profile.season}
             </span>
             <span>● READY TO CODE</span>
           </div>

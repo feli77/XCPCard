@@ -34,7 +34,8 @@ describe('荣誉收藏和历史记录', () => {
       return old as MatchResult;
     });
     const restored = restoreHistory(profile);
-    expect(restored.history.map(entry => entry.season)).toEqual(ended ? [2, 2, 3] : [1, 1, 2]);
+    expect(restored.season).toBe(2028);
+    expect(restored.history.map(entry => entry.season)).toEqual(ended ? [2027, 2027, 2028] : [2026, 2026, 2027]);
     expect(restored.history.map(entry => entry.medal)).toEqual(['silver', 'gold', null]);
     expect(restored.history.map(entry => entry.title)).toEqual([null, 'third-place', null]);
     expect(restored.history.map(entry => entry.teams)).toEqual([50, 50, 50]);
@@ -44,8 +45,18 @@ describe('荣誉收藏和历史记录', () => {
 
   it('已有赛季记录在跨季后保持不变', () => {
     const profile = createProfile();
-    profile.season = 3;
-    profile.history = [result('regional', 1, 1), result('regional', 10, 2)];
+    profile.season = 2028;
+    profile.history = [result('regional', 1, 2026), result('regional', 10, 2027)];
     expect(restoreHistory(profile).history).toEqual(profile.history);
+  });
+
+  it('旧存档有赛季编号的历史记录也迁移为年份', () => {
+    const profile = createProfile();
+    profile.season = 2;
+    profile.history = [result('regional', 1, 1), result('regional', 10, 2)];
+    const restored = restoreHistory(profile);
+    expect(restored.season).toBe(2027);
+    expect(restored.history.map(entry => entry.season)).toEqual([2026, 2027]);
+    expect(restoreHistory(restored)).toEqual(restored);
   });
 });

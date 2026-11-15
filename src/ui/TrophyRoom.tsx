@@ -19,7 +19,7 @@ export function TrophyRoom({ profile }: { profile: Profile }) {
       <div className="honor-illustration"><PixelArt kind="trophy" /></div>
       <div>
         <span className="eyebrow">最高荣誉</span>
-        <h2>{best ? `第 ${best.season} 赛季 ${eventById[best.eventId].name}` : '第一份荣誉，等你带回'}</h2>
+        <h2>{best ? `${best.season} 赛季 ${eventById[best.eventId].name}` : '第一份荣誉，等你带回'}</h2>
         {best ? <>
           <AwardBadges medal={best.medal} title={best.title} />
           <p>第 {best.rank} 名 / {best.teams} 队 · {best.solved} AC · 罚时 {best.penalty}</p>
@@ -38,7 +38,7 @@ export function TrophyRoom({ profile }: { profile: Profile }) {
       {profile.history.length ? <div className="history-scroll"><table className="history-table">
         <thead><tr><th>赛季</th><th>赛事</th><th>排名</th><th>AC</th><th>罚时</th><th>荣誉</th><th>奖励</th></tr></thead>
         <tbody>{[...profile.history].reverse().map(result => <tr key={result.matchId}>
-          <td>第 {result.season} 赛季</td>
+          <td>{result.season} 赛季</td>
           <td>{eventById[result.eventId].name}</td>
           <td>#{result.rank} <small>/ {result.teams}</small></td>
           <td>{result.solved}</td><td>{result.penalty}</td>

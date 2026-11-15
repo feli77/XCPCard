@@ -1,4 +1,5 @@
 import type { MatchResult, Medal, PodiumTitle, Profile } from './types';
+import { seasonYear } from './season';
 
 export const medalNames: Record<Medal, string> = { gold: '金牌', silver: '银牌', bronze: '铜牌' };
 export const titleNames: Record<PodiumTitle, string> = { champion: '冠军', 'runner-up': '亚军', 'third-place': '季军' };
@@ -12,13 +13,13 @@ export function contestAwards(eventId: string, rank: number, teams: number): { m
 }
 
 export function restoreHistory(profile: Profile): Profile {
-  let season = profile.season;
+  let season = seasonYear(profile.season);
   if (profile.history.at(-1)?.seasonEnded && !profile.seasonEnded) season--;
   const history = [...profile.history].reverse().map((result, index) => {
     if (index > 0 && result.seasonEnded) season--;
-    return { ...result, season: result.season ?? season, ...contestAwards(result.eventId, result.rank, result.teams) };
+    return { ...result, season: result.season === undefined ? season : seasonYear(result.season), ...contestAwards(result.eventId, result.rank, result.teams) };
   }).reverse();
-  return { ...profile, history };
+  return { ...profile, season: seasonYear(profile.season), history };
 }
 
 const eventLevels: Record<string, number> = { wf: 4, ecf: 3, regional: 2, provincial: 1, invitational: 1 };

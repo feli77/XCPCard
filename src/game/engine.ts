@@ -2,6 +2,7 @@ import { cards, events, problemNames, teamNames, rarityWeights } from '../conten
 import type { Category, CardDefinition } from '../content/types';
 import type { Action, CardInstance, Match, MatchResult, Opponent, Pack, Profile, Standing, TableCard } from './types';
 import { contestAwards } from './honors';
+import { FIRST_SEASON_YEAR } from './season';
 
 export const MATCH_DURATION = 300;
 export const HAND_LIMIT = 8;
@@ -43,7 +44,7 @@ function readingTime(difficulty: number, rng: { randomState: number }): number {
 
 export function createProfile(): Profile {
   const packs: Pack[] = Array.from({ length: 8 }, () => ({ id: uniqueId(), eventId: 'starter', guarantee: 0 }));
-  return { collection: {}, deck: [], season: 1, mainIndex: 0, seasonEnded: false, playedEvents: [], packs, history: [] };
+  return { collection: {}, deck: [], season: FIRST_SEASON_YEAR, mainIndex: 0, seasonEnded: false, playedEvents: [], packs, history: [] };
 }
 
 export function availableEvents(profile: Profile) {

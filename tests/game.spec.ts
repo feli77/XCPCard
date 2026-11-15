@@ -421,7 +421,7 @@ test('finish, claim reward, reveal one card, reload, reveal rest and start next 
   await page.getByRole('button', { name: '赛事大厅', exact: true }).click();
   await page.getByRole('button', { name: '开启下一季' }).click();
   const next = await state(page);
-  expect(next.profile.season).toBe(2);
+  expect(next.profile.season).toBe(2027);
   expect(count(next.profile)).toBe(29);
   expect(next.profile.mainIndex).toBe(0);
   await expect(page.getByRole('button', { name: '参加比赛' })).toBeEnabled();
