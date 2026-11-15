@@ -1,9 +1,10 @@
 import { test, expect, type Page } from '@playwright/test';
-import { createProfile, startMatch } from '../src/game/engine';
+import { startMatch } from '../src/game/engine';
 import type { Match } from '../src/game/types';
+import { createTestProfile } from './fixtures';
 
 async function load(page: Page, prepare: (match: Match) => void = () => {}) {
-  const profile = createProfile();
+  const profile = createTestProfile();
   const match = startMatch(profile, 'school', 492);
   match.paused = true;
   prepare(match);
