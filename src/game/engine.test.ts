@@ -442,7 +442,7 @@ describe('赛季、组卡与开包', () => {
     game.problems[0].attempts = [{ time: 30, result: 'AC', score: 1000 }];
     const settled = settleMatch(profile, game);
     expect(settled.result.promoted).toBe(true);
-    expect(settled.result.packs).toBe(4);
+    expect(settled.result.packs).toBe(5);
     profile = settled.profile;
     expect(availableEvents(profile).map(e => e.id)).toEqual(['online', 'provincial', 'invitational']);
     const side = startMatch(profile, 'provincial', 1);
@@ -451,6 +451,30 @@ describe('赛季、组卡与开包', () => {
     expect(profile.mainIndex).toBe(1);
     expect(profile.seasonEnded).toBe(false);
     expect(availableEvents(profile).map(e => e.id)).toEqual(['online', 'invitational']);
+  });
+  it.each([
+    { times: [], bonus: 2 },
+    { times: [[null, null, null]], bonus: 2 },
+    { times: [[40, 70, 10]], bonus: 2 },
+    { times: [[20, 70, null]], bonus: 1 },
+    { times: [[30, 60, null]], bonus: 0 },
+    { times: [[20, 70, null], [40, 50, null]], bonus: 0 },
+  ])('每道一血额外发一包：对手 AC 时间 $times，奖励 $bonus 包', ({ times, bonus }) => {
+    const profile = createProfile();
+    const game = startMatch(profile, 'regional', 7);
+    game.status = 'finished';
+    game.problems[0].acTime = 30;
+    game.problems[1].acTime = 60;
+    game.opponents = times.map((acTimes, index) => ({
+      ...game.opponents[index],
+      results: game.problems.map((_, i) => ({ attempts: acTimes[i] == null ? 0 : 1, acTime: acTimes[i] ?? null })),
+    }));
+    const settled = settleMatch(profile, game);
+    expect(settled.result.packs).toBe(2 + bonus);
+    const rewards = settled.profile.packs.slice(profile.packs.length);
+    expect(rewards).toHaveLength(2 + bonus);
+    expect(rewards.every(pack => pack.eventId === 'regional' && pack.guarantee === 2)).toBe(true);
+    expect(settleMatch(settled.profile, game).profile).toBe(settled.profile);
   });
   it('开包每包5张、保底满足，技巧只取固定卡池，卡片逐张入藏', () => {
     for (const guarantee of [0, 2, 3, 4]) {
@@ -481,11 +505,11 @@ describe('赛季、组卡与开包', () => {
     }
     expect(profile.seasonEnded).toBe(true);
     expect(profile.playedEvents).toEqual(['school', 'online', 'regional', 'ecf', 'wf']);
-    expect(profile.packs).toHaveLength(28);
+    expect(profile.packs).toHaveLength(33);
     profile = nextSeason(profile);
     expect(profile.playedEvents).toEqual([]);
     expect(availableEvents(profile).map(event => event.id)).toEqual(['school']);
-    expect(profile.packs).toHaveLength(28);
+    expect(profile.packs).toHaveLength(33);
   });
   it('保底不会覆盖前四位已达标结果，算法普通档位遵循权重', () => {
     const upper = rollPack(4, rngSequence([0.1, 0.999, 0]));

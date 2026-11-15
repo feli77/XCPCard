@@ -320,7 +320,9 @@ export function settleMatch(profile: Profile, match: Match): { profile: Profile;
   const ranking = standings(match);
   const player = ranking.find(row => row.player)!;
   const percentile = player.rank / ranking.length;
-  const count = 1 + (player.solved > 0 ? 1 : 0) + (percentile <= 0.3 ? 1 : 0) + (percentile <= 0.1 ? 1 : 0);
+  const firstBloods = match.problems.filter((problem, index) => problem.acTime !== null &&
+    match.opponents.every(team => team.results[index].acTime === null || problem.acTime! < team.results[index].acTime!)).length;
+  const count = 1 + (player.solved > 0 ? 1 : 0) + (percentile <= 0.3 ? 1 : 0) + (percentile <= 0.1 ? 1 : 0) + firstBloods;
   const promoted = event.kind === 'main' && player.solved > 0 && event.promotion !== undefined && percentile <= event.promotion;
   const seasonEnded = event.kind === 'main' && (!promoted || event.id === mainEvents[mainEvents.length - 1].id);
   const result: MatchResult = { matchId: match.id, eventId: match.eventId, rank: player.rank, teams: ranking.length,
