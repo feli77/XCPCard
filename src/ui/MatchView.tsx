@@ -12,20 +12,22 @@ import { useCardTransfers } from './useCardTransfers';
 
 interface MatchViewProps {
   match: Match;
+  speed: 1 | 2 | 4;
   viewProblem: number;
   selected: string[];
   onCommand: (action: Action) => void;
   onChooseProblem: (index: number) => void;
   onToggleSelected: (uid: string) => void;
   onTogglePause: () => void;
+  onChangeSpeed: (speed: 1 | 2 | 4) => void;
 }
 
 const timeText = (value: number) =>
   `${Math.floor(value / 60).toString().padStart(2, '0')}:${Math.floor(value % 60).toString().padStart(2, '0')}`;
 
 export function MatchView({
-  match, viewProblem, selected,
-  onCommand, onChooseProblem, onToggleSelected, onTogglePause,
+  match, speed, viewProblem, selected,
+  onCommand, onChooseProblem, onToggleSelected, onTogglePause, onChangeSpeed,
 }: MatchViewProps) {
   const root = useRef<HTMLElement>(null);
   const [deckOpen, setDeckOpen] = useState(false);
@@ -76,6 +78,15 @@ export function MatchView({
       <div className="player-record">
         <b>{player.solved}<span> AC</span></b>
         <small>#{player.rank} / {leaderboard.length}</small>
+      </div>
+      <div className="speed-control" role="group" aria-label="比赛速度">
+        {([1, 2, 4] as const).map(value => <button
+          key={value}
+          className={speed === value ? 'primary' : 'secondary'}
+          aria-pressed={speed === value}
+          disabled={match.status === 'finished'}
+          onClick={() => onChangeSpeed(value)}
+        >{value}x</button>)}
       </div>
       <button
         className={match.paused ? 'primary pause-button' : 'secondary pause-button'}

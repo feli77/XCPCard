@@ -136,6 +136,17 @@
   color: #998f7c;
   font: 11px var(--mono);
 }
+.speed-control {
+  display: flex;
+  flex-shrink: 0;
+  gap: 4px;
+}
+.speed-control button {
+  width: 36px;
+  min-height: 35px;
+  padding: 8px 0;
+  font: 11px var(--mono);
+}
 .pause-button {
   width: 119px;
   min-height: 35px;

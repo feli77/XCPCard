@@ -52,6 +52,7 @@ export function App() {
     session.match ? "match" : "lobby",
   );
   const [selected, setSelected] = useState<string[]>([]);
+  const [speed, setSpeed] = useState<1 | 2 | 4>(1);
   const [viewProblem, setViewProblem] = useState(
     session.match?.currentProblem || 0,
   );
@@ -67,17 +68,18 @@ export function App() {
   useEffect(() => {
     if (!match || match.paused || match.status !== "playing") return;
     let last = performance.now();
+    const tickDuration = 1000 / speed;
     const timer = window.setInterval(() => {
       const now = performance.now();
-      const elapsed = Math.floor((now - last) / 1000);
+      const elapsed = Math.floor((now - last) / tickDuration);
       if (!elapsed) return;
-      last += elapsed * 1000;
+      last += elapsed * tickDuration;
       setSession((s) =>
         s.match ? { ...s, match: advanceMatch(s.match, elapsed) } : s,
       );
     }, 200);
     return () => clearInterval(timer);
-  }, [match?.id, match?.paused, match?.status]);
+  }, [match?.id, match?.paused, match?.status, speed]);
   useEffect(() => {
     if (match?.status !== "finished" || result?.matchId === match.id) return;
     setSession((s) => {
@@ -113,6 +115,7 @@ export function App() {
     setSession((s) => ({ ...s, match: next, result: null }));
     setViewProblem(0);
     setSelected([]);
+    setSpeed(1);
     setScreen("match");
   }
   function chooseProblem(index: number) {
@@ -278,12 +281,14 @@ export function App() {
       {screen === "match" && match && (
         <MatchView
           match={match}
+          speed={speed}
           viewProblem={viewProblem}
           selected={selected}
           onCommand={command}
           onChooseProblem={chooseProblem}
           onToggleSelected={uid => setSelected(ids => ids.includes(uid) ? ids.filter(id => id !== uid) : [...ids, uid])}
           onTogglePause={togglePause}
+          onChangeSpeed={setSpeed}
         />
       )}
 
