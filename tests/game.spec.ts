@@ -42,7 +42,6 @@ test('leaderboard highlights first blood and preserves tied winners after reload
   await expect(playerFirst).toHaveAttribute('title', /一血/);
   await expect(playerFirst).toHaveCSS('background-color', 'rgb(79, 112, 61)');
   await expect(page.locator('.rank-table .you .team-problems button').nth(1)).toHaveCSS('background-color', 'rgb(153, 170, 125)');
-  await expect(page.locator('.rank-legend')).toContainText('■ 一血');
   const winner = await firstBloods.evaluateAll(buttons => buttons.map(button => button.closest('tr')!.textContent));
   await page.screenshot({ path: 'test-results/first-blood.png', fullPage: true });
   await page.reload();

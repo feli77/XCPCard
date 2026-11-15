@@ -321,7 +321,6 @@ function LiveRanking({ match, rows, onChoose }: {
         </tbody>
       </table>
     </div>
-    <div className="rank-legend"><span>■ AC</span><span>■ 未通过</span><span className="first-blood">■ 一血</span><small>看大家在过哪题，也是一种算法。</small></div>
   </aside>;
 }
 
