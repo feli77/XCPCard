@@ -4,6 +4,7 @@ import { uiText } from "../content/text";
 import {
   act,
   advanceMatch,
+  advanceJudging,
   cardById,
   collectCard,
   createProfile,
@@ -59,32 +60,39 @@ export function App() {
   const [rarity, setRarity] = useState<number | null>(null);
   const [notice, setNotice] = useState("");
   const previousFeedback = useRef(session.match?.feedback?.id);
+  const judgingClock = useRef(0);
   const { profile, match, result, openedPack } = session;
   const playing = match?.status === "playing";
+  const judging = !!match?.problems.some(problem => problem.judging);
+  const ticking = playing || judging;
   useEffect(() => {
     localStorage.setItem(SAVE_KEY, JSON.stringify(session));
   }, [session]);
   useEffect(() => {
-    if (!match || match.paused || match.status !== "playing") return;
+    if (!match || match.paused || !ticking) return;
     let last = performance.now();
+    judgingClock.current = last;
     const timer = window.setInterval(() => {
       const now = performance.now();
       const elapsed = Math.floor((now - last) / 1000);
-      if (!elapsed) return;
+      const judgingElapsed = now - judgingClock.current;
+      judgingClock.current = now;
       last += elapsed * 1000;
-      setSession((s) =>
-        s.match ? { ...s, match: advanceMatch(s.match, elapsed) } : s,
-      );
-    }, 200);
+      setSession((s) => {
+        if (!s.match) return s;
+        const next = advanceMatch(advanceJudging(s.match, judgingElapsed), elapsed);
+        return next === s.match ? s : { ...s, match: next };
+      });
+    }, 100);
     return () => clearInterval(timer);
-  }, [match?.id, match?.paused, match?.status]);
+  }, [match?.id, match?.paused, ticking]);
   useEffect(() => {
-    if (match?.status !== "finished" || result?.matchId === match.id) return;
+    if (match?.status !== "finished" || judging || result?.matchId === match.id) return;
     setSession((s) => {
       const settled = settleMatch(s.profile, s.match!);
       return { ...s, ...settled };
     });
-  }, [match?.status, match?.id, result?.matchId]);
+  }, [match?.status, match?.id, result?.matchId, judging]);
   useEffect(() => {
     if (!match?.feedback || match.feedback.id === previousFeedback.current)
       return;
@@ -97,13 +105,18 @@ export function App() {
     return () => clearTimeout(timer);
   }, [notice]);
   function command(action: Action) {
-    setSession((s) => ({ ...s, match: act(s.match!, action) }));
+    const now = performance.now();
+    const elapsed = now - judgingClock.current;
+    judgingClock.current = now;
+    setSession((s) => ({ ...s, match: act(advanceJudging(s.match!, elapsed), action) }));
     if (action.type === "play" || action.type === "discard-hand")
       setSelected([]);
   }
   function navigate(next: Screen) {
-    if (screen === "match" && match?.status === "playing")
-      setSession((s) => ({ ...s, match: setPaused(s.match!, true) }));
+    if (screen === "match" && match?.status === "playing") {
+      const elapsed = performance.now() - judgingClock.current;
+      setSession((s) => ({ ...s, match: setPaused(advanceJudging(s.match!, elapsed), true) }));
+    }
     setScreen(next);
     setSelected([]);
   }
@@ -121,7 +134,8 @@ export function App() {
     setSelected([]);
   }
   function togglePause() {
-    const next = setPaused(match!, !match!.paused);
+    const elapsed = performance.now() - judgingClock.current;
+    const next = setPaused(advanceJudging(match!, elapsed), !match!.paused);
     setSession(s => ({ ...s, match: next }));
     setViewProblem(next.currentProblem);
   }

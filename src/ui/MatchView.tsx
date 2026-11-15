@@ -1,6 +1,6 @@
 import { useRef, useState, type CSSProperties } from 'react';
 import { canSubmit, cardById, standings, tableScore, TABLE_LIMIT } from '../game/engine';
-import type { Action, Match, Standing } from '../game/types';
+import type { Action, Match, Problem, Standing } from '../game/types';
 import { Card } from './Card';
 import { CardPile } from './CardPile';
 import { ContestCountdown } from './ContestCountdown';
@@ -22,6 +22,10 @@ interface MatchViewProps {
 
 const timeText = (value: number) =>
   `${Math.floor(value / 60).toString().padStart(2, '0')}:${Math.floor(value % 60).toString().padStart(2, '0')}`;
+const verdicts = ['AC', 'WA'] as const;
+const judgingVerdict = (judging: Problem['judging']) => judging
+  ? verdicts[Math.floor(Math.round(judging.duration - judging.remaining) / 250) % verdicts.length]
+  : undefined;
 
 export function MatchView({
   match, viewProblem, selected,
@@ -34,23 +38,33 @@ export function MatchView({
   const leaderboard = standings(match);
   const player = leaderboard.find(team => team.player)!;
   const problem = match.problems[viewProblem];
+  const judging = problem.judging;
+  const verdict = judgingVerdict(judging) ?? problem.attempts.at(-1)?.result;
   const read = problem.readProgress >= problem.readTime;
   const score = tableScore(match, viewProblem);
   const ready = canSubmit(match, viewProblem);
   const remainingSlots = Math.max(0, TABLE_LIMIT - problem.table.length);
-  const submitDisabled = match.paused
+  const submitDisabled = !!judging || (match.paused
     ? !problem.table.length
-    : !ready || viewProblem !== match.currentProblem;
+    : !ready || viewProblem !== match.currentProblem);
 
   const { dragged, startDrag, onClickCapture, onPointerDownCapture } = useCardDrag<{
     from: 'hand' | 'table'; uid: string; uids: string[];
-  }>((transfer, target) => {
+  }>((transfer, target, point) => {
     const uids = transfer.uids;
     if (!uids.length) return false;
     captureCards({ skipPlay: true });
-    if (target === 'table' && transfer.from === 'hand' && read && problem.acTime === null && uids.length <= remainingSlots) {
+    if (target === 'table' && transfer.from === 'hand' && !judging && read && problem.acTime === null && uids.length <= remainingSlots) {
       onCommand({ type: 'play', uids, problem: viewProblem });
-    } else if (target === 'discard') {
+    } else if (target === 'table' && transfer.from === 'table' && !judging) {
+      const slots = Array.from(root.current!.querySelectorAll<HTMLElement>('.table-card-slot'))
+        .filter(slot => slot.dataset.cardSlot !== transfer.uid);
+      const toIndex = slots.filter(slot => {
+        const bounds = slot.getBoundingClientRect();
+        return point.x > bounds.left + bounds.width / 2;
+      }).length;
+      onCommand({ type: 'reorder-table', uid: transfer.uid, toIndex, problem: viewProblem });
+    } else if (target === 'discard' && (transfer.from === 'hand' || !judging)) {
       onCommand(transfer.from === 'hand'
         ? { type: 'discard-hand', uids }
         : { type: 'discard-table', uids, problem: viewProblem });
@@ -89,8 +103,9 @@ export function MatchView({
     <div className="arena">
       <ProblemMenu match={match} viewProblem={viewProblem} onChoose={onChooseProblem}/>
       <section
-        className={`table-panel ${match.feedback?.problem === viewProblem ? `feedback-${match.feedback.result}` : ''}`}
+        className={`table-panel ${verdict ? `verdict-${verdict}` : ''} ${judging ? 'judging' : match.feedback?.problem === viewProblem ? `feedback-${match.feedback.result}` : ''}`}
         data-card-drop="table"
+        aria-busy={!!judging}
       >
         <div className="problem-heading">
           <span className="problem-letter">{problem.label}</span>
@@ -130,7 +145,7 @@ export function MatchView({
             </div>
           </div>
           <div className={`table-cards ${!problem.table.length ? 'empty' : ''}`}>
-            {problem.table.length ? problem.table.map(instance => {
+            {problem.table.length ? <div className="table-card-row" style={{ '--table-count': problem.table.length } as CSSProperties}>{problem.table.map(instance => {
               const card = cardById[instance.cardId];
               const scoreGain = card.type === 'algorithm'
                 ? card.score * (card.categories.some(category => problem.categories.includes(category)) ? 1 : 0.5)
@@ -143,13 +158,13 @@ export function MatchView({
                   progress={instance.duration ? instance.progress / instance.duration : 0}
                   dice={instance.dice}
                   scoreGain={scoreGain}
-                  draggable
+                  draggable={!judging}
                   dragging={dragged?.from === 'table' && dragged.uid === instance.uid}
-                  onPointerDown={event => startDrag(event, { from: 'table', uid: instance.uid, uids: [instance.uid] })}
-                  onDiscard={() => onCommand({ type: 'discard-table', uids: [instance.uid], problem: viewProblem })}
+                  onPointerDown={judging ? undefined : event => startDrag(event, { from: 'table', uid: instance.uid, uids: [instance.uid] })}
+                  onDiscard={judging ? undefined : () => onCommand({ type: 'discard-table', uids: [instance.uid], problem: viewProblem })}
                 />
               </div>;
-            }) : <div className="empty-table">
+            })}</div> : <div className="empty-table">
               <span>＋</span><p>把思路放上来</p><small>点击手牌多选后出牌，或拖到这里</small>
             </div>}
           </div>
@@ -157,19 +172,22 @@ export function MatchView({
             <span>
               {problem.submitQueued ? '◷ 已预约提交'
                 : problem.attempts.length ? `提交记录 ${problem.attempts.map(attempt => `${attempt.verdict ?? attempt.result} ${Math.floor(attempt.time)}′`).join(' · ')}`
-                : '卡牌依次生效，全部就绪后可提交。'}
+                : '拖拽调整顺序，从左到右依次生效，全部就绪后可提交。'}
             </span>
             <button
               className="primary submit-button"
               disabled={submitDisabled}
               onClick={() => onCommand({ type: 'submit', problem: viewProblem })}
             >
-              {match.paused ? '预约提交' : '提交'} <span>↵</span>
+              {judging ? '判题中' : match.paused ? '预约提交' : '提交'} <span>↵</span>
             </button>
           </div>
         </>}
 
-        {match.feedback?.problem === viewProblem && <div key={match.feedback.id} className={`judge-toast ${match.feedback.result}`}>
+        {judging && <div className="judge-toast judging-toast" role="status">
+          <b>JUDGING</b><span>{match.paused ? '判题已暂停' : '评测机正在运行……'}</span>
+        </div>}
+        {!judging && match.feedback?.problem === viewProblem && <div key={match.feedback.id} className={`judge-toast ${match.feedback.result}`}>
           <b>{match.feedback.verdict ?? match.feedback.result}</b><span>{match.feedback.text}</span>
         </div>}
       </section>
@@ -193,7 +211,7 @@ export function MatchView({
           </button>
           <button
             className="primary"
-            disabled={!selected.length || selected.length > remainingSlots || !read || problem.acTime !== null}
+            disabled={!!judging || !selected.length || selected.length > remainingSlots || !read || problem.acTime !== null}
             onClick={() => onCommand({ type: 'play', uids: selected, problem: viewProblem })}
           >
             出牌 →
@@ -247,9 +265,11 @@ function ProblemMenu({ match, viewProblem, onChoose }: {
       {match.problems.map((problem, index) => {
         const known = problem.readProgress >= problem.readTime;
         const ac = problem.acTime !== null;
+        const verdict = judgingVerdict(problem.judging) ?? problem.attempts.at(-1)?.result;
         return <button
           key={problem.id}
-          className={`problem-button ${viewProblem === index ? 'current' : ''} ${ac ? 'solved' : ''}`}
+          className={`problem-button ${viewProblem === index ? 'current' : ''} ${ac ? 'solved' : ''} ${problem.judging ? 'judging' : ''} ${verdict ? `verdict-${verdict}` : ''}`}
+          aria-busy={!!problem.judging}
           onClick={() => onChoose(index)}
         >
           <b>{problem.label}</b>
@@ -313,6 +333,7 @@ function PendingActions({ match }: { match: Match }) {
       case 'submit': return `预约 ${match.problems[action.problem ?? match.currentProblem].label} 提交`;
       case 'discard-hand':
       case 'discard-table': return `弃 ${action.uids.length} 张`;
+      case 'reorder-table': return '调整牌桌顺序';
     }
   }
   return <div className="pending-strip">

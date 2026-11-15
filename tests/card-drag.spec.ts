@@ -115,6 +115,16 @@ async function expectPosition(locator: Locator, expected: { x: number; y: number
   expect(actual.y).toBeCloseTo(expected.y, 0);
 }
 
+async function expectTableCentered(page: Page) {
+  const desk = (await page.locator('.table-cards').boundingBox())!;
+  const slots = page.locator('.table-card-slot');
+  await expect.poll(async () => {
+    const first = (await slots.first().boundingBox())!;
+    const last = (await slots.last().boundingBox())!;
+    return Math.abs((first.x + last.x + last.width) / 2 - (desk.x + desk.width / 2));
+  }).toBeLessThan(1);
+}
+
 test('collection lifts the original card while keeping its grid position and restores it on cancel', async ({ page }) => {
   await load(page);
   await page.getByRole('button', { name: '我的卡组', exact: true }).click();
@@ -320,7 +330,9 @@ test('dragging selected cards moves the batch immediately and allows discarding 
   await expect(tableCard).toHaveAttribute('data-draggable', 'true');
   await lift(page, tableCard);
   await releaseOn(page, page.locator('.discard-pile'));
-  expect((await state(page)).match.discard.map(card => card.uid)).toContain(initial.hand[0].uid);
+  expect((await state(page)).match.discard.map(card => card.uid)).toEqual(
+    cardById[initial.hand[0].cardId].type === 'algorithm' ? [initial.hand[0].uid] : [],
+  );
   await expect(page.locator('.table-cards .game-card')).toHaveCount(2);
   await page.getByRole('button', { name: '▶ 继续比赛', exact: true }).click();
   await expect(page.locator('.table-cards .game-card')).toHaveCount(2);
@@ -382,14 +394,13 @@ test('table cards keep their positions during dragging and fill the gap only aft
   const table = page.locator('.table-cards .game-card');
   const source = table.nth(0);
   const next = table.nth(1);
-  const bounds = (await source.boundingBox())!;
   const nextBounds = (await next.boundingBox())!;
   await lift(page, source, 80, -75);
   await expectPosition(next, nextBounds);
   await releaseOn(page, page.locator('.discard-pile'));
   await expect(table).toHaveCount(2);
-  await expect.poll(async () => Math.abs((await table.first().boundingBox())!.x - bounds.x)).toBeLessThan(0.5);
-  await expectPosition(table.first(), bounds);
+  await expectTableCentered(page);
+  expect((await table.first().boundingBox())!.x).toBeLessThan(nextBounds.x);
   await table.nth(0).locator('.card-discard').click();
   await expect(table).toHaveCount(1);
   expect((await state(page)).match.discard.map(card => card.uid)).toEqual(
@@ -397,6 +408,69 @@ test('table cards keep their positions during dragging and fill the gap only aft
   );
   await expect(page.locator('.is-dragging')).toHaveCount(0);
 });
+
+for (const viewport of [{ width: 1280, height: 800 }, { width: 1440, height: 1000 }, { width: 1920, height: 1080 }]) {
+  test(`larger table cards stay centered in one row as cards are added at ${viewport.width}px`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await matchFixture(page);
+    expect(await page.locator('.hand-cards .game-card').first().evaluate(element => element.offsetWidth))
+      .toBeGreaterThan(Math.min(145, Math.max(108, viewport.width * 0.092)));
+    for (let count = 1; count <= 5; count++) {
+      await page.locator('.hand-cards .game-card').first().click();
+      await page.getByRole('button', { name: '出牌 →', exact: true }).click();
+      await page.mouse.move(10, 100);
+      await expect(page.locator('.table-card-slot')).toHaveCount(count);
+      await expectTableCentered(page);
+      const cards = page.locator('.table-cards .game-card');
+      const first = (await cards.first().boundingBox())!;
+      const last = (await cards.last().boundingBox())!;
+      expect(first.width).toBeGreaterThanOrEqual(128);
+      expect(first.y).toBeCloseTo(last.y, 0);
+      const desk = (await page.locator('.table-cards').boundingBox())!;
+      expect(first.x).toBeGreaterThan(desk.x);
+      expect(last.x + last.width).toBeLessThan(desk.x + desk.width);
+    }
+    if (viewport.width === 1440) await page.screenshot({ path: 'test-results/table-centered.png', fullPage: true });
+  });
+}
+
+for (const paused of [false, true]) {
+  test(`table drag reorders cards in both directions and into the middle while ${paused ? 'paused' : 'running'}`, async ({ page }) => {
+    await page.clock.install();
+    const initial = await matchFixture(page, 4);
+    if (!paused) await page.getByRole('button', { name: '▶ 继续比赛', exact: true }).click();
+    const uids = initial.problems[0].table.map(card => card.uid);
+    const cards = page.locator('.table-cards .game-card');
+    const source = page.locator(`[data-card-uid="${uids[0]}"]`);
+    const right = (await cards.last().boundingBox())!;
+    await lift(page, source);
+    await page.mouse.move(right.x + right.width - 8, right.y + 35);
+    await page.mouse.up();
+    await expect(page.locator('.is-dragging')).toHaveCount(0);
+    expect((await state(page)).match.problems[0].table.map(card => card.uid)).toEqual([...uids.slice(1), uids[0]]);
+    await page.locator('.table-card-slot').evaluateAll(slots => slots.forEach(slot => slot.getAnimations().forEach(animation => animation.finish())));
+    await expectTableCentered(page);
+
+    const left = (await cards.first().boundingBox())!;
+    await lift(page, source);
+    await page.mouse.move(left.x + 8, left.y + 35);
+    await page.mouse.up();
+    expect((await state(page)).match.problems[0].table.map(card => card.uid)).toEqual(uids);
+    await page.locator('.table-card-slot').evaluateAll(slots => slots.forEach(slot => slot.getAnimations().forEach(animation => animation.finish())));
+
+    const middle = (await page.locator('.table-card-slot').nth(1).boundingBox())!;
+    await lift(page, cards.last());
+    await page.mouse.move(middle.x + middle.width / 2 + 10, middle.y + 35);
+    await page.mouse.up();
+    const reordered = (await state(page)).match;
+    expect(reordered.problems[0].table.map(card => card.uid)).toEqual([uids[0], uids[1], uids[3], uids[2]]);
+    expect(reordered.pendingActions).toEqual([]);
+    expect(reordered.discard).toEqual(initial.discard);
+    expect(reordered.hand).toEqual(initial.hand);
+    await expect(page.locator('.card-drag-placeholder')).toHaveCount(0);
+  });
+}
 
 test('automatic acceptance cancels a lifted table card immediately when its source is removed', async ({ page }) => {
   const profile = createTestProfile();
@@ -415,7 +489,7 @@ test('automatic acceptance cancels a lifted table card immediately when its sour
   await lift(page, page.locator('.table-cards .game-card'));
   await expect(page.locator('body')).toHaveClass(/card-dragging/);
 
-  await page.clock.runFor(3000);
+  await page.clock.runFor(7000);
   await expect(page.locator('.solved-desk')).toBeVisible();
   await expect(page.locator('.is-dragging')).toHaveCount(0);
   await expect(page.locator('.card-drag-placeholder')).toHaveCount(0);

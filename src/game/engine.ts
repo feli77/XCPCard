@@ -115,6 +115,7 @@ export function tableScore(match: Match, problemIndex = match.currentProblem): n
 export function canSubmit(match: Match, problemIndex = match.currentProblem): boolean {
   const problem = match.problems[problemIndex];
   return match.status === 'playing' && match.time < MATCH_DURATION && problem.acTime === null &&
+    !problem.judging &&
     problem.readProgress >= problem.readTime && problem.table.length > 0 && problem.table.every(card => card.active) &&
     problem.waRevision !== problem.revision;
 }
@@ -130,17 +131,35 @@ function submit(match: Match, index: number) {
   const score = tableScore(match, index);
   const accepted = random(match) < acceptanceChance(score, problem.difficulty);
   // Cosmetic randomness must not advance the gameplay RNG.
+  const cosmetic = { randomState: match.randomState };
   const feedback = accepted ? { verdict: 'AC' as const, text: '过了，别碰它。' }
-    : failureFeedback[Math.floor(random({ randomState: match.randomState }) * failureFeedback.length)];
-  problem.attempts.push({ time: match.time, result: accepted ? 'AC' : 'WA', verdict: feedback.verdict, score });
-  if (accepted) {
-    problem.acTime = match.time;
-    match.discard.push(...problem.table.filter(card => cardById[card.cardId].type === 'algorithm').map(({ uid, cardId }) => ({ uid, cardId })));
-    problem.table = [];
-  } else problem.waRevision = problem.revision;
+    : failureFeedback[Math.floor(random(cosmetic) * failureFeedback.length)];
+  const duration = 1000 + Math.floor(random(cosmetic) * 4001);
+  problem.judging = { duration, remaining: duration,
+    attempt: { time: match.time, result: accepted ? 'AC' : 'WA', verdict: feedback.verdict, score }, text: feedback.text };
   problem.submitQueued = false;
-  match.feedback = { id: (match.feedback?.id ?? 0) + 1, problem: index, result: accepted ? 'AC' : 'WA', ...feedback };
   return true;
+}
+
+export function advanceJudging(match: Match, milliseconds: number): Match {
+  if (match.paused || milliseconds <= 0 || !match.problems.some(problem => problem.judging)) return match;
+  const next = structuredClone(match);
+  next.problems.forEach((problem, index) => {
+    const judging = problem.judging;
+    if (!judging) return;
+    judging.remaining = Math.max(0, judging.remaining - milliseconds);
+    if (judging.remaining > 0) return;
+    const { attempt, text } = judging;
+    problem.attempts.push(attempt);
+    if (attempt.result === 'AC') {
+      problem.acTime = attempt.time;
+      next.discard.push(...problem.table.filter(card => cardById[card.cardId].type === 'algorithm').map(({ uid, cardId }) => ({ uid, cardId })));
+      problem.table = [];
+    } else problem.waRevision = problem.revision;
+    next.feedback = { id: (next.feedback?.id ?? 0) + 1, problem: index, result: attempt.result, verdict: attempt.verdict, text };
+    delete problem.judging;
+  });
+  return next;
 }
 
 function runAction(match: Match, action: Action, scheduled = false) {
@@ -151,7 +170,7 @@ function runAction(match: Match, action: Action, scheduled = false) {
       match.currentProblem = action.problem;
       break;
     case 'play': {
-      if ((!match.paused && index !== match.currentProblem) || problem.acTime !== null || problem.readProgress < problem.readTime) break;
+      if (problem.judging || (!match.paused && index !== match.currentProblem) || problem.acTime !== null || problem.readProgress < problem.readTime) break;
       const playing = [...new Set(action.uids)].map(uid => match.hand.find(card => card.uid === uid)).filter((card): card is CardInstance => !!card);
       if (!playing.length || problem.table.length + playing.length > TABLE_LIMIT) break;
       match.hand = match.hand.filter(card => !playing.some(item => item.uid === card.uid));
@@ -167,6 +186,7 @@ function runAction(match: Match, action: Action, scheduled = false) {
       break;
     }
     case 'discard-table': {
+      if (problem.judging) break;
       const discarded = problem.table.filter(card => action.uids.includes(card.uid));
       if (!discarded.length) break;
       match.discard.push(...discarded.filter(card => cardById[card.cardId].type === 'algorithm').map(({ uid, cardId }) => ({ uid, cardId })));
@@ -175,7 +195,17 @@ function runAction(match: Match, action: Action, scheduled = false) {
       startNextCard(match, index);
       break;
     }
+    case 'reorder-table': {
+      if (problem.judging) break;
+      const fromIndex = problem.table.findIndex(card => card.uid === action.uid);
+      if (fromIndex < 0 || !Number.isInteger(action.toIndex) || action.toIndex < 0 || action.toIndex >= problem.table.length) break;
+      const [card] = problem.table.splice(fromIndex, 1);
+      problem.table.splice(action.toIndex, 0, card);
+      startNextCard(match, index);
+      break;
+    }
     case 'submit':
+      if (problem.judging) break;
       if (scheduled) problem.submitQueued = true;
       else submit(match, index);
       break;
@@ -187,7 +217,7 @@ export function act(match: Match, action: Action): Match {
   const next = structuredClone(match);
   if (next.paused) {
     const target = 'problem' in action && action.problem !== undefined ? action.problem : next.pendingActions.reduce((current, item) => item.type === 'switch' ? item.problem : current, next.currentProblem);
-    if (action.type === 'play' || action.type === 'discard-table') runAction(next, { ...action, problem: target });
+    if (action.type === 'play' || action.type === 'discard-table' || action.type === 'reorder-table') runAction(next, { ...action, problem: target });
     else if (action.type === 'discard-hand') runAction(next, action);
     else next.pendingActions.push(action.type === 'submit' ? { ...action, problem: target } : action);
   } else {

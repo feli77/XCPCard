@@ -228,6 +228,31 @@ test('an empty deck reshuffles discard before drawing and reduced motion leaves 
   expect(await page.locator('[data-card-slot]').evaluateAll(slots => slots.flatMap(slot => slot.getAnimations()).length)).toBe(0);
 });
 
+test('adding a table card slides the existing cards aside and centers the new row', async ({ page }) => {
+  const match = await load(page, match => {
+    const problem = match.problems[0];
+    problem.readProgress = problem.readTime;
+    problem.table = match.hand.splice(0, 1).map(card => ({
+      ...card, active: false, progress: 0, duration: null,
+    }));
+  });
+  const remaining = page.locator(`[data-card-slot="${match.problems[0].table[0].uid}"]`);
+  const origin = (await remaining.boundingBox())!;
+  await page.locator('.hand-cards .game-card').first().click();
+  await page.getByRole('button', { name: '出牌 →', exact: true }).click();
+  await expect(page.locator('.table-card-slot')).toHaveCount(2);
+  expect((await remaining.boundingBox())!.x).toBeCloseTo(origin.x, 0);
+  await remaining.evaluate(element => element.getAnimations().forEach(animation => { animation.currentTime = 180; }));
+  const midway = (await remaining.boundingBox())!;
+  await finish(page);
+  const settled = (await remaining.boundingBox())!;
+  expect(midway.x).toBeLessThan(origin.x);
+  expect(midway.x).toBeGreaterThan(settled.x);
+  const last = (await page.locator('.table-card-slot').last().boundingBox())!;
+  const desk = (await page.locator('.table-cards').boundingBox())!;
+  expect((settled.x + last.x + last.width) / 2).toBeCloseTo(desk.x + desk.width / 2, 0);
+});
+
 test('table cards slide into the gap after a discard', async ({ page }) => {
   const match = await load(page, match => {
     const problem = match.problems[0];

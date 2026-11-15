@@ -58,7 +58,8 @@
   font-size: 21px;
 }
 .match-page {
-  --hand-card-width: clamp(108px, 9.2vw, 145px);
+  --hand-card-width: clamp(124px, 10.5vw, 165px);
+  --table-card-width: clamp(128px, 10vw, 156px);
   padding: 0 24px 12px;
   max-width: 1920px;
   margin: auto;
@@ -207,20 +208,20 @@
   font: 10px var(--mono);
   color: #b5ab95;
 }
+.problem-button:hover {
+  background: #eae8df;
+}
 .problem-button.current {
-  background: #e8e8da;
-  border-color: #cbd0b7;
-  box-shadow: 2px 2px 0 #dedecd;
+  background: #ded9ce;
+  border-color: #b7afa0;
+  box-shadow: 2px 2px 0 #ded9ce;
 }
 .problem-button.current > b {
-  color: #63714d;
+  color: #645c4c;
 }
 .problem-button.solved > b,
 .problem-button.solved i {
   color: #788f62;
-}
-.problem-button:hover {
-  background: #eae8df;
 }
 .table-panel {
   background-color: #eeece3;
@@ -232,6 +233,22 @@
   min-height: 0;
   background-image: radial-gradient(#c9c5b9 0.6px, transparent 0.6px);
   background-size: 8px 8px;
+}
+.table-panel.verdict-AC,
+.problem-button.verdict-AC {
+  background-color: #e0e8d4;
+  border-color: #9aaa7d;
+}
+.table-panel.verdict-WA,
+.problem-button.verdict-WA {
+  background-color: #edd9d3;
+  border-color: #b47769;
+}
+.problem-button.current.verdict-AC {
+  background-color: #cbd7bc;
+}
+.problem-button.current.verdict-WA {
+  background-color: #dfc2ba;
 }
 .problem-heading {
   display: flex;
@@ -313,26 +330,39 @@
 }
 .table-cards {
   display: flex;
-  align-items: center;
-  align-content: flex-start;
-  flex-wrap: wrap;
-  gap: 16px;
+  align-items: safe center;
+  justify-content: center;
+  --table-gap: 16px;
   padding: 15px 20px 28px;
   flex: 1;
   overflow: auto;
   scroll-padding-top: 12px;
   min-height: 0;
 }
-.table-cards.empty {
-  justify-content: center;
+.table-card-row {
+  display: flex;
+  gap: var(--table-gap);
+  width: calc(var(--table-card-width) * var(--table-count) + var(--table-gap) * (var(--table-count) - 1));
+  max-width: 100%;
+  flex-shrink: 0;
+}
+.table-card-slot {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.table-card-slot:last-child {
+  flex: 0 0 var(--table-card-width);
+}
+.table-card-slot:has(> .game-card:is(:hover, :focus-visible, .is-dragging)) {
+  z-index: 20;
 }
 .table-cards .game-card {
-  width: 109px;
-  min-width: 109px;
+  width: var(--table-card-width);
+  min-width: var(--table-card-width);
   padding: 6px;
 }
 .table-cards .card-name {
-  font-size: 10px;
+  font-size: 11px;
 }
 .empty-table {
   text-align: center;
@@ -861,6 +891,11 @@
 .judge-toast.AC {
   border-color: #81936a;
   color: #81936a;
+}
+.judging-toast {
+  animation: none;
+  border-color: #918772;
+  color: #756d5b;
 }
 .feedback-WA {
   animation: shake 0.25s;
