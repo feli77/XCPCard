@@ -494,11 +494,14 @@ describe('赛季、组卡与开包', () => {
     expect(profile.packs.every(pack => pack.eventId === 'starter' && pack.guarantee === 0)).toBe(true);
     expect(nextSeason(profile)).toBe(profile);
   });
-  it('组卡不超过收藏或24张，允许实际持有的同名复数', () => {
+  it('组卡不超过收藏或32张，允许实际持有的同名复数', () => {
     const profile = profileWithDeck();
     expect(setDeck(profile, ['enumerate', 'enumerate']).deck).toHaveLength(2);
     expect(setDeck(profile, ['enumerate', 'enumerate', 'enumerate'])).toBe(profile);
     expect(setDeck(profile, [...profile.deck, 'enumerate'])).toBe(profile);
+    profile.collection.enumerate = 33;
+    expect(setDeck(profile, Array(32).fill('enumerate')).deck).toHaveLength(32);
+    expect(setDeck(profile, Array(33).fill('enumerate'))).toBe(profile);
   });
   it('零AC结束赛季，结算仅发一次奖励；新赛季保留收藏和卡组', () => {
     const profile = createProfile();

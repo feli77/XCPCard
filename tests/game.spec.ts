@@ -133,7 +133,7 @@ test('screen-edge countdown follows contest time, pause, warning thresholds and 
   await expect(page.locator('.result-modal')).toBeVisible();
 });
 
-test('lobby and deck edits allow fewer cards and obey owned copies and the 24-card limit', async ({ page }) => {
+test('lobby and deck edits allow fewer cards and obey owned copies and the 32-card limit', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', e => errors.push(e.message));
   await page.goto('/');
@@ -141,13 +141,13 @@ test('lobby and deck edits allow fewer cards and obey owned copies and the 24-ca
   await page.screenshot({ path: 'test-results/lobby.png', fullPage: true });
   await page.getByRole('button', { name: '我的卡组', exact: true }).click();
   await page.locator('.deck-slots button').filter({ hasText: '枚举' }).click();
-  await expect(page.locator('.deck-count')).toHaveText('23 / 24');
+  await expect(page.locator('.deck-count')).toHaveText('23 / 32');
   await expect(page.locator('.deck-state')).toHaveText('■ 可以参赛');
   await page.getByRole('button', { name: '赛事大厅', exact: true }).click();
   await expect(page.getByRole('button', { name: '参加比赛' })).toBeEnabled();
   await page.getByRole('button', { name: '我的卡组', exact: true }).click();
   await page.locator('.collection-cards').getByRole('button', { name: /^枚举，/ }).click();
-  await expect(page.locator('.deck-count')).toHaveText('24 / 24');
+  await expect(page.locator('.deck-count')).toHaveText('24 / 32');
   await expect(page.locator('.collection-item').filter({ hasText: '枚举' })).toContainText('已带 2 / 2');
   await page.locator('.collection-cards').getByRole('button', { name: /^枚举，/ }).click();
   expect((await state(page)).profile.deck).toHaveLength(24);
@@ -186,12 +186,12 @@ test('collection drag and drop moves one copy in either direction and persists t
   const deckCard = page.locator('.deck-slots button').filter({ hasText: '枚举' });
   const collectionCard = page.locator('.collection-cards').getByRole('button', { name: /^枚举，/ });
   await deckCard.dragTo(page.locator('.collection-library'), { targetPosition: { x: 10, y: 10 } });
-  await expect(page.locator('.deck-count')).toHaveText('23 / 24');
+  await expect(page.locator('.deck-count')).toHaveText('23 / 32');
   await expect(deckCard.locator('b')).toHaveText('×1');
   await expect(collectionCard.locator('.card-count')).toHaveText('×2');
   expect((await state(page)).profile.collection).toEqual(before.profile.collection);
   await collectionCard.dragTo(page.locator('.deck-editor .section-heading'));
-  await expect(page.locator('.deck-count')).toHaveText('24 / 24');
+  await expect(page.locator('.deck-count')).toHaveText('24 / 32');
   await expect(deckCard.locator('b')).toHaveText('×2');
   await expect(page.locator('.collection-item').filter({ hasText: '枚举' })).toContainText('已带 2 / 2');
   const after = await state(page);
@@ -201,7 +201,12 @@ test('collection drag and drop moves one copy in either direction and persists t
 });
 
 test('collection drag and drop respects deck capacity and owned copies', async ({ page }) => {
+  const profile = createTestProfile();
+  profile.deck.push(...Array(8).fill('enumerate'));
+  profile.collection.enumerate += 8;
   await page.goto('/');
+  await page.evaluate(([key, value]) => localStorage.setItem(key, value), [storageKey, JSON.stringify({ profile, match: null, result: null, openedPack: null })]);
+  await page.reload();
   await page.getByRole('button', { name: '我的卡组', exact: true }).click();
   const before = await state(page);
   const deck = page.locator('.deck-editor .section-heading');
@@ -210,13 +215,13 @@ test('collection drag and drop respects deck capacity and owned copies', async (
   await expect(page.getByRole('status')).toHaveText('卡组已满，先移出一张。');
   expect((await state(page)).profile.deck).toEqual(before.profile.deck);
   await page.locator('.deck-slots button').filter({ hasText: '枚举' }).dragTo(page.locator('.collection-library'), { targetPosition: { x: 10, y: 10 } });
-  await expect(page.locator('.deck-count')).toHaveText('23 / 24');
+  await expect(page.locator('.deck-count')).toHaveText('31 / 32');
   const reducedDeck = (await state(page)).profile.deck;
   await page.locator('.collection-cards').getByRole('button', { name: /^快速排序，/ }).dragTo(deck);
   await expect(page.getByRole('status')).toHaveText('这张卡已经全部带上了。');
   expect((await state(page)).profile.deck).toEqual(reducedDeck);
   await collectionCard.dragTo(deck);
-  await expect(page.locator('.deck-count')).toHaveText('24 / 24');
+  await expect(page.locator('.deck-count')).toHaveText('32 / 32');
 });
 
 test('collection drags within the same area or outside both areas leave the deck unchanged', async ({ page }) => {
@@ -230,7 +235,7 @@ test('collection drags within the same area or outside both areas leave the deck
   expect((await state(page)).profile.deck).toEqual(before.profile.deck);
   await deckCard.dragTo(page.locator('.header-meta'));
   expect((await state(page)).profile.deck).toEqual(before.profile.deck);
-  await expect(page.locator('.deck-count')).toHaveText('24 / 24');
+  await expect(page.locator('.deck-count')).toHaveText('24 / 32');
 });
 
 test('collection drag and drop supports adding to and removing the last card from an empty deck', async ({ page }) => {
@@ -241,10 +246,10 @@ test('collection drag and drop supports adding to and removing the last card fro
   await page.reload();
   await page.getByRole('button', { name: '我的卡组', exact: true }).click();
   await page.locator('.collection-cards').getByRole('button', { name: /^枚举，/ }).dragTo(page.locator('.deck-editor .empty-copy'));
-  await expect(page.locator('.deck-count')).toHaveText('1 / 24');
+  await expect(page.locator('.deck-count')).toHaveText('1 / 32');
   await expect(page.locator('.deck-slots button')).toHaveCount(1);
   await page.locator('.deck-slots button').dragTo(page.locator('.collection-library'), { targetPosition: { x: 10, y: 10 } });
-  await expect(page.locator('.deck-count')).toHaveText('0 / 24');
+  await expect(page.locator('.deck-count')).toHaveText('0 / 32');
   await expect(page.locator('.deck-editor .empty-copy')).toBeVisible();
   expect((await state(page)).profile.collection).toEqual(profile.collection);
 });

@@ -164,7 +164,7 @@ test('deck entry becomes a full card and the next entry fills its position after
 
   await releaseOn(page, page.locator('.collection-toolbar h3'));
   await expect(source).toHaveCount(0);
-  await expect(page.locator('.deck-count')).toHaveText('2 / 24');
+  await expect(page.locator('.deck-count')).toHaveText('2 / 32');
   expect((await next.boundingBox())!.y).toBeCloseTo(initialTop, 0);
   expect((await state(page)).profile.deck).toEqual(['quick-sort', 'two-pointers']);
   expect((await state(page)).profile.collection).toEqual(profile.collection);
@@ -178,12 +178,12 @@ test('a collection drop adds exactly one copy and an ordinary click still adds a
   const source = page.locator('.collection-cards').getByRole('button', { name: /^枚举，/ });
   await lift(page, source);
   await releaseOn(page, page.locator('.deck-editor .section-heading'));
-  await expect(page.locator('.deck-count')).toHaveText('1 / 24');
+  await expect(page.locator('.deck-count')).toHaveText('1 / 32');
   expect((await state(page)).profile.deck).toEqual(['enumerate']);
   await source.click();
-  await expect(page.locator('.deck-count')).toHaveText('2 / 24');
+  await expect(page.locator('.deck-count')).toHaveText('2 / 32');
   await page.locator('.deck-entry').click();
-  await expect(page.locator('.deck-count')).toHaveText('1 / 24');
+  await expect(page.locator('.deck-count')).toHaveText('1 / 32');
 });
 
 test('hovering a fanned hand reveals the card, makes room on both sides and keeps details above it', async ({ page }) => {

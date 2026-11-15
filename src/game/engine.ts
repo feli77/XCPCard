@@ -5,7 +5,7 @@ import type { Action, CardInstance, Match, MatchResult, Opponent, Pack, Profile,
 export const MATCH_DURATION = 300;
 export const HAND_LIMIT = 8;
 export const TABLE_LIMIT = 5;
-export const DECK_SIZE = 24;
+export const DECK_SIZE = 32;
 export const cardById = Object.fromEntries(cards.map(card => [card.id, card]));
 const categories: Category[] = ['基础算法', '图论', '数学', 'DP', '数据结构', '字符串', '计算几何'];
 const mainEvents = events.filter(event => event.kind === 'main');
