@@ -1,3 +1,4 @@
+import { TrainingPoints } from './TrainingPoints';
 import { rarities } from '../content/data';
 import { cardById } from '../game/engine';
 import type { Profile } from '../game/types';
@@ -7,7 +8,7 @@ import { PixelArt } from './PixelArt';
 export function Training({ profile, onPurchase }: { profile: Profile; onPurchase: (id: string) => void }) {
   return <main className="training-page">
     <div className="page-heading"><div><span className="eyebrow">ONE MORE PRACTICE</span>
-      <h1>加训 <small>{profile.trainingPoints} 训练点</small></h1>
+      <h1>加训 <small><TrainingPoints amount={profile.trainingPoints} /></small></h1>
       <p>题可以不补，强度必须补。每次完赛换一批，每项限兑一次。</p>
     </div></div>
     <h2>打包补课</h2>
@@ -34,6 +35,6 @@ export function Training({ profile, onPurchase }: { profile: Profile; onPurchase
 
 function Exchange({ purchased, affordable, price, onClick }: { purchased: boolean; affordable: boolean; price: number; onClick: () => void }) {
   return <button className="primary" disabled={purchased || !affordable} onClick={onClick}>
-    {purchased ? '已兑换' : `${price} 训练点 · ${affordable ? '兑换' : '点数不足'}`}
+    {purchased ? '已兑换' : <><TrainingPoints amount={price} /> · {affordable ? '兑换' : '点数不足'}</>}
   </button>;
 }

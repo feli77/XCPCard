@@ -28,9 +28,11 @@ test('加训兑换、限购、类别拆包和余额持久化', async ({ page }) 
   await page.getByRole('button', { name: '加训', exact: true }).click();
   await expect(page.locator('.training-packs .training-item')).toHaveCount(3);
   await expect(page.locator('.training-cards .training-item')).toHaveCount(5);
+  await expect(page.locator('.header-brand .header-season')).toContainText(String(profile.season));
   const pack = page.locator('.training-packs .training-item').nth(1);
   await pack.getByRole('button').click();
   await expect(pack.getByRole('button', { name: '已兑换' })).toBeDisabled();
+  await expect(page.locator('.training-change.negative')).toHaveText('-150');
   const single = profile.trainingOffers.find(o => o.kind === 'card')!;
   await page.locator('.training-cards .training-item').first().getByRole('button').click();
   let updated = (await state(page)).profile;
@@ -90,7 +92,7 @@ test('比赛结算发点和刷新只执行一次', async ({ page }) => {
   const profile = createTestProfile();
   const match = advanceMatch(startMatch(profile, 'school', 42), 300);
   await load(page, profile, match);
-  await expect(page.locator('.reward-label')).toContainText('+100 训练点');
+  await expect(page.locator('.reward-label').getByLabel('+100 训练点', { exact: true })).toBeVisible();
   const updated = (await state(page)).profile;
   expect(updated.trainingPoints).toBe(100);
   expect(updated.trainingOffers).not.toEqual(profile.trainingOffers);
@@ -105,4 +107,26 @@ test('1040px 窄屏加训页可完整展示', async ({ page }) => {
   await expect(page.getByRole('heading', { name: '重点突破' })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1040);
   await page.screenshot({ path: 'test-results/training-narrow.png', fullPage: true });
+});
+
+test('训练点用图标显示，连续回炉会重新播放增加提示，读档不播放', async ({ page }) => {
+  const profile = createTestProfile();
+  profile.collection = { enumerate: 2 };
+  profile.deck = [];
+  await load(page, profile);
+  await expect(page.locator('.training-balance .pixel-art')).toBeVisible();
+  await expect(page.locator('.training-change')).toHaveCount(0);
+  await page.getByRole('button', { name: '收藏', exact: true }).click();
+  await drag(page, page.locator('.collection-cards .game-card'));
+  await expect(page.locator('.training-balance').getByLabel('5 训练点', { exact: true })).toBeVisible();
+  await expect(page.locator('.training-change')).toHaveText('+5');
+  expect(await page.locator('.training-change').evaluate(el => getComputedStyle(el).animationName)).toBe('training-point-change');
+  await page.screenshot({ path: 'test-results/training-point-change.png' });
+  await drag(page, page.locator('.collection-cards .game-card'));
+  await expect(page.locator('.training-balance').getByLabel('10 训练点', { exact: true })).toBeVisible();
+  await expect(page.locator('.training-change')).toHaveText('+5');
+  await expect(page.locator('.training-change')).toHaveCount(0);
+  await page.reload();
+  await expect(page.locator('.training-balance').getByLabel('10 训练点', { exact: true })).toBeVisible();
+  await expect(page.locator('.training-change')).toHaveCount(0);
 });

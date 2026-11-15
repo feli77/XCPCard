@@ -1,3 +1,4 @@
+import { TrainingPoints } from './TrainingPoints';
 import { useEffect, useRef, useState } from 'react';
 import { RECYCLE_POINTS } from '../game/economy';
 import type { CSSProperties } from "react";
@@ -190,7 +191,7 @@ export function Collection({
           <section className={`recycle-zone panel ${draggedCard ? 'drop-target' : ''}`} data-card-drop="recycle" aria-label="知识回炉">
             <span className="recycle-icon" aria-hidden="true">♨</span>
             <h3>知识回炉</h3>
-            <p>{draggedCard ? `放入一张「${cardById[draggedCard.id].name}」，获得 ${RECYCLE_POINTS[cardById[draggedCard.id].rarity]} 训练点` : '把卡拖进来，知识炼成训练点。'}</p>
+            <p>{draggedCard ? <>放入一张「{cardById[draggedCard.id].name}」，获得 <TrainingPoints amount={RECYCLE_POINTS[cardById[draggedCard.id].rarity]} /></> : '把卡拖进来，知识炼成训练点。'}</p>
             <small>每次分解一张 · 紫及以上需要确认</small>
           </section>
         </div>
@@ -214,7 +215,7 @@ function RecycleDialog({ cardId, removesFromDeck, onClose, onConfirm }: {
     onCancel={event => { event.preventDefault(); onClose(); }}>
     <h2 id="recycle-title">让这份知识回炉？</h2>
     <p>{rarities[card.rarity].name} · {card.name} ×1</p>
-    <p>分解后获得 <b>{RECYCLE_POINTS[card.rarity]} 训练点</b>。</p>
+    <p>分解后获得 <b><TrainingPoints amount={RECYCLE_POINTS[card.rarity]} /></b>。</p>
     {removesFromDeck && <p>这张卡也会从参赛卡组中移出。</p>}
     <div className="recycle-actions">
       <button autoFocus onClick={onClose}>取消</button>

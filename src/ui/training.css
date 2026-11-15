@@ -10,7 +10,7 @@
 .training-item .game-card { flex-shrink: 0; }
 .training-pack-art { padding: 16px; }
 .training-pack-art svg { width: 64px; height: 64px; }
-.training-balance { white-space: nowrap; font-size: 12px; font-weight: 700; }
+.training-balance { white-space: nowrap; font-size: 18px; font-weight: 700; line-height: 1; margin-right: 54px; }
 .collection-sidebar { min-width: 0; display: flex; flex-direction: column; gap: 16px; position: sticky; top: 28px; }
 .recycle-zone { padding: 22px; text-align: center; border: 2px dashed var(--muted); }
 .recycle-zone.drop-target { border-color: var(--green); background: #bd8a5012; }
@@ -24,7 +24,6 @@
   .training-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .training-packs { grid-template-columns: 1fr; }
   .training-item { padding: 16px 8px; }
-  .training-balance { font-size: 10px; }
 }
 
 .collection-sidebar .deck-editor { position: static; max-height: calc(100vh - 370px); }
@@ -32,3 +31,31 @@
 .recycle-dialog p { margin-top: 12px; }
 
 .training-note { margin-top: 20px; }
+
+.training-points { display: inline-block; position: relative; padding-left: 27px; white-space: nowrap; vertical-align: baseline; font-variant-numeric: tabular-nums; }
+.training-points > span { font-family: var(--mono); }
+.training-points .pixel-art { position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 22px; height: 18px; color: #b18a35; filter: drop-shadow(0 1px 0 #fff5); }
+.training-balance { position: relative; display: inline-flex; }
+.training-balance > span { display: inline-flex; }
+.training-balance-pop { animation: training-point-pop 420ms cubic-bezier(.2,.8,.3,1); }
+.training-change { position: absolute; top: 50%; left: calc(100% + 8px); margin-top: -7px; font-size: 14px; pointer-events: none; animation: training-point-change 1300ms ease-out both; }
+.training-change.positive { color: #498258; }
+.training-change.negative { color: #b8554f; }
+.training-item .primary .training-points .pixel-art { color: #ebd18b; }
+.result-modal .reward-label .training-points { animation: training-point-pop 500ms ease-out; }
+@keyframes training-point-pop {
+  0%, 100% { transform: scale(1); }
+  40% { transform: translateY(-2px) scale(1.16); color: #b18a35; }
+}
+@keyframes training-point-change {
+  0% { opacity: 0; transform: translateY(8px) scale(.85); }
+  15%, 60% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-18px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .training-balance-pop, .training-change, .result-modal .reward-label .training-points { animation: none; }
+}
+
+.header-brand { display: flex; align-items: center; gap: 20px; }
+.header-season { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.header-season b { font: 20px var(--mono); }

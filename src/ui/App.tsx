@@ -1,3 +1,4 @@
+import { TrainingBalance, TrainingPoints } from './TrainingPoints';
 import { purchaseOffer, recycleCard, restoreEconomy } from '../game/economy';
 import { Training } from './Training';
 import { useEffect, useRef, useState } from "react";
@@ -193,17 +194,20 @@ export function App() {
   return (
     <div className={`app ${screen === "match" ? "in-match" : ""}`}>
       <header className="app-header">
-        <button
-          className="brand"
-          onClick={() => navigate("lobby")}
-          aria-label="返回大厅"
-        >
-          <span className="brand-icon">X</span>
-          <strong>
-            XCP<span>Card</span>
-          </strong>
-          <span className="brand-sub">ALGORITHM CARD CLUB</span>
-        </button>
+        <div className="header-brand">
+          <button
+            className="brand"
+            onClick={() => navigate("lobby")}
+            aria-label="返回大厅"
+          >
+            <span className="brand-icon">X</span>
+            <strong>
+              XCP<span>Card</span>
+            </strong>
+            <span className="brand-sub">ALGORITHM CARD CLUB</span>
+          </button>
+          <div className="header-season"><span className="tiny-label">SEASON</span><b>{profile.season}</b></div>
+        </div>
         {screen !== "match" ? (
           <nav>
             {(
@@ -231,20 +235,14 @@ export function App() {
           <div className="match-title">
             <span className="live-dot" />
             {match && eventById[match.eventId].name}
-            <span>{profile.season} 赛季</span>
           </div>
         )}
         <div className="header-meta">
-          <span className="training-balance">{profile.trainingPoints} 训练点</span>
-          {screen === "match" ? (
+          <TrainingBalance amount={profile.trainingPoints} />
+          {screen === "match" && (
             <button className="text-button" onClick={() => navigate("lobby")}>
               保存并离场 ↗
             </button>
-          ) : (
-            <>
-              <span className="tiny-label">SEASON</span>
-              <b>{profile.season}</b>
-            </>
           )}
         </div>
       </header>
@@ -346,7 +344,7 @@ export function App() {
             <div className="reward-label">
               <PixelArt kind="trophy" />
               <span>
-                带回 <b>{result.packs} 包</b> 比赛奖励 · <b>+{result.trainingPoints ?? 0} 训练点</b>
+                带回 <b>{result.packs} 包</b> 比赛奖励 · <b><TrainingPoints amount={`+${result.trainingPoints ?? 0}`} /></b>
               </span>
             </div>
             <button
