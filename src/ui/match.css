@@ -688,27 +688,6 @@
   background: #c38e7d;
   color: white;
 }
-.rank-legend {
-  border-top: 1px solid #e0dacb;
-  padding: 10px;
-  font-size: 8px;
-  color: #8a9b70;
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-.rank-legend > span:nth-child(2) {
-  color: #b17e6c;
-}
-.rank-legend > .first-blood {
-  color: #4f703d;
-}
-.rank-legend > small {
-  font-size: 8px;
-  color: #afa58d;
-  display: block;
-  width: 100%;
-}
 .hand-panel {
   margin-top: 15px;
   background: #f8f6ee;
