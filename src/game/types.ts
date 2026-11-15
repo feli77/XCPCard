@@ -64,7 +64,10 @@ export interface Match {
   randomState: number;
   feedback: { id: number; problem: number; result: 'AC' | 'WA'; verdict?: Verdict; text: string } | null;
 }
-export interface Pack { id: string; eventId: string; guarantee: number }
+export interface Pack { id: string; eventId: string; guarantee: number; category?: Category }
+export type TrainingOffer = { id: string; price: number; purchased: boolean } & (
+  { kind: 'pack'; category?: Category } | { kind: 'card'; cardId: string }
+);
 export interface Standing {
   id: string;
   name: string;
@@ -78,15 +81,23 @@ export interface Standing {
 export interface MatchResult {
   matchId: string;
   eventId: string;
+  season: number;
   rank: number;
   teams: number;
   solved: number;
   penalty: number;
   packs: number;
+  trainingPoints?: number;
   promoted: boolean;
   seasonEnded: boolean;
+  medal: Medal | null;
+  title: PodiumTitle | null;
 }
+export type Medal = 'gold' | 'silver' | 'bronze';
+export type PodiumTitle = 'champion' | 'runner-up' | 'third-place';
 export interface Profile {
+  trainingPoints: number;
+  trainingOffers: TrainingOffer[];
   collection: Record<string, number>;
   deck: string[];
   season: number;

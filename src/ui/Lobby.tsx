@@ -5,6 +5,7 @@ import { availableEvents, cardById, DECK_SIZE } from "../game/engine";
 import type { Match, Profile } from "../game/types";
 import { Card } from "./Card";
 import { PixelArt } from "./PixelArt";
+import { AwardBadges } from "./AwardBadges";
 
 interface LobbyProps {
   profile: Profile;
@@ -80,7 +81,7 @@ export function Lobby({
         <section className="contest-ticket">
           <div className="ticket-top">
             <span>
-              ENTRY TICKET / {String(profile.season).padStart(2, "0")}
+              ENTRY TICKET / {profile.season}
             </span>
             <span>● READY TO CODE</span>
           </div>
@@ -104,6 +105,7 @@ export function Lobby({
                     : mainEvent?.description}
               </p>
               <div className="ticket-facts">
+                <span><b>{playing ? match.opponents.length + 1 : mainEvent?.teams || 40}</b> 支队伍</span>
                 <span>
                   <b>
                     {playing
@@ -205,7 +207,7 @@ export function Lobby({
                         ? "本季已参加"
                         : profile.mainIndex === 0
                           ? "校赛后开放"
-                          : `保底${rarities[event.guarantee].name}卡 · 不影响主线资格`}
+                          : `${event.teams} 队 · 保底${rarities[event.guarantee].name}卡 · 不影响主线资格`}
                     </small>
                   </span>
                   <b>→</b>
@@ -223,6 +225,7 @@ export function Lobby({
         <div className="last-result">
           上一场 · {eventById[lastResult.eventId].name}　{lastResult.solved}{" "}
           AC　排名 #{lastResult.rank}　奖励 {lastResult.packs} 包
+          {"　"}<AwardBadges medal={lastResult.medal} title={lastResult.title} />
         </div>
       )}
       <footer>

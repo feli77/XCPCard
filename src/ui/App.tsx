@@ -1,3 +1,6 @@
+import { TrainingBalance, TrainingPoints } from './TrainingPoints';
+import { purchaseOffer, recycleCard, restoreEconomy } from '../game/economy';
+import { Training } from './Training';
 import { useEffect, useRef, useState } from "react";
 import { events } from "../content/data";
 import { uiText } from "../content/text";
@@ -17,6 +20,10 @@ import {
   startMatch,
 } from "../game/engine";
 import type { Action, Match, MatchResult, Profile } from "../game/types";
+import { contestAwards, restoreHistory } from "../game/honors";
+import { seasonYear } from "../game/season";
+import { AwardBadges } from "./AwardBadges";
+import { TrophyRoom } from "./TrophyRoom";
 import { MatchView } from "./MatchView";
 import { PixelArt } from "./PixelArt";
 import { sound } from "./audio";
@@ -25,7 +32,7 @@ import { Collection } from "./Collection";
 import { Packs, PackReveal } from "./Packs";
 import type { OpenedPack } from "./Packs";
 
-type Screen = "lobby" | "deck" | "packs" | "match";
+type Screen = "lobby" | "deck" | "packs" | "honors" | "training" | "match";
 interface Session {
   profile: Profile;
   match: Match | null;
@@ -44,6 +51,9 @@ function load(): Session {
       openedPack: null,
     };
   const session: Session = JSON.parse(saved);
+  session.profile = restoreEconomy(restoreHistory(session.profile));
+  if (session.result) session.result = session.profile.history.find(result => result.matchId === session.result!.matchId)
+    ?? { ...session.result, season: seasonYear(session.result.season ?? session.profile.season), ...contestAwards(session.result.eventId, session.result.rank, session.result.teams) };
   if (session.match?.status === "playing") session.match.paused = true;
   return session;
 }
@@ -143,12 +153,12 @@ export function App() {
     setViewProblem(next.currentProblem);
   }
   function buyPack(index: number) {
-    const eventId = profile.packs[index].eventId;
+    const { eventId, category } = profile.packs[index];
     const opened = openPack(profile, index);
     setSession((s) => ({
       ...s,
       profile: opened.profile,
-      openedPack: { cards: opened.cards, revealed: [], eventId },
+      openedPack: { cards: opened.cards, revealed: [], eventId, category },
     }));
   }
   function reveal(indices: number[]) {
@@ -198,24 +208,29 @@ export function App() {
   return (
     <div className={`app ${screen === "match" ? "in-match" : ""}`}>
       <header className="app-header">
-        <button
-          className="brand"
-          onClick={() => navigate("lobby")}
-          aria-label="返回赛事大厅"
-        >
-          <span className="brand-icon">X</span>
-          <strong>
-            XCP<span>Card</span>
-          </strong>
-          <span className="brand-sub">ALGORITHM CARD CLUB</span>
-        </button>
+        <div className="header-brand">
+          <button
+            className="brand"
+            onClick={() => navigate("lobby")}
+            aria-label="返回大厅"
+          >
+            <span className="brand-icon">X</span>
+            <strong>
+              XCP<span>Card</span>
+            </strong>
+            <span className="brand-sub">ALGORITHM CARD CLUB</span>
+          </button>
+          <div className="header-season"><span className="tiny-label">SEASON</span><b>{profile.season}</b></div>
+        </div>
         {screen !== "match" ? (
           <nav>
             {(
               [
-                ["lobby", "赛事大厅"],
-                ["deck", "我的卡组"],
-                ["packs", "卡包仓库"],
+                ["lobby", "大厅"],
+                ["deck", "收藏"],
+                ["packs", "卡包"],
+                ["training", "加训"],
+                ["honors", "成就"],
               ] as const
             ).map(([key, label]) => (
               <button
@@ -234,19 +249,14 @@ export function App() {
           <div className="match-title">
             <span className="live-dot" />
             {match && eventById[match.eventId].name}
-            <span>第 {profile.season} 赛季</span>
           </div>
         )}
         <div className="header-meta">
-          {screen === "match" ? (
+          <TrainingBalance amount={profile.trainingPoints} />
+          {screen === "match" && (
             <button className="text-button" onClick={() => navigate("lobby")}>
               保存并离场 ↗
             </button>
-          ) : (
-            <>
-              <span className="tiny-label">SEASON</span>
-              <b>{String(profile.season).padStart(2, "0")}</b>
-            </>
           )}
         </div>
       </header>
@@ -279,6 +289,7 @@ export function App() {
               onRarity={setRarity}
               onRemove={removeCard}
               onAdd={addCard}
+              onRecycle={(id) => setSession(s => ({ ...s, profile: recycleCard(s.profile, id) }))}
             />
           )}
 
@@ -289,6 +300,8 @@ export function App() {
               onContest={() => navigate("lobby")}
             />
           )}
+          {screen === "training" && <Training profile={profile} onPurchase={(id) => setSession(s => ({ ...s, profile: purchaseOffer(s.profile, id) }))} />}
+          {screen === "honors" && <TrophyRoom profile={profile} />}
         </div>
       )}
 
@@ -329,6 +342,7 @@ export function App() {
                 <span>总罚时</span>
               </div>
             </div>
+            {(result.medal || result.title) && <div className="result-awards"><AwardBadges medal={result.medal} title={result.title} /></div>}
             <p>
               {eventById[result.eventId].kind === "side"
                 ? "支线完赛，主线门票依然有效。"
@@ -344,7 +358,7 @@ export function App() {
             <div className="reward-label">
               <PixelArt kind="trophy" />
               <span>
-                带回 <b>{result.packs} 包</b> 比赛奖励
+                带回 <b>{result.packs} 包</b> 比赛奖励 · <b><TrainingPoints amount={`+${result.trainingPoints ?? 0}`} /></b>
               </span>
             </div>
             <button

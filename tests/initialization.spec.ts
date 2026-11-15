@@ -20,7 +20,7 @@ test('new players receive eight packs and opening cards persists without grantin
 
   await page.reload();
   expect((await state(page)).profile).toEqual(initial);
-  await page.getByRole('button', { name: /^卡包仓库/ }).click();
+  await page.getByRole('button', { name: /^卡包/ }).click();
   await expect(page.locator('.pack-item')).toHaveCount(8);
   await expect(page.locator('.pack-item').first()).toContainText('新手礼包');
   await page.locator('.pack-item').first().click();
@@ -36,7 +36,7 @@ test('new players receive eight packs and opening cards persists without grantin
   await page.getByRole('button', { name: '一键全开 →', exact: true }).click();
   expect(collectionSize((await state(page)).profile)).toBe(5);
   await page.getByRole('button', { name: '收好，下一包。 →', exact: true }).click();
-  await page.getByRole('button', { name: '我的卡组', exact: true }).click();
+  await page.getByRole('button', { name: '收藏', exact: true }).click();
   await expect(page.locator('.deck-count')).toHaveText('0 / 32');
   await page.locator('.collection-cards .game-card').first().click();
   await expect(page.locator('.deck-count')).toHaveText('1 / 32');

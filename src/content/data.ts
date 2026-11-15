@@ -199,13 +199,13 @@ export const cards: CardDefinition[] = [
 ];
 
 export const events: EventDefinition[] = [
-  { id: 'school', name: '校赛', shortName: '校赛', kind: 'main', problems: 10, minDifficulty: 800, maxDifficulty: 1800, promotion: 0.5, guarantee: 0, description: '前 50% 且至少 1 AC 晋级网络赛。' },
-  { id: 'online', name: '网络赛', shortName: '网络赛', kind: 'main', problems: 11, minDifficulty: 1000, maxDifficulty: 2200, promotion: 0.4, guarantee: 0, description: '前 40% 且至少 1 AC 晋级区域赛。' },
-  { id: 'regional', name: '区域赛', shortName: '区域赛', kind: 'main', problems: 12, minDifficulty: 1400, maxDifficulty: 3000, promotion: 0.25, guarantee: 2, description: '前 25% 且至少 1 AC 晋级 ECF。' },
-  { id: 'ecf', name: 'ECF', shortName: 'ECF', kind: 'main', problems: 13, minDifficulty: 1600, maxDifficulty: 3300, promotion: 0.2, guarantee: 3, description: '前 20% 且至少 1 AC 晋级 WF。' },
-  { id: 'wf', name: 'WF', shortName: 'WF', kind: 'main', problems: 13, minDifficulty: 1800, maxDifficulty: 3500, guarantee: 4, description: '赛季终站。把模板带到世界尽头。' },
-  { id: 'provincial', name: '省赛', shortName: '省赛', kind: 'side', problems: 11, minDifficulty: 1200, maxDifficulty: 2600, guarantee: 2, description: '赛季支线，每季一次；奖励卡包，不影响主线资格。' },
-  { id: 'invitational', name: '邀请赛', shortName: '邀请赛', kind: 'side', problems: 12, minDifficulty: 1200, maxDifficulty: 2600, guarantee: 2, description: '赛季支线，每季一次；奖励卡包，不影响主线资格。' },
+  { id: 'school', name: '校赛', shortName: '校赛', kind: 'main', teams: 40, problems: 10, minDifficulty: 800, maxDifficulty: 1800, promotion: 0.5, guarantee: 0, description: '前 50% 且至少 1 AC 晋级网络赛。' },
+  { id: 'online', name: '网络赛', shortName: '网络赛', kind: 'main', teams: 60, problems: 11, minDifficulty: 1000, maxDifficulty: 2200, promotion: 0.4, guarantee: 0, description: '前 40% 且至少 1 AC 晋级区域赛。' },
+  { id: 'regional', name: '区域赛', shortName: '区域赛', kind: 'main', teams: 50, problems: 12, minDifficulty: 1400, maxDifficulty: 3000, promotion: 0.25, guarantee: 2, description: '前 25% 且至少 1 AC 晋级 EC-Final。' },
+  { id: 'ecf', name: 'EC-Final', shortName: 'EC-Final', kind: 'main', teams: 50, problems: 13, minDifficulty: 1600, maxDifficulty: 3300, promotion: 0.2, guarantee: 3, description: '前 20% 且至少 1 AC 晋级 WF。' },
+  { id: 'wf', name: 'WF', shortName: 'WF', kind: 'main', teams: 60, problems: 13, minDifficulty: 1800, maxDifficulty: 3500, guarantee: 4, description: '赛季终站。把模板带到世界尽头。' },
+  { id: 'provincial', name: '省赛', shortName: '省赛', kind: 'side', teams: 40, problems: 11, minDifficulty: 1200, maxDifficulty: 2600, guarantee: 2, description: '赛季支线，每季一次；奖励卡包，不影响主线资格。' },
+  { id: 'invitational', name: '邀请赛', shortName: '邀请赛', kind: 'side', teams: 40, problems: 12, minDifficulty: 1200, maxDifficulty: 2600, guarantee: 2, description: '赛季支线，每季一次；奖励卡包，不影响主线资格。' },
 ];
 
 export const problemNames = [

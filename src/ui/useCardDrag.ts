@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { MouseEvent, PointerEvent } from 'react';
 
-type DropZone = 'collection' | 'deck' | 'table' | 'discard';
+type DropZone = 'collection' | 'deck' | 'table' | 'discard' | 'recycle';
 
 export function useCardDrag<T>(onDrop: (item: T, target: DropZone, point: { x: number; y: number }) => boolean) {
   const [dragged, setDragged] = useState<T | null>(null);

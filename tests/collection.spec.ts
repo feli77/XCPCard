@@ -10,7 +10,7 @@ test('rarity filters show owned cards and combine with category filters', async 
     localStorage.setItem('xcpcard-save', JSON.stringify({ profile, match: null, result: null, openedPack: null }));
   }, profile);
   await page.goto('/');
-  await page.getByRole('button', { name: '我的卡组', exact: true }).click();
+  await page.getByRole('button', { name: '收藏', exact: true }).click();
 
   const rarityFilter = page.getByRole('group', { name: '稀有度筛选' });
   const categoryFilter = page.getByRole('group', { name: '类别筛选' });
@@ -40,8 +40,8 @@ test('rarity filters show owned cards and combine with category filters', async 
   await expect(page.getByText('没有符合筛选条件的卡牌。', { exact: true })).toHaveCount(0);
 
   await rarityFilter.getByRole('button', { name: '灰', exact: true }).click();
-  await page.getByRole('button', { name: '赛事大厅', exact: true }).click();
-  await page.getByRole('button', { name: '我的卡组', exact: true }).click();
+  await page.getByRole('button', { name: '大厅', exact: true }).click();
+  await page.getByRole('button', { name: '收藏', exact: true }).click();
   await expect(names).toHaveText(['祖传模板']);
   await expect(rarityFilter.getByRole('button', { name: '灰', exact: true })).toHaveAttribute('aria-pressed', 'true');
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('xcpcard-save')!));
