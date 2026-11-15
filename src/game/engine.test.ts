@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { cards, events } from '../content/data';
-import { acceptanceChance, act, advanceMatch, availableEvents, canSubmit, cardById, collectCard, createProfile, nextSeason, openPack, rollPack, setDeck, setPaused, settleMatch, standings, startMatch, tableScore } from './engine';
+import { acceptanceChance, act, advanceJudging, advanceMatch, availableEvents, canSubmit, cardById, collectCard, createProfile, nextSeason, openPack, rollPack, setDeck, setPaused, settleMatch, standings, startMatch, tableScore } from './engine';
 import type { Match, TableCard } from './types';
 
 const testDeck = [
@@ -286,6 +286,7 @@ describe('得分与技巧效果', () => {
     const score = tableScore(game);
     expect(score).toBe((300 + game.problems[0].table[4].dice!) * 1.2);
     game = act(game, { type: 'submit' });
+    game = advanceJudging(game, 5000);
     expect(game.problems[0].attempts[0]).toMatchObject({ result, score });
     expect(game.problems[0].table).toEqual(result === 'AC' ? [] : tableBefore);
     expect(game.discard.map(card => card.cardId)).toEqual(result === 'AC' ? ['enumerate'] : []);
@@ -325,6 +326,76 @@ describe('得分与技巧效果', () => {
 });
 
 describe('暂停预排、判题与罚时', () => {
+  it('判题随机等待1～5秒，暂停冻结，完成前保留牌桌且不更新榜单', () => {
+    let game = match();
+    ready(game);
+    game.time = 70;
+    game.problems[0].table = [table('enumerate')];
+    game.problems[0].difficulty = -100000;
+    game = act(game, { type: 'submit' });
+    const judging = game.problems[0].judging!;
+    expect(judging.duration).toBeGreaterThanOrEqual(1000);
+    expect(judging.duration).toBeLessThanOrEqual(5000);
+    expect(game.problems[0].attempts).toHaveLength(0);
+    expect(game.problems[0].acTime).toBeNull();
+    expect(game.problems[0].table).toHaveLength(1);
+    expect(game.feedback).toBeNull();
+    expect(standings(game)[0].solved).toBe(0);
+    expect(canSubmit(game)).toBe(false);
+    expect(act(game, { type: 'submit' }).problems[0].judging).toEqual(judging);
+    game = advanceJudging(game, 600);
+    game = setPaused(game, true);
+    expect(advanceJudging(game, 10000)).toBe(game);
+    game = setPaused(game, false);
+    game = advanceJudging(game, judging.duration - 601);
+    expect(game.problems[0].attempts).toHaveLength(0);
+    game = advanceJudging(game, 1);
+    expect(game.problems[0].judging).toBeUndefined();
+    expect(game.problems[0].acTime).toBe(70);
+    expect(game.problems[0].attempts).toHaveLength(1);
+    expect(game.problems[0].table).toHaveLength(0);
+    expect(game.feedback?.verdict).toBe('AC');
+  });
+  it('切题和存档保留判题剩余时间，比赛结束后仍可完成已提交的判题', () => {
+    let game = match();
+    ready(game);
+    game.time = 299;
+    game.problems[0].table = [table('enumerate')];
+    game.problems[0].difficulty = 100000;
+    game = act(game, { type: 'submit' });
+    game = advanceJudging(game, 300);
+    const judging = structuredClone(game.problems[0].judging!);
+    const randomState = game.randomState;
+    game = act(game, { type: 'switch', problem: 1 });
+    game = JSON.parse(JSON.stringify(game));
+    expect(game.problems[0].judging).toEqual(judging);
+    game = advanceMatch(game, 1);
+    expect(game.status).toBe('finished');
+    game = advanceJudging(game, judging.remaining);
+    expect(game.problems[0].attempts[0]).toMatchObject({ result: 'WA', time: 299 });
+    expect(game.problems[0].waRevision).toBe(game.problems[0].revision);
+    expect(game.randomState).toBe(randomState);
+  });
+  it('判题只锁定提交题的牌桌，暂停时同样锁定，其他题仍可出牌', () => {
+    let game = withHand(match(), ['binary-search']);
+    ready(game);
+    ready(game, 1);
+    game.problems[0].table = [table('enumerate')];
+    game = act(game, { type: 'submit' });
+    const submitted = structuredClone(game.problems[0]);
+    for (const paused of [false, true]) {
+      game = setPaused(game, paused);
+      game = act(game, { type: 'play', uids: ['test-0'], problem: 0 });
+      game = act(game, { type: 'discard-table', uids: ['enumerate'], problem: 0 });
+      expect(game.problems[0]).toEqual(submitted);
+      expect(game.hand).toHaveLength(1);
+    }
+    game = setPaused(game, false);
+    game = act(game, { type: 'switch', problem: 1 });
+    game = act(game, { type: 'play', uids: ['test-0'] });
+    expect(game.problems[1].table.map(card => card.uid)).toEqual(['test-0']);
+    expect(game.problems[0]).toEqual(submitted);
+  });
   it('暂停立即出牌并冻结计时，恢复后提交预约等待当前题准备好仅执行一次', () => {
     let game = withHand(match(), ['enumerate']);
     ready(game);
@@ -339,6 +410,7 @@ describe('暂停预排、判题与罚时', () => {
     game = setPaused(game, false);
     expect(game.problems[0].submitQueued).toBe(true);
     game = advanceMatch(game, 4);
+    game = advanceJudging(game, 5000);
     expect(game.problems[0].attempts).toHaveLength(1);
     expect(game.problems[0].submitQueued).toBe(false);
     game = advanceMatch(game, 20);
@@ -424,6 +496,7 @@ describe('暂停预排、判题与罚时', () => {
     expect(game.problems[0].attempts).toHaveLength(0);
     game = act(game, { type: 'switch', problem: 0 });
     game = advanceMatch(game, 4);
+    game = advanceJudging(game, 5000);
     expect(game.problems[0].attempts).toHaveLength(1);
   });
   it('预约提交在恢复时重新检查即时弃牌后的牌桌', () => {
@@ -448,6 +521,7 @@ describe('暂停预排、判题与罚时', () => {
     game.problems[0].table = [table('enumerate'), table('binary-search')];
     game.problems[0].difficulty = 100000;
     game = act(game, { type: 'submit' });
+    game = advanceJudging(game, 5000);
     expect(game.problems[0].attempts[0].result).toBe('WA');
     expect(canSubmit(game)).toBe(false);
     game = act(game, { type: 'discard-hand', uids: [game.hand[0].uid] });
@@ -458,6 +532,7 @@ describe('暂停预排、判题与罚时', () => {
     game = act(game, { type: 'discard-table', uids: ['binary-search'] });
     expect(canSubmit(game)).toBe(true);
     game = act(game, { type: 'submit' });
+    game = advanceJudging(game, 5000);
     expect(game.problems[0].attempts).toHaveLength(2);
   });
   it('AC清桌回收；未AC不计罚时；排行按AC、罚时、最后AC排序', () => {
@@ -468,6 +543,7 @@ describe('暂停预排、判题与罚时', () => {
     game.problems[0].difficulty = -100000;
     game.problems[0].attempts = [{ time: 10, result: 'WA', score: 1 }];
     game = act(game, { type: 'submit' });
+    game = advanceJudging(game, 5000);
     expect(game.problems[0].acTime).toBe(70);
     expect(game.problems[0].table).toHaveLength(0);
     expect(game.discard.some(c => c.uid === 'enumerate')).toBe(true);

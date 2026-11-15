@@ -23,6 +23,7 @@ export interface Problem {
   revision: number;
   waRevision: number | null;
   submitQueued: boolean;
+  judging?: { duration: number; remaining: number; attempt: Attempt; text: string };
 }
 export type Action =
   | { type: 'switch'; problem: number }

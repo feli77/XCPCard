@@ -415,7 +415,7 @@ test('automatic acceptance cancels a lifted table card immediately when its sour
   await lift(page, page.locator('.table-cards .game-card'));
   await expect(page.locator('body')).toHaveClass(/card-dragging/);
 
-  await page.clock.runFor(3000);
+  await page.clock.runFor(7000);
   await expect(page.locator('.solved-desk')).toBeVisible();
   await expect(page.locator('.is-dragging')).toHaveCount(0);
   await expect(page.locator('.card-drag-placeholder')).toHaveCount(0);

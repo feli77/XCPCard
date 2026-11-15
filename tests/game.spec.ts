@@ -362,6 +362,7 @@ test('WA requires a changed table before another submission', async ({ page }) =
   await page.reload();
   await page.getByRole('button', { name: '▶ 继续比赛' }).click();
   await page.getByRole('button', { name: '提交 ↵', exact: true }).click();
+  await elapsed(page, 5);
   expect((await state(page)).match.problems[0].attempts[0].result).toBe('WA');
   await expect(page.getByRole('button', { name: '提交 ↵', exact: true })).toBeDisabled();
   await page.locator('.problem-button').nth(1).click();
@@ -373,6 +374,7 @@ test('WA requires a changed table before another submission', async ({ page }) =
   await elapsed(page, 7);
   await expect(page.getByRole('button', { name: '提交 ↵', exact: true })).toBeEnabled();
   await page.getByRole('button', { name: '提交 ↵', exact: true }).click();
+  await elapsed(page, 5);
   expect((await state(page)).match.problems[0].attempts).toHaveLength(2);
 });
 
