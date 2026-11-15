@@ -195,6 +195,15 @@ function runAction(match: Match, action: Action, scheduled = false) {
       startNextCard(match, index);
       break;
     }
+    case 'reorder-table': {
+      if (problem.judging) break;
+      const fromIndex = problem.table.findIndex(card => card.uid === action.uid);
+      if (fromIndex < 0 || !Number.isInteger(action.toIndex) || action.toIndex < 0 || action.toIndex >= problem.table.length) break;
+      const [card] = problem.table.splice(fromIndex, 1);
+      problem.table.splice(action.toIndex, 0, card);
+      startNextCard(match, index);
+      break;
+    }
     case 'submit':
       if (problem.judging) break;
       if (scheduled) problem.submitQueued = true;
@@ -208,7 +217,7 @@ export function act(match: Match, action: Action): Match {
   const next = structuredClone(match);
   if (next.paused) {
     const target = 'problem' in action && action.problem !== undefined ? action.problem : next.pendingActions.reduce((current, item) => item.type === 'switch' ? item.problem : current, next.currentProblem);
-    if (action.type === 'play' || action.type === 'discard-table') runAction(next, { ...action, problem: target });
+    if (action.type === 'play' || action.type === 'discard-table' || action.type === 'reorder-table') runAction(next, { ...action, problem: target });
     else if (action.type === 'discard-hand') runAction(next, action);
     else next.pendingActions.push(action.type === 'submit' ? { ...action, problem: target } : action);
   } else {

@@ -3,7 +3,7 @@ import type { MouseEvent, PointerEvent } from 'react';
 
 type DropZone = 'collection' | 'deck' | 'table' | 'discard';
 
-export function useCardDrag<T>(onDrop: (item: T, target: DropZone) => boolean) {
+export function useCardDrag<T>(onDrop: (item: T, target: DropZone, point: { x: number; y: number }) => boolean) {
   const [dragged, setDragged] = useState<T | null>(null);
   const dropRef = useRef(onDrop);
   const cleanupRef = useRef<(() => void) | null>(null);
@@ -123,7 +123,7 @@ export function useCardDrag<T>(onDrop: (item: T, target: DropZone) => boolean) {
       if (pointer.pointerId !== pointerId) return;
       const target = document.elementFromPoint(pointer.clientX, pointer.clientY)
         ?.closest<HTMLElement>('[data-card-drop]')?.dataset.cardDrop as DropZone | undefined;
-      if (lifted && target && dropRef.current(item, target)) {
+      if (lifted && target && dropRef.current(item, target, { x: pointer.clientX, y: pointer.clientY })) {
         cleanup();
         setDragged(null);
       } else {

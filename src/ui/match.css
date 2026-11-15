@@ -58,7 +58,8 @@
   font-size: 21px;
 }
 .match-page {
-  --hand-card-width: clamp(108px, 9.2vw, 145px);
+  --hand-card-width: clamp(124px, 10.5vw, 165px);
+  --table-card-width: clamp(128px, 10vw, 156px);
   padding: 0 24px 12px;
   max-width: 1920px;
   margin: auto;
@@ -329,26 +330,39 @@
 }
 .table-cards {
   display: flex;
-  align-items: center;
-  align-content: flex-start;
-  flex-wrap: wrap;
-  gap: 16px;
+  align-items: safe center;
+  justify-content: center;
+  --table-gap: 16px;
   padding: 15px 20px 28px;
   flex: 1;
   overflow: auto;
   scroll-padding-top: 12px;
   min-height: 0;
 }
-.table-cards.empty {
-  justify-content: center;
+.table-card-row {
+  display: flex;
+  gap: var(--table-gap);
+  width: calc(var(--table-card-width) * var(--table-count) + var(--table-gap) * (var(--table-count) - 1));
+  max-width: 100%;
+  flex-shrink: 0;
+}
+.table-card-slot {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.table-card-slot:last-child {
+  flex: 0 0 var(--table-card-width);
+}
+.table-card-slot:has(> .game-card:is(:hover, :focus-visible, .is-dragging)) {
+  z-index: 20;
 }
 .table-cards .game-card {
-  width: 109px;
-  min-width: 109px;
+  width: var(--table-card-width);
+  min-width: var(--table-card-width);
   padding: 6px;
 }
 .table-cards .card-name {
-  font-size: 10px;
+  font-size: 11px;
 }
 .empty-table {
   text-align: center;

@@ -30,6 +30,7 @@ export type Action =
   | { type: 'play'; uids: string[]; problem?: number }
   | { type: 'discard-hand'; uids: string[] }
   | { type: 'discard-table'; uids: string[]; problem?: number }
+  | { type: 'reorder-table'; uid: string; toIndex: number; problem?: number }
   | { type: 'submit'; problem?: number };
 export interface OpponentProblem { attempts: number; acTime: number | null }
 export interface Opponent {

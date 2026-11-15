@@ -50,12 +50,20 @@ export function MatchView({
 
   const { dragged, startDrag, onClickCapture, onPointerDownCapture } = useCardDrag<{
     from: 'hand' | 'table'; uid: string; uids: string[];
-  }>((transfer, target) => {
+  }>((transfer, target, point) => {
     const uids = transfer.uids;
     if (!uids.length) return false;
     captureCards({ skipPlay: true });
     if (target === 'table' && transfer.from === 'hand' && !judging && read && problem.acTime === null && uids.length <= remainingSlots) {
       onCommand({ type: 'play', uids, problem: viewProblem });
+    } else if (target === 'table' && transfer.from === 'table' && !judging) {
+      const slots = Array.from(root.current!.querySelectorAll<HTMLElement>('.table-card-slot'))
+        .filter(slot => slot.dataset.cardSlot !== transfer.uid);
+      const toIndex = slots.filter(slot => {
+        const bounds = slot.getBoundingClientRect();
+        return point.x > bounds.left + bounds.width / 2;
+      }).length;
+      onCommand({ type: 'reorder-table', uid: transfer.uid, toIndex, problem: viewProblem });
     } else if (target === 'discard' && (transfer.from === 'hand' || !judging)) {
       onCommand(transfer.from === 'hand'
         ? { type: 'discard-hand', uids }
@@ -137,7 +145,7 @@ export function MatchView({
             </div>
           </div>
           <div className={`table-cards ${!problem.table.length ? 'empty' : ''}`}>
-            {problem.table.length ? problem.table.map(instance => {
+            {problem.table.length ? <div className="table-card-row" style={{ '--table-count': problem.table.length } as CSSProperties}>{problem.table.map(instance => {
               const card = cardById[instance.cardId];
               const scoreGain = card.type === 'algorithm'
                 ? card.score * (card.categories.some(category => problem.categories.includes(category)) ? 1 : 0.5)
@@ -156,7 +164,7 @@ export function MatchView({
                   onDiscard={judging ? undefined : () => onCommand({ type: 'discard-table', uids: [instance.uid], problem: viewProblem })}
                 />
               </div>;
-            }) : <div className="empty-table">
+            })}</div> : <div className="empty-table">
               <span>＋</span><p>把思路放上来</p><small>点击手牌多选后出牌，或拖到这里</small>
             </div>}
           </div>
@@ -164,7 +172,7 @@ export function MatchView({
             <span>
               {problem.submitQueued ? '◷ 已预约提交'
                 : problem.attempts.length ? `提交记录 ${problem.attempts.map(attempt => `${attempt.verdict ?? attempt.result} ${Math.floor(attempt.time)}′`).join(' · ')}`
-                : '卡牌依次生效，全部就绪后可提交。'}
+                : '拖拽调整顺序，从左到右依次生效，全部就绪后可提交。'}
             </span>
             <button
               className="primary submit-button"
@@ -325,6 +333,7 @@ function PendingActions({ match }: { match: Match }) {
       case 'submit': return `预约 ${match.problems[action.problem ?? match.currentProblem].label} 提交`;
       case 'discard-hand':
       case 'discard-table': return `弃 ${action.uids.length} 张`;
+      case 'reorder-table': return '调整牌桌顺序';
     }
   }
   return <div className="pending-strip">

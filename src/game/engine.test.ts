@@ -127,6 +127,59 @@ describe('比赛时间、读题与队列', () => {
     expect(game.problems[1].table).toHaveLength(1);
     expect(game.problems[0].table).toHaveLength(5);
   });
+  it('重排后处理最左侧未生效的牌，保留已生效状态与被移后卡牌的进度', () => {
+    let game = withHand(match(), ['enumerate', 'template', 'binary-search']);
+    ready(game);
+    game.problems[0].categories = ['基础算法'];
+    game = act(game, { type: 'play', uids: game.hand.map(card => card.uid) });
+    game = advanceMatch(game, 6);
+    const [active, processing] = structuredClone(game.problems[0].table);
+    const revision = game.problems[0].revision;
+    game = act(game, { type: 'reorder-table', uid: 'test-2', toIndex: 0 });
+    expect(game.problems[0].table.map(card => card.uid)).toEqual(['test-2', 'test-0', 'test-1']);
+    expect(game.problems[0].table[1]).toEqual(active);
+    expect(game.problems[0].table[2]).toEqual(processing);
+    expect(game.problems[0].revision).toBe(revision);
+    expect(tableScore(game)).toBe(300);
+    game = advanceMatch(game, 1);
+    expect(game.problems[0].table.map(card => card.progress)).toEqual([1, 4, 2]);
+    game = advanceMatch(game, 4);
+    expect(game.problems[0].table.map(card => card.active)).toEqual([true, true, false]);
+    game = advanceMatch(game, 1);
+    expect(game.problems[0].table.every(card => card.active)).toBe(true);
+    expect(tableScore(game)).toBe(840);
+  });
+  it('暂停时立即重排指定题目，恢复后按新顺序生效且不重复排序', () => {
+    let game = withHand(match(), ['enumerate', 'binary-search']);
+    ready(game, 1);
+    game = setPaused(game, true);
+    game = act(game, { type: 'switch', problem: 1 });
+    game = act(game, { type: 'play', uids: ['test-0', 'test-1'] });
+    game = act(game, { type: 'reorder-table', uid: 'test-1', toIndex: 0, problem: 1 });
+    expect(game.problems[1].table.map(card => card.uid)).toEqual(['test-1', 'test-0']);
+    expect(game.problems[1].table.map(card => card.duration)).toEqual([null, null]);
+    expect(game.pendingActions).toEqual([{ type: 'switch', problem: 1 }]);
+    game = setPaused(game, false);
+    game = advanceMatch(game, 5);
+    expect(game.problems[1].table.map(card => card.uid)).toEqual(['test-1', 'test-0']);
+    expect(game.problems[1].table.map(card => card.active)).toEqual([true, false]);
+  });
+  it('无效的排序目标保持牌桌完整，纯排序不能绕过 WA 后的构成要求', () => {
+    let game = match();
+    ready(game);
+    game.problems[0].table = [table('enumerate'), table('binary-search')];
+    game.problems[0].waRevision = game.problems[0].revision;
+    const before = structuredClone(game.problems[0]);
+    for (const toIndex of [-1, 2, 0.5]) {
+      game = act(game, { type: 'reorder-table', uid: 'enumerate', toIndex });
+      expect(game.problems[0]).toEqual(before);
+    }
+    game = act(game, { type: 'reorder-table', uid: 'missing', toIndex: 0 });
+    expect(game.problems[0]).toEqual(before);
+    game = act(game, { type: 'reorder-table', uid: 'enumerate', toIndex: 1 });
+    expect(game.problems[0].table.map(card => card.uid)).toEqual(['binary-search', 'enumerate']);
+    expect(canSubmit(game)).toBe(false);
+  });
   it('暂停出牌立即占用牌桌空位，弃牌立即释放空位，恢复不重复执行', () => {
     let game = withHand(match(), Array(7).fill('enumerate'));
     ready(game);
@@ -380,13 +433,14 @@ describe('暂停预排、判题与罚时', () => {
     let game = withHand(match(), ['binary-search']);
     ready(game);
     ready(game, 1);
-    game.problems[0].table = [table('enumerate')];
+    game.problems[0].table = [table('enumerate'), table('template')];
     game = act(game, { type: 'submit' });
     const submitted = structuredClone(game.problems[0]);
     for (const paused of [false, true]) {
       game = setPaused(game, paused);
       game = act(game, { type: 'play', uids: ['test-0'], problem: 0 });
       game = act(game, { type: 'discard-table', uids: ['enumerate'], problem: 0 });
+      game = act(game, { type: 'reorder-table', uid: 'template', toIndex: 0, problem: 0 });
       expect(game.problems[0]).toEqual(submitted);
       expect(game.hand).toHaveLength(1);
     }
