@@ -302,10 +302,21 @@ export function standings(match: Match): Standing[] {
     result: problem.acTime !== null ? 'AC' as const : problem.attempts.length ? 'WA' as const : null,
     attempts: problem.attempts.length,
     time: problem.acTime,
+    firstBlood: false,
   }));
   const rows = [{ id: 'player', name: '我交我自己', player: true, problems: playerProblems },
     ...match.opponents.map(team => ({ id: team.id, name: team.name, player: false,
-      problems: team.results.map(result => ({ result: result.acTime !== null ? 'AC' as const : result.attempts ? 'WA' as const : null, attempts: result.attempts, time: result.acTime })) }))];
+      problems: team.results.map(result => ({ result: result.acTime !== null ? 'AC' as const : result.attempts ? 'WA' as const : null, attempts: result.attempts, time: result.acTime, firstBlood: false })) }))];
+  match.problems.forEach((problem, index) => {
+    const earliest = Math.min(...rows.map(row => row.problems[index].time ?? Infinity));
+    if (earliest === Infinity) return;
+    const tied = rows.filter(row => row.problems[index].time === earliest);
+    // 每场每题固定随机种子，避免刷新排行榜时一血归属变化。
+    const rng = { randomState: 2166136261 };
+    for (const char of `${match.id}:${problem.id}`) rng.randomState = Math.imul(rng.randomState ^ char.charCodeAt(0), 16777619) >>> 0;
+    const winner = tied.find(row => row.player) ?? tied[Math.floor(random(rng) * tied.length)];
+    winner.problems[index].firstBlood = true;
+  });
   return rows.map(row => ({ ...row,
     solved: row.problems.filter(problem => problem.result === 'AC').length,
     penalty: row.problems.reduce((sum, problem) => sum + (problem.time !== null ? Math.floor(problem.time) + (problem.attempts - 1) * 20 : 0), 0),
@@ -320,9 +331,8 @@ export function settleMatch(profile: Profile, match: Match): { profile: Profile;
   const ranking = standings(match);
   const player = ranking.find(row => row.player)!;
   const percentile = player.rank / ranking.length;
-  const firstBloods = match.problems.filter((problem, index) => problem.acTime !== null &&
-    match.opponents.every(team => team.results[index].acTime === null || problem.acTime! < team.results[index].acTime!)).length;
-  const count = 1 + (player.solved > 0 ? 1 : 0) + (percentile <= 0.3 ? 1 : 0) + (percentile <= 0.1 ? 1 : 0) + firstBloods;
+  const firstBloods = player.problems.filter(problem => problem.firstBlood).length;
+  const count = 1 + (player.solved > 0 ? 1 : 0) + (percentile <= 0.3 ? 1 : 0) + (percentile <= 0.1 ? 1 : 0) + Math.min(firstBloods, 3);
   const promoted = event.kind === 'main' && player.solved > 0 && event.promotion !== undefined && percentile <= event.promotion;
   const seasonEnded = event.kind === 'main' && (!promoted || event.id === mainEvents[mainEvents.length - 1].id);
   const result: MatchResult = { matchId: match.id, eventId: match.eventId, rank: player.rank, teams: ranking.length,

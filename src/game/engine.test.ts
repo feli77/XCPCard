@@ -457,7 +457,7 @@ describe('赛季、组卡与开包', () => {
     { times: [[null, null, null]], bonus: 2 },
     { times: [[40, 70, 10]], bonus: 2 },
     { times: [[20, 70, null]], bonus: 1 },
-    { times: [[30, 60, null]], bonus: 0 },
+    { times: [[30, 60, null]], bonus: 2 },
     { times: [[20, 70, null], [40, 50, null]], bonus: 0 },
   ])('每道一血额外发一包：对手 AC 时间 $times，奖励 $bonus 包', ({ times, bonus }) => {
     const profile = createProfile();
@@ -475,6 +475,54 @@ describe('赛季、组卡与开包', () => {
     expect(rewards).toHaveLength(2 + bonus);
     expect(rewards.every(pack => pack.eventId === 'regional' && pack.guarantee === 2)).toBe(true);
     expect(settleMatch(settled.profile, game).profile).toBe(settled.profile);
+  });
+  it.each([1, 3, 4, 6])('%i 道一血的额外卡包最多三包，排行榜保留全部一血', count => {
+    const profile = createProfile();
+    const game = startMatch(profile, 'school', 7);
+    for (const problem of game.problems.slice(0, count)) {
+      problem.acTime = 30;
+      problem.attempts = [{ time: 30, result: 'AC', score: 1000 }];
+    }
+    expect(standings(game).find(row => row.player)!.problems.filter(problem => problem.firstBlood)).toHaveLength(count);
+    const settled = settleMatch(profile, game);
+    expect(settled.result.packs).toBe(4 + Math.min(count, 3));
+    expect(settled.profile.packs).toHaveLength(profile.packs.length + settled.result.packs);
+  });
+  it('并列最早 AC 优先玩家，较晚 AC 和未通过不获得一血', () => {
+    const game = startMatch(createProfile(), 'school', 7);
+    game.problems[0].acTime = 30;
+    game.problems[1].acTime = 40;
+    game.opponents[0].results[0].acTime = 30;
+    game.opponents[0].results[1].acTime = 30;
+    const rows = standings(game);
+    expect(rows.find(row => row.player)!.problems.map(problem => problem.firstBlood)).toEqual([true, false, ...Array(8).fill(false)]);
+    expect(rows.find(row => row.id === game.opponents[0].id)!.problems[1].firstBlood).toBe(true);
+    for (let index = 0; index < game.problems.length; index++) {
+      expect(rows.filter(row => row.problems[index].firstBlood)).toHaveLength(index < 2 ? 1 : 0);
+    }
+  });
+  it('电脑队并列一血随机指定一队，刷新、读档和比赛推进保持归属', () => {
+    const game = startMatch(createProfile(), 'school', 7);
+    game.opponents[0].results[0].acTime = 30;
+    game.opponents[1].results[0].acTime = 30;
+    game.opponents[2].results[0].acTime = 40;
+    const winners = new Set<string>();
+    for (let i = 0; i < 24; i++) {
+      game.id = `tie-${i}`;
+      const before = JSON.stringify(game);
+      const rows = standings(game);
+      const awarded = rows.filter(row => row.problems[0].firstBlood);
+      expect(awarded).toHaveLength(1);
+      expect(game.opponents.slice(0, 2).map(team => team.id)).toContain(awarded[0].id);
+      winners.add(awarded[0].id);
+      expect(standings(game)).toEqual(rows);
+      expect(standings(JSON.parse(before))).toEqual(rows);
+      expect(JSON.stringify(game)).toBe(before);
+      game.randomState++;
+      game.time++;
+      expect(standings(game)).toEqual(rows);
+    }
+    expect(winners.size).toBe(2);
   });
   it('开包每包5张、保底满足，技巧只取固定卡池，卡片逐张入藏', () => {
     for (const guarantee of [0, 2, 3, 4]) {
