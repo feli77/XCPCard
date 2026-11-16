@@ -65,7 +65,7 @@ export function evaluateAchievements(profile: Profile, includeCollection = true,
   return next;
 }
 export type AchievementView = { id: string; hidden: true } | {
-  id: string; hidden: false; category: string; title: string;
+  id: string; hidden: false; title: string;
   levels: (AchievementLevel & { unlocked: boolean; unlockedAt: AchievementUnlock | undefined; progress: number; target: number; rewardText: string })[];
 };
 export function getAchievementView(profile: Profile): AchievementView[] {

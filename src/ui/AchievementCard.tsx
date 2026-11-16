@@ -99,7 +99,7 @@ export function AchievementCard({ achievement, level, stacked = false, style }: 
         <span className="achievement-question-pattern" aria-hidden="true">{'? '.repeat(180)}</span>
         <span className="achievement-mystery-seal" aria-hidden="true">?</span>
       </> : <>
-        <span className="achievement-card-top"><span>{achievement.category}成就{stacked && <b> / {level!.title}</b>}</span><span>{unlocked ? '已解锁 ◆' : '未解锁 ◇'}</span></span>
+        <span className="achievement-card-top"><span>{stacked && level!.title}</span><span>{unlocked ? '已解锁 ◆' : '未解锁 ◇'}</span></span>
         <span className="achievement-card-body">
           <span className="achievement-art" aria-hidden="true"><PixelArt kind={illustrations[achievement.id] ?? 'trophy'} /><span className="achievement-art-star">✦</span></span>
           <span className="achievement-card-copy">

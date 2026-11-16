@@ -47,7 +47,6 @@ export interface AchievementLevel {
 }
 export interface AchievementDefinition {
   id: string;
-  category: '收集' | '荣誉' | '搞笑';
   title: string;
   hidden: boolean;
   levels: AchievementLevel[];
