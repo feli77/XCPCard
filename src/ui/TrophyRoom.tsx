@@ -1,5 +1,7 @@
 import { events } from '../content/data';
 import { getAchievementView } from '../game/achievements';
+import { achievementDefinitions } from '../content/achievements';
+import { AchievementStack } from './AchievementCard';
 import { highestHonor, medalNames, titleNames } from '../game/honors';
 import type { Profile } from '../game/types';
 import { AwardBadges } from './AwardBadges';
@@ -12,6 +14,7 @@ export function TrophyRoom({ profile }: { profile: Profile }) {
   const best = highestHonor(profile.history);
   const achievements = getAchievementView(profile);
   const unlocked = achievements.reduce((count, achievement) => count + (achievement.hidden ? 0 : achievement.levels.filter(level => level.unlocked).length), 0);
+  const total = achievementDefinitions.reduce((count, achievement) => count + achievement.levels.length, 0);
   return <main className="honors-page">
     <div className="honors-heading">
       <span className="eyebrow">THE TROPHY ROOM</span>
@@ -51,24 +54,9 @@ export function TrophyRoom({ profile }: { profile: Profile }) {
       </table></div> : <p className="empty-copy">还没有比赛记录，完成第一场比赛后会保存在这里。</p>}
     </section>
     <section className="achievements panel">
-      <div className="section-heading"><h3>成就系统</h3><span>已解锁 {unlocked} 个等级</span></div>
+      <div className="section-heading"><h3>成就收藏</h3><span>已解锁 <b>{unlocked}</b> / {total}</span></div>
       <div className="achievement-list">
-        {achievements.map(achievement => achievement.hidden ? <article className="achievement-card is-hidden" key={achievement.id}>
-          <div className="achievement-heading"><h4>隐藏成就</h4><span className="achievement-state">未解锁</span></div>
-          <p>达成后揭晓，评测机还藏着一点惊喜。</p>
-        </article> : <article className={`achievement-card ${achievement.levels.every(level => level.unlocked) ? 'is-unlocked' : ''}`} key={achievement.id} data-achievement={achievement.id}>
-          <div className="achievement-heading">
-            <div><span className="achievement-category">{achievement.category}</span><h4>{achievement.title}</h4></div>
-            <span className="achievement-state">{achievement.levels.every(level => level.unlocked) ? '已解锁' : '进行中'}</span>
-          </div>
-          <p>{achievement.description}</p>
-          <div className="achievement-levels">{achievement.levels.map(level => <div className="achievement-level" key={level.id} data-level={level.id}>
-            <div className="achievement-level-heading"><strong>{level.title}</strong><span>{level.unlocked ? '已完成' : '未完成'}</span></div>
-            <p className="achievement-condition">{level.conditionText}</p>
-            <div className="achievement-progress"><progress aria-label={`${achievement.title} · ${level.title}进度`} value={Math.min(level.progress, level.target)} max={level.target} /><span>{Math.min(level.progress, level.target)} / {level.target}</span></div>
-            <span className="achievement-reward">奖励：{level.rewardText}{level.unlocked ? ' · 已到账' : ''}</span>
-          </div>)}</div>
-        </article>)}
+        {achievements.map(achievement => <AchievementStack key={achievement.id} achievement={achievement} />)}
       </div>
     </section>
   </main>;

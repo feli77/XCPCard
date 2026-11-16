@@ -1,18 +1,19 @@
 import { achievementDefinitions } from '../content/achievements';
-import { cards, rarities } from '../content/data';
+import { cards, events, rarities } from '../content/data';
 import type { AchievementCondition, AchievementLevel, AchievementReward } from '../content/types';
-import type { AchievementState, Match, MatchResult, Profile } from './types';
+import type { AchievementState, AchievementUnlock, Match, MatchResult, Profile } from './types';
 import { addToCollection } from './collection';
 
 export const achievementKey = (achievementId: string, levelId: string) => `${achievementId}:${levelId}`;
 export function createAchievementState(): AchievementState {
-  return { collected: [], unlocked: [], rewarded: [], notifications: [], progress: {}, match: null };
+  return { collected: [], unlocked: [], unlockedAt: {}, rewarded: [], notifications: [], progress: {}, match: null };
 }
 export function restoreAchievements(profile: Profile, match: Match | null = null): Profile {
-  if (profile.achievements) return profile;
+  if (profile.achievements) return profile.achievements.unlockedAt ? profile : { ...profile, achievements: { ...profile.achievements, unlockedAt: {} } };
   return evaluateAchievements({ ...profile, achievements: { ...createAchievementState(),
     collected: Object.keys(profile.collection).filter(id => profile.collection[id] > 0),
-    match: match ? { id: match.id, attempts: Object.fromEntries(match.problems.map(problem => [problem.id, problem.attempts.length])) } : null } });
+    match: match ? { id: match.id, attempts: Object.fromEntries(match.problems.map(problem => [problem.id, problem.attempts.length])) } : null } }, true,
+    match ? { season: profile.season, eventId: match.eventId } : undefined);
 }
 function conditionProgress(profile: Profile, condition: AchievementCondition): { progress: number; target: number } {
   const state = profile.achievements;
@@ -37,7 +38,10 @@ export function grantAchievementReward(profile: Profile, reward: AchievementRewa
     case 'pack': return { ...profile, packs: [...profile.packs, { id: `achievement:${achievementKey(achievementId, levelId)}`, eventId: 'achievement', achievementId, levelId, guarantee: reward.guarantee }] };
   }
 }
-export function evaluateAchievements(profile: Profile, includeCollection = true): Profile {
+export function evaluateAchievements(profile: Profile, includeCollection = true, unlockedAt: AchievementUnlock = {
+  season: profile.season + (profile.seasonEnded ? 1 : 0),
+  eventId: events.filter(event => event.kind === 'main')[profile.seasonEnded ? 0 : profile.mainIndex].id,
+}): Profile {
   let next = profile;
   let changed: boolean;
   do {
@@ -51,6 +55,7 @@ export function evaluateAchievements(profile: Profile, includeCollection = true)
         if (progress < target) continue;
         const state = next.achievements;
         next = grantAchievementReward({ ...next, achievements: { ...state,
+          unlockedAt: { ...state.unlockedAt, [key]: state.unlockedAt?.[key] ?? unlockedAt },
           unlocked: [...new Set([...state.unlocked, key])], rewarded: [...state.rewarded, key], notifications: [...new Set([...state.notifications, key])] } }, level.reward, definition.id, level.id);
         if (level.reward.kind === 'card') includeCollection = true;
         changed = true;
@@ -60,13 +65,14 @@ export function evaluateAchievements(profile: Profile, includeCollection = true)
   return next;
 }
 export type AchievementView = { id: string; hidden: true } | {
-  id: string; hidden: false; category: string; title: string; description: string;
-  levels: (AchievementLevel & { unlocked: boolean; progress: number; target: number; rewardText: string })[];
+  id: string; hidden: false; category: string; title: string;
+  levels: (AchievementLevel & { unlocked: boolean; unlockedAt: AchievementUnlock | undefined; progress: number; target: number; rewardText: string })[];
 };
 export function getAchievementView(profile: Profile): AchievementView[] {
   return achievementDefinitions.map(definition => {
     if (definition.hidden && !definition.levels.some(level => profile.achievements.unlocked.includes(achievementKey(definition.id, level.id)))) return { id: definition.id, hidden: true };
     return { ...definition, hidden: false, levels: definition.levels.map(level => ({ ...level,
+      unlockedAt: profile.achievements.unlockedAt?.[achievementKey(definition.id, level.id)],
       ...conditionProgress(profile, level.condition), unlocked: profile.achievements.unlocked.includes(achievementKey(definition.id, level.id)), rewardText: formatAchievementReward(level.reward) })) };
   });
 }
@@ -102,5 +108,6 @@ export function processMatchAchievements(profile: Profile, match: Match, result?
     }
   }
   return evaluateAchievements({ ...profile, achievements: { ...state, progress,
-    match: { id: match.id, attempts: Object.fromEntries(match.problems.map(problem => [problem.id, problem.attempts.length])) } } }, false);
+    match: { id: match.id, attempts: Object.fromEntries(match.problems.map(problem => [problem.id, problem.attempts.length])) } } }, false,
+    { season: result?.season ?? profile.season, eventId: match.eventId });
 }

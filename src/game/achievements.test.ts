@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { achievementDefinitions } from '../content/achievements';
-import { cards } from '../content/data';
+import { cards, events } from '../content/data';
 import { acknowledgeAchievementNotifications, evaluateAchievements, getAchievementView, processMatchAchievements, restoreAchievements } from './achievements';
 import { advanceJudging, collectCard, createProfile, nextSeason, settleMatch, startMatch } from './engine';
 import { recycleCard } from './economy';
@@ -295,5 +295,80 @@ describe('成就持久化和重复调用', () => {
     expect(second.profile).toBe(settled.profile);
     expect(second.result).toEqual(settled.result);
     expect(new Set(second.profile.achievements.rewarded).size).toBe(second.profile.achievements.rewarded.length);
+  });
+});
+
+describe('成就解锁时间', () => {
+  it('收藏解锁记录当时赛季和待参加主线比赛，刷新和换季后保持原记录', () => {
+    const initial = { ...createProfile(), season: 2029, mainIndex: 2 };
+    const profile = sorting.reduce(collectCard, initial);
+    expect(profile.achievements.unlockedAt['sorting:1']).toEqual({ season: 2029, eventId: 'regional' });
+    const view = getAchievementView(profile).find(item => item.id === 'sorting')!;
+    if (!view.hidden) expect(view.levels[0].unlockedAt).toEqual({ season: 2029, eventId: 'regional' });
+    const reloaded = restoreAchievements(JSON.parse(JSON.stringify(profile)));
+    const next = nextSeason({ ...reloaded, seasonEnded: true });
+    expect(evaluateAchievements(next).achievements.unlockedAt).toEqual(profile.achievements.unlockedAt);
+  });
+
+  it.each([2, events.filter(event => event.kind === 'main').length])('赛季结束后的收藏解锁归入下一赛季校赛，主线索引 %i', mainIndex => {
+    const initial = { ...createProfile(), season: 2029, seasonEnded: true, mainIndex };
+    const profile = sorting.reduce(collectCard, initial);
+    expect(profile.achievements.unlockedAt['sorting:1']).toEqual({ season: 2030, eventId: 'school' });
+    expect(profile.season).toBe(2029);
+    expect(evaluateAchievements(nextSeason(profile)).achievements.unlockedAt).toEqual(profile.achievements.unlockedAt);
+  });
+
+  it('比赛内解锁和奖励卡连锁解锁均记录本场比赛，而非待参加主线比赛', () => {
+    const geometry = achievementDefinitions.find(item => item.id === 'geometry')!.levels[0];
+    const oldCondition = geometry.condition;
+    geometry.condition = { kind: 'cards', cardIds: ['template'] };
+    try {
+      const profile = { ...createProfile(), season: 2030, mainIndex: 2 };
+      const match = startMatch(profile, 'provincial', 42);
+      match.problems[0].attempts = [ac(100, 0)];
+      match.problems[0].acTime = 100;
+      const unlocked = processMatchAchievements(profile, match);
+      for (const key of ['sample:1', 'proof:1', 'geometry:1']) {
+        expect(unlocked.achievements.unlockedAt[key]).toEqual({ season: 2030, eventId: 'provincial' });
+      }
+    } finally { geometry.condition = oldCondition; }
+  });
+
+  it('系列各级保留各自的解锁时间，重复达成不覆盖旧记录', () => {
+    let profile = { ...createProfile(), season: 2031 };
+    profile = processMatchAchievements(profile, gameWith([failed(), ac()], profile));
+    expect(profile.achievements.unlockedAt['retry:1']).toEqual({ season: 2031, eventId: 'school' });
+    profile = { ...profile, season: 2032 };
+    profile = processMatchAchievements(profile, gameWith([failed(), failed(), failed(), ac()], profile));
+    expect(profile.achievements.unlockedAt['retry:1']).toEqual({ season: 2031, eventId: 'school' });
+    expect(profile.achievements.unlockedAt['retry:3']).toEqual({ season: 2032, eventId: 'school' });
+  });
+
+  it('完赛成就记录比赛所在赛季和赛事', () => {
+    const profile = gold({ ...createProfile(), season: 2033 }, 'wf');
+    expect(profile.achievements.unlockedAt['gold:wf']).toEqual({ season: 2033, eventId: 'wf' });
+    expect(profile.seasonEnded).toBe(true);
+  });
+
+  it('已有结算结果时使用比赛结果所记录的赛季', () => {
+    const profile = { ...createProfile(), season: 2033 };
+    const match = gameWith([failed()], profile);
+    const result = settleMatch(profile, match).result;
+    const unlocked = processMatchAchievements({ ...profile, season: 2034 }, match, result);
+    expect(unlocked.achievements.unlockedAt['attendance:1']).toEqual({ season: 2033, eventId: 'school' });
+  });
+
+  it('旧档已有成就但无解锁时间时保留未知，并继续记录新解锁', () => {
+    const profile = sorting.reduce(collectCard, createProfile());
+    const { unlockedAt: _, ...legacy } = profile.achievements;
+    const restored = restoreAchievements({ ...profile, achievements: legacy } as Profile);
+    expect(restored.achievements.unlocked).toEqual(['sorting:1']);
+    expect(restored.achievements.unlockedAt).toEqual({});
+    const view = getAchievementView(restored).find(item => item.id === 'sorting')!;
+    if (!view.hidden) expect(view.levels[0].unlockedAt).toBeUndefined();
+    const updated = processMatchAchievements(restored, gameWith([ac()], restored));
+    expect(updated.achievements.unlockedAt['sorting:1']).toBeUndefined();
+    expect(updated.achievements.unlockedAt['sample:1']).toEqual({ season: restored.season, eventId: 'school' });
+    expect(restoreAchievements(JSON.parse(JSON.stringify(updated)))).toEqual(updated);
   });
 });

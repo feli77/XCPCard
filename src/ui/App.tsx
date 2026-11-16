@@ -1,5 +1,6 @@
 import { acknowledgeAchievementNotifications, processMatchAchievements, restoreAchievements } from '../game/achievements';
 import { AchievementUnlocks } from './AchievementUnlocks';
+import { AchievementDetailsProvider } from './AchievementCard';
 import { TrainingBalance, TrainingPoints } from './TrainingPoints';
 import { purchaseOffer, recycleCard, restoreEconomy } from '../game/economy';
 import { Training } from './Training';
@@ -218,6 +219,7 @@ export function App() {
     }));
   }
   return (
+    <AchievementDetailsProvider>
     <div className={`app ${screen === "match" ? "in-match" : ""}`}>
       <header className="app-header">
         <div className="header-brand">
@@ -403,5 +405,6 @@ export function App() {
         </div>
       )}
     </div>
+    </AchievementDetailsProvider>
   );
 }

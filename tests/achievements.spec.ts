@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
-import { cards } from '../src/content/data';
+import { cards, events } from '../src/content/data';
+import { processMatchAchievements } from '../src/game/achievements';
 import { createProfile, startMatch } from '../src/game/engine';
 import type { Match, Profile } from '../src/game/types';
 import type { OpenedPack } from '../src/ui/Packs';
@@ -54,8 +55,10 @@ test('翻牌后入藏，重复点击只收一次；卡牌奖励与通知刷新�
   await expect(unlocks).toHaveCount(0);
   expect((await state(page)).profile).toEqual(updated);
   await page.getByRole('button', { name: '成就', exact: true }).click();
-  await expect(page.locator('[data-achievement="sorting"]')).toContainText('已到账');
-  await expect(page.locator('[data-achievement="sorting"]')).toContainText('6 / 6');
+  await expect(page.locator('[data-achievement="sorting"] .achievement-card')).toHaveClass(/is-unlocked/);
+  await page.locator('[data-achievement="sorting"] .achievement-card').focus();
+  await expect(page.getByRole('tooltip')).toContainText('已到账');
+  await expect(page.getByRole('tooltip')).toContainText(`${profile.season} 赛季 · 校赛`);
 });
 
 test('兑换触发几何成就，奖励卡包显示成就来源并可正常翻开', async ({ page }) => {
@@ -75,7 +78,7 @@ test('兑换触发几何成就，奖励卡包显示成就来源并可正常翻�
   expect(updated.packs).toHaveLength(1);
   expect(updated.packs[0]).toMatchObject({ eventId: 'achievement', achievementId: 'geometry', levelId: '1' });
   await expect(page.locator('.training-cards .training-item button')).toBeDisabled();
-  await page.getByRole('region', { name: '成就解锁' }).getByRole('button').click();
+  await page.getByRole('region', { name: '成就解锁' }).getByRole('button', { name: '收下这份荣誉 →', exact: true }).click();
   await page.getByRole('button', { name: /^卡包/ }).click();
   await expect(page.locator('.pack-item')).toContainText('成就奖励 · 几何不会就是不会');
   await page.locator('.pack-item').click();
@@ -126,10 +129,12 @@ test('公布多题结果才解锁，原生对话框排队，三类奖励和隐�
   expect((await state(page)).profile).toEqual(updated);
   await page.setViewportSize({ width: 1040, height: 844 });
   await page.screenshot({ path: 'test-results/achievement-unlocks-compact.png', animations: 'disabled' });
-  await unlocks.getByRole('button').click();
+  await unlocks.getByRole('button', { name: '收下这份荣誉 →', exact: true }).click();
   await page.getByRole('button', { name: '保存并离场 ↗' }).click();
   await page.getByRole('button', { name: '成就', exact: true }).click();
-  await expect(page.locator('[data-achievement="last-minute"]')).toContainText('已到账');
+  await page.locator('[data-achievement="last-minute"] .achievement-card').focus();
+  await expect(page.getByRole('tooltip')).toContainText('已到账');
+  await expect(page.getByRole('tooltip')).toContainText(`${profile.season} 赛季 · 校赛`);
   await expect(page.locator('.achievement-card.is-hidden')).toHaveCount(2);
   await expect(page.locator('.achievements')).not.toContainText('来都来了');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1040);
@@ -189,14 +194,15 @@ test('旧档载入立即发放收藏成就奖励，刷新不重复且不回溯�
   await expect(unlocks).toContainText('二叉堆 ×1');
   await page.reload();
   expect((await state(page)).profile).toEqual(restored);
-  await unlocks.getByRole('button').click();
+  await unlocks.getByRole('button', { name: '收下这份荣誉 →', exact: true }).click();
   await page.getByRole('button', { name: '▶ 继续比赛', exact: true }).click();
   await page.clock.runFor(1000);
   expect((await state(page)).profile.achievements.unlocked).toEqual(['sorting:1']);
   await page.getByRole('button', { name: '保存并离场 ↗' }).click();
   await page.getByRole('button', { name: '成就', exact: true }).click();
-  await expect(page.locator('[data-achievement="sorting"]')).toContainText('6 / 6');
-  await expect(page.locator('[data-achievement="sorting"]')).toContainText('已到账');
+  await page.locator('[data-achievement="sorting"] .achievement-card').focus();
+  await expect(page.getByRole('tooltip')).toContainText('已到账');
+  await expect(page.getByRole('tooltip')).toContainText(`${profile.season} 赛季 · 校赛`);
   await page.reload();
   await expect(unlocks).toHaveCount(0);
   expect((await state(page)).profile.achievements.unlocked).toEqual(['sorting:1']);
@@ -229,12 +235,16 @@ for (const [eventId, title, guarantee] of [['ecf', 'EC-Final', 3], ['wf', 'World
     const unlocks = page.getByRole('region', { name: '成就解锁' });
     await expect(unlocks).toContainText('金牌只是起点');
     await expect(unlocks).toContainText(title);
-    await unlocks.getByRole('button').click();
+    await unlocks.getByRole('button', { name: '收下这份荣誉 →', exact: true }).click();
     await page.getByRole('button', { name: '成就', exact: true }).click();
     const gold = page.locator('[data-achievement="gold"]');
-    await expect(gold).toContainText(`获得${title}金牌`);
-    await expect(gold).not.toContainText('前一级');
-    await expect(gold.locator('.achievement-level-heading span')).toHaveText(['regional', 'ecf', 'wf'].map(id => id === eventId ? '已完成' : '未完成'));
+    await expect(gold.locator('.achievement-card')).toHaveCount(3);
+    for (const id of ['regional', 'ecf', 'wf']) {
+      await expect(gold.locator(`[data-level="${id}"]`)).toHaveClass(id === eventId ? /is-unlocked/ : /is-locked/);
+    }
+    await gold.locator(`[data-level="${eventId}"]`).focus();
+    await expect(page.getByRole('tooltip')).toContainText(`获得${title}金牌`);
+    await expect(page.getByRole('tooltip')).toContainText(`${profile.season} 赛季 · ${events.find(event => event.id === eventId)!.name}`);
   });
 }
 
@@ -265,13 +275,14 @@ test('最后一发公布后结算，通知等待领取，刷新和换季保留�
   await page.getByRole('button', { name: '领取卡包 →', exact: true }).click();
   const unlocks = page.getByRole('region', { name: '成就解锁' });
   await expect(unlocks.locator('.achievement-unlock')).toHaveCount(5);
-  await unlocks.getByRole('button').click();
+  await unlocks.getByRole('button', { name: '收下这份荣誉 →', exact: true }).click();
   await page.getByRole('button', { name: '大厅', exact: true }).click();
   await page.getByRole('button', { name: '开启下一季 →', exact: true }).click();
   await expect.poll(async () => (await state(page)).profile.season).toBe(profile.season + 1);
   let updated = (await state(page)).profile;
   expect(updated.achievements.unlocked).toEqual(settled.achievements.unlocked);
   expect(updated.achievements.rewarded).toEqual(settled.achievements.rewarded);
+  expect(updated.achievements.unlockedAt).toEqual(settled.achievements.unlockedAt);
   expect(updated.achievements.notifications).toEqual([]);
   expect(updated.trainingPoints).toBe(settled.trainingPoints);
   expect(updated.collection).toEqual(settled.collection);
@@ -281,4 +292,132 @@ test('最后一发公布后结算，通知等待领取，刷新和换季保留�
   updated = (await state(page)).profile;
   expect(updated.achievements.rewarded).toEqual(settled.achievements.rewarded);
   expect(updated.trainingPoints).toBe(settled.trainingPoints);
+});
+
+for (const width of [1440, 1040]) {
+  test(`${width}px 成就卡三态、系列叠放、悬停详情和键盘操作`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 844 });
+    const profile = createTestProfile();
+    profile.season = 2028;
+    profile.mainIndex = 2;
+    profile.collection = Object.fromEntries(sorting.slice(0, 5).map(id => [id, 1]));
+    profile.achievements.collected = Object.keys(profile.collection);
+    const match = startMatch(profile, 'invitational', 42);
+    match.problems[0].attempts = [...[1, 2, 3].map(time => ({ time, result: 'WA' as const, verdict: 'WA' as const, score: 0 })),
+      { time: 295, result: 'AC', verdict: 'AC', score: 5000 }];
+    match.problems[0].acTime = 295;
+    match.problems[1].attempts = [{ time: 100, result: 'AC', verdict: 'AC', score: 5000 }];
+    match.problems[1].acTime = 100;
+    const updated = processMatchAchievements(profile, match);
+    updated.achievements.notifications = [];
+    await load(page, updated);
+    await page.getByRole('button', { name: '成就', exact: true }).click();
+
+    const locked = page.locator('[data-achievement="sorting"] .achievement-card');
+    const unlocked = page.locator('[data-achievement="sample"] .achievement-card');
+    await expect(locked).toHaveClass(/is-locked/);
+    await expect(locked).toContainText('5 / 6');
+    await expect(locked.getByRole('progressbar')).toHaveAttribute('value', '5');
+    await expect(locked.getByRole('progressbar')).toHaveAttribute('max', '6');
+    await expect(unlocked).toHaveClass(/is-unlocked/);
+    await expect(unlocked.getByRole('progressbar')).toHaveCount(0);
+    expect(await unlocked.evaluate(card => getComputedStyle(card).backgroundColor))
+      .not.toBe(await locked.evaluate(card => getComputedStyle(card).backgroundColor));
+    const cardBox = await locked.boundingBox();
+    expect(cardBox!.width).toBeGreaterThan(cardBox!.height);
+
+    await locked.hover();
+    const tooltip = page.getByRole('tooltip');
+    await expect(tooltip).toContainText('排序全家桶');
+    await expect(tooltip).toContainText('曾入藏快速、插入、冒泡、选择、计数和归并排序各一张');
+    await expect(tooltip).toContainText('尚未解锁');
+    await page.locator('[data-achievement="geometry"] .achievement-card').focus();
+    await expect(tooltip).toHaveCount(1);
+    await expect(tooltip).toContainText('几何不会就是不会');
+    await unlocked.focus();
+    await expect(unlocked).toBeFocused();
+    await expect(tooltip).toHaveCount(1);
+    await expect(tooltip).toContainText('2028 赛季 · 邀请赛');
+    await locked.hover();
+    await expect(tooltip).toHaveCount(1);
+    await expect(tooltip).toContainText('排序全家桶');
+    await page.mouse.move(0, 0);
+    await expect(tooltip).toHaveCount(0);
+    await unlocked.hover();
+    await expect(tooltip).toContainText('某题首次提交即 AC');
+    await expect(tooltip).toContainText('2028 赛季 · 邀请赛');
+    await expect(tooltip).toContainText('50 训练点 · 已到账');
+    await page.mouse.move(0, 0);
+
+    const series = page.locator('[data-achievement="retry"]');
+    await expect(series).toHaveClass(/is-series/);
+    await expect(series.locator('.achievement-card')).toHaveCount(3);
+    await expect(series.locator('[data-level="1"]')).toHaveClass(/is-unlocked/);
+    await expect(series.locator('[data-level="3"]')).toHaveClass(/is-unlocked/);
+    await expect(series.locator('[data-level="5"]')).toHaveClass(/is-locked/);
+    await series.scrollIntoViewIfNeeded();
+    const boxes = await series.locator('.achievement-card').evaluateAll(elements => elements.map(element => {
+      const rect = element.getBoundingClientRect();
+      return { top: rect.top, bottom: rect.bottom };
+    }));
+    expect(boxes[1].top).toBeGreaterThan(boxes[0].top);
+    expect(boxes[1].top).toBeLessThan(boxes[0].bottom);
+    for (const [id, title, condition] of [['1', '第 1 级', '至少 1 次'], ['3', '第 2 级', '至少 3 次'], ['5', '第 3 级', '至少 5 次']]) {
+      await page.mouse.move(0, 0);
+      await series.locator(`[data-level="${id}"]`).hover({ position: { x: 30, y: 14 } });
+      await expect(tooltip).toContainText(`再交一发就过 · ${title}`);
+      await expect(tooltip).toContainText(condition);
+    }
+    await page.mouse.move(0, 0);
+
+    const hidden = page.locator('[data-achievement="attendance"] .achievement-card');
+    await expect(hidden).toHaveClass(/is-hidden/);
+    await expect(hidden).toHaveAccessibleName('隐藏成就');
+    await expect(hidden).not.toContainText('来都来了');
+    await hidden.hover();
+    await expect(tooltip).toHaveText('隐藏成就');
+    const tipBox = await tooltip.boundingBox();
+    expect(tipBox!.x).toBeGreaterThanOrEqual(0);
+    expect(tipBox!.x + tipBox!.width).toBeLessThanOrEqual(width);
+    expect(tipBox!.y).toBeGreaterThanOrEqual(0);
+    expect(tipBox!.y + tipBox!.height).toBeLessThanOrEqual(844);
+    await page.mouse.move(0, 0);
+    await expect(tooltip).toHaveCount(0);
+
+    await locked.focus();
+    await expect(tooltip).toContainText('排序全家桶');
+    await page.keyboard.press('Tab');
+    await expect(page.locator('[data-achievement="geometry"] .achievement-card')).toBeFocused();
+    await expect(tooltip).toContainText('几何不会就是不会');
+    await page.keyboard.press('Escape');
+    await expect(tooltip).toHaveCount(0);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
+    await page.screenshot({ path: `test-results/achievement-cards-${width}.png`, fullPage: true, animations: 'disabled' });
+
+    await page.reload();
+    await page.getByRole('button', { name: '成就', exact: true }).click();
+    await unlocked.focus();
+    await expect(tooltip).toHaveCount(1);
+    await expect(tooltip).toContainText('2028 赛季 · 邀请赛');
+    expect((await state(page)).profile.achievements.unlockedAt).toEqual(updated.achievements.unlockedAt);
+  });
+}
+
+test('已有成就的旧档保留卡面与奖励，解锁时间显示未记录', async ({ page }) => {
+  const profile = createProfile();
+  profile.achievements.unlocked = ['sample:1'];
+  profile.achievements.rewarded = ['sample:1'];
+  profile.achievements.progress['first-try'] = 1;
+  const { unlockedAt, ...legacyAchievements } = profile.achievements;
+  const legacy = { ...profile, achievements: legacyAchievements } as Profile;
+  await load(page, legacy);
+  await page.getByRole('button', { name: '成就', exact: true }).click();
+  const card = page.locator('[data-achievement="sample"] .achievement-card');
+  await expect(card).toHaveClass(/is-unlocked/);
+  await card.focus();
+  await expect(page.getByRole('tooltip')).toContainText('未记录');
+  await expect(page.getByRole('tooltip')).toContainText('50 训练点 · 已到账');
+  expect((await state(page)).profile.trainingPoints).toBe(profile.trainingPoints);
+  await page.reload();
+  expect((await state(page)).profile.achievements.unlockedAt).toEqual({});
 });

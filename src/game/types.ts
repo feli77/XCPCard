@@ -95,9 +95,11 @@ export interface MatchResult {
 }
 export type Medal = 'gold' | 'silver' | 'bronze';
 export type PodiumTitle = 'champion' | 'runner-up' | 'third-place';
+export interface AchievementUnlock { season: number; eventId: string }
 export interface AchievementState {
   collected: string[];
   unlocked: string[];
+  unlockedAt: Record<string, AchievementUnlock>;
   rewarded: string[];
   notifications: string[];
   progress: Record<string, number>;
