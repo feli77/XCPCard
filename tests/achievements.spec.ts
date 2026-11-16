@@ -238,13 +238,22 @@ for (const [eventId, title, guarantee] of [['ecf', 'EC-Final', 3], ['wf', 'World
     await unlocks.getByRole('button', { name: '收下这份荣誉 →', exact: true }).click();
     await page.getByRole('button', { name: '成就', exact: true }).click();
     const gold = page.locator('[data-achievement="gold"]');
-    await expect(gold.locator('.achievement-card')).toHaveCount(3);
-    for (const id of ['regional', 'ecf', 'wf']) {
-      await expect(gold.locator(`[data-level="${id}"]`)).toHaveClass(id === eventId ? /is-unlocked/ : /is-locked/);
-    }
-    await gold.locator(`[data-level="${eventId}"]`).focus();
+    const card = gold.locator('.achievement-card');
+    await expect(card).toHaveCount(1);
+    await expect(gold.locator('.achievement-stack-edge')).toHaveCount(2);
+    await expect(card).toHaveAttribute('data-level', eventId);
+    await expect(card).toHaveClass(/is-unlocked/);
+    await card.focus();
     await expect(page.getByRole('tooltip')).toContainText(`获得${title}金牌`);
     await expect(page.getByRole('tooltip')).toContainText(`${profile.season} 赛季 · ${events.find(event => event.id === eventId)!.name}`);
+    const ids = ['regional', 'ecf', 'wf'];
+    for (let step = 1; step <= ids.length; step++) {
+      await card.click();
+      const id = ids[(ids.indexOf(eventId) + step) % ids.length];
+      await expect(card).toHaveAttribute('data-level', id);
+      await expect(card).toHaveClass(id === eventId ? /is-unlocked/ : /is-locked/);
+      await expect(page.getByRole('tooltip')).toContainText(`获得${['区域赛', 'EC-Final', 'World Finals'][ids.indexOf(id)]}金牌`);
+    }
   });
 }
 
@@ -312,6 +321,9 @@ for (const width of [1440, 1040]) {
     updated.achievements.notifications = [];
     await load(page, updated);
     await page.getByRole('button', { name: '成就', exact: true }).click();
+    expect(await page.locator('.achievement-list > .achievement-stack').evaluateAll(stacks => stacks.map(stack => stack.getAttribute('data-achievement')))).toEqual([
+      'last-minute', 'sample', 'sorting', 'geometry', 'gold', 'retry', 'penalty', 'warmup', 'proof', 'verdicts', 'attendance',
+    ]);
 
     const locked = page.locator('[data-achievement="sorting"] .achievement-card');
     const unlocked = page.locator('[data-achievement="sample"] .achievement-card');
@@ -360,23 +372,39 @@ for (const width of [1440, 1040]) {
 
     const series = page.locator('[data-achievement="retry"]');
     await expect(series).toHaveClass(/is-series/);
-    await expect(series.locator('.achievement-card')).toHaveCount(3);
-    await expect(series.locator('[data-level="1"]')).toHaveClass(/is-unlocked/);
-    await expect(series.locator('[data-level="3"]')).toHaveClass(/is-unlocked/);
-    await expect(series.locator('[data-level="5"]')).toHaveClass(/is-locked/);
+    const seriesCard = series.locator('.achievement-card');
+    await expect(seriesCard).toHaveCount(1);
+    await expect(seriesCard).toHaveAttribute('data-level', '3');
+    await expect(seriesCard).toHaveClass(/is-unlocked/);
+    await expect(series.locator('.achievement-stack-edge')).toHaveCount(2);
     await series.scrollIntoViewIfNeeded();
-    const boxes = await series.locator('.achievement-card').evaluateAll(elements => elements.map(element => {
-      const rect = element.getBoundingClientRect();
-      return { top: rect.top, bottom: rect.bottom };
-    }));
-    expect(boxes[1].top).toBeGreaterThan(boxes[0].top);
-    expect(boxes[1].top).toBeLessThan(boxes[0].bottom);
-    for (const [id, title, condition] of [['1', '第 1 级', '至少 1 次'], ['3', '第 2 级', '至少 3 次'], ['5', '第 3 级', '至少 5 次']]) {
-      await page.mouse.move(0, 0);
-      await series.locator(`[data-level="${id}"]`).hover({ position: { x: 30, y: 14 } });
+    const edges = await series.evaluate(stack => {
+      const card = stack.querySelector('.achievement-card')!.getBoundingClientRect();
+      return [...stack.querySelectorAll('.achievement-stack-edge')].map(edge => {
+        const rect = edge.getBoundingClientRect();
+        return { down: rect.top - card.top, right: rect.right - card.right };
+      });
+    });
+    for (const [index, edge] of edges.entries()) {
+      expect(edge.down).toBeCloseTo((index + 1) * 4, 1);
+      expect(edge.right).toBeCloseTo((index + 1) * 4, 1);
+    }
+    for (const [id, title, condition] of [['5', '第 3 级', '至少 5 次'], ['1', '第 1 级', '至少 1 次'], ['3', '第 2 级', '至少 3 次']]) {
+      await seriesCard.click();
+      await expect(seriesCard).toHaveAttribute('data-level', id);
+      await expect(seriesCard).toHaveClass(id === '5' ? /is-locked/ : /is-unlocked/);
       await expect(tooltip).toContainText(`再交一发就过 · ${title}`);
       await expect(tooltip).toContainText(condition);
+      if (id === '5') await expect(seriesCard).toContainText('3 / 5');
+      else await expect(seriesCard).toContainText('2028 赛季 · 邀请赛');
     }
+    await seriesCard.press('Enter');
+    await expect(seriesCard).toHaveAttribute('data-level', '5');
+    await expect(tooltip).toContainText('第 3 级');
+    await seriesCard.press('Space');
+    await expect(seriesCard).toHaveAttribute('data-level', '1');
+    await expect(tooltip).toContainText('第 1 级');
+    await seriesCard.press('Tab');
     await page.mouse.move(0, 0);
 
     const hidden = page.locator('[data-achievement="attendance"] .achievement-card');

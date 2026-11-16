@@ -42,7 +42,8 @@ test('empty collection shows zero awards and achievement progress', async ({ pag
   await expect(page.locator('.history-table tbody tr')).toHaveCount(0);
   await expect(page.getByText('成就收藏', { exact: true })).toBeVisible();
   await expect(page.locator('.achievement-stack')).toHaveCount(11);
-  await expect(page.locator('.achievement-card')).toHaveCount(15);
+  await expect(page.locator('.achievement-card')).toHaveCount(11);
+  await expect(page.locator('.achievement-stack-edge')).toHaveCount(4);
   await expect(page.locator('.achievement-card.is-hidden')).toHaveCount(5);
   await expect(page.locator('[data-achievement="sorting"]')).toContainText('0 / 6');
   await expect(page.locator('.achievements')).not.toContainText('开发中');

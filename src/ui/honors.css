@@ -35,17 +35,18 @@
   .honor-stats { gap: 12px; }
   .honor-stat { padding: 16px; }
 }
-.achievement-list { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: end; gap: 24px 16px; }
-.achievement-stack { --stack-count: 1; position: relative; min-width: 0; aspect-ratio: 183 / 125; padding-bottom: calc((var(--stack-count) - 1) * 34px); box-sizing: content-box; }
+.achievement-list { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: start; gap: 24px 16px; }
+.achievement-stack { --stack-count: 1; position: relative; min-width: 0; aspect-ratio: 183 / 125; padding-bottom: calc((var(--stack-count) - 1) * 4px); box-sizing: content-box; }
 .achievement-stack:has(:hover, :focus-visible) { z-index: 2; }
+.achievement-stack-edge { position: absolute; inset: 0 0 auto; aspect-ratio: 183 / 125; z-index: calc(var(--stack-count) - var(--edge-index)); border: 2px solid #b6bab3; border-radius: 9px; background: #eeefeb; box-shadow: 1px 2px 0 #b5b9af; transform: translate(calc(var(--edge-index) * 4px), calc(var(--edge-index) * 4px)); }
+.achievement-stack-edge.is-unlocked { border-color: #7a9971; background: #e6eddf; box-shadow: 1px 2px 0 #a5b399; }
 .achievement-card {
   --card-accent: #858882;
   --card-line: #b6bab3;
   --card-fill: #eeefeb;
-  --stack-index: 0;
   position: absolute;
-  inset: calc(var(--stack-index) * 34px) calc((var(--stack-count) - 1 - var(--stack-index)) * 4px) auto;
-  z-index: calc(var(--stack-index) + 1);
+  inset: 0 0 auto;
+  z-index: var(--stack-count);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -68,6 +69,7 @@
 .achievement-card:is(:hover, :focus-visible) { z-index: 10; box-shadow: 3px 8px 0 color-mix(in srgb, var(--card-line) 65%, #d7d8ce), 0 12px 24px #30392b18; }
 .achievement-card:focus-visible { outline: 2px solid #52754d; outline-offset: 4px; }
 .achievement-card:is(:hover, :focus-visible)::after { opacity: .6; }
+.is-series .achievement-card { cursor: pointer; }
 .achievement-card-title { font-size: 14px; font-weight: 800; line-height: 1.45; text-wrap: balance; }
 .achievement-unlocked-at { color: #52754d; font-size: 10px; line-height: 1.6; }
 .achievement-progress { display: flex; flex-direction: column; gap: 5px; color: #83877f; font-size: 9px; }

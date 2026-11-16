@@ -14,11 +14,11 @@ export function AchievementDetailsProvider({ children }: PropsWithChildren) {
   return <DetailsContext.Provider value={{ active, setActive }}>{children}</DetailsContext.Provider>;
 }
 
-export function AchievementCard({ achievement, level, stacked = false, style }: {
+export function AchievementCard({ achievement, level, stacked = false, onCycle }: {
   achievement: AchievementView;
   level?: Level;
   stacked?: boolean;
-  style?: CSSProperties;
+  onCycle?: () => void;
 }) {
   const root = useRef<HTMLButtonElement>(null);
   const details = useRef<HTMLDivElement>(null);
@@ -53,7 +53,7 @@ export function AchievementCard({ achievement, level, stacked = false, style }: 
       window.removeEventListener('scroll', placeDetails, true);
       window.removeEventListener('resize', placeDetails);
     };
-  }, [open]);
+  }, [open, name, level?.id]);
 
   function tilt(event: PointerEvent<HTMLButtonElement>) {
     if (event.pointerType !== 'mouse' || event.buttons || !bounds.current) return;
@@ -71,10 +71,10 @@ export function AchievementCard({ achievement, level, stacked = false, style }: 
   }
 
   return <>
-    <button ref={root} type="button" style={style}
+    <button ref={root} type="button"
       className={`achievement-card ${hidden ? 'is-hidden' : unlocked ? 'is-unlocked' : 'is-locked'}`}
       data-level={level?.id}
-      aria-label={`${name}${hidden ? '' : unlocked ? '，已解锁' : '，未解锁'}`}
+      aria-label={`${name}${hidden ? '' : unlocked ? '，已解锁' : '，未解锁'}${onCycle ? '，点击切换等级' : ''}`}
       aria-describedby={open ? tooltipId : undefined}
       onPointerEnter={event => {
         if (event.pointerType !== 'mouse') return;
@@ -86,7 +86,7 @@ export function AchievementCard({ achievement, level, stacked = false, style }: 
       onPointerCancel={() => { reset(); setOpen(false); }}
       onFocus={() => setOpen(true)}
       onBlur={() => { reset(); setOpen(false); }}
-      onClick={() => setOpen(true)}
+      onClick={() => { setOpen(true); onCycle?.(); }}
       onKeyDown={event => { if (event.key === 'Escape') setOpen(false); }}
     >
       {hidden ? <>
@@ -114,12 +114,15 @@ export function AchievementCard({ achievement, level, stacked = false, style }: 
 }
 
 export function AchievementStack({ achievement }: { achievement: AchievementView }) {
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   if (achievement.hidden) return <article className="achievement-stack" data-achievement={achievement.id}><AchievementCard achievement={achievement} /></article>;
-  const featured = achievement.levels.filter(level => level.unlocked).at(-1) ?? achievement.levels[0];
-  const levels = [...achievement.levels.filter(level => level !== featured), featured];
-  return <article className={`achievement-stack ${levels.length > 1 ? 'is-series' : ''}`} data-achievement={achievement.id}
-    style={{ '--stack-count': levels.length } as CSSProperties} aria-label={levels.length > 1 ? `${achievement.title}，系列成就` : undefined}>
-    {levels.map((level, index) => <AchievementCard key={level.id} achievement={achievement} level={level} stacked={levels.length > 1}
-      style={{ '--stack-index': index } as CSSProperties} />)}
+  const featured = achievement.levels.find(level => level.id === selectedId) ?? achievement.levels.filter(level => level.unlocked).at(-1) ?? achievement.levels[0];
+  const others = achievement.levels.filter(level => level !== featured);
+  const cycleLevel = () => setSelectedId(achievement.levels[(achievement.levels.indexOf(featured) + 1) % achievement.levels.length].id);
+  return <article className={`achievement-stack ${others.length ? 'is-series' : ''}`} data-achievement={achievement.id}
+    style={{ '--stack-count': achievement.levels.length } as CSSProperties} aria-label={others.length ? `${achievement.title}，系列成就` : undefined}>
+    {others.map((level, index) => <span key={level.id} className={`achievement-stack-edge ${level.unlocked ? 'is-unlocked' : 'is-locked'}`}
+      aria-hidden="true" style={{ '--edge-index': index + 1 } as CSSProperties} />)}
+    <AchievementCard achievement={achievement} level={featured} stacked={!!others.length} onCycle={others.length ? cycleLevel : undefined} />
   </article>;
 }
