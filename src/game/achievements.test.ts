@@ -173,6 +173,14 @@ describe('成就条件和奖励', () => {
 });
 
 describe('成就持久化和重复调用', () => {
+  it('已全部解锁的成就排在最前，部分解锁的系列仍在进行中，隐藏成就排在最后', () => {
+    const profile = createProfile();
+    profile.achievements.unlocked = ['geometry:1', 'sample:1', 'gold:regional', 'gold:ecf', 'gold:wf', 'retry:1'];
+    expect(getAchievementView(profile).map(achievement => achievement.id)).toEqual([
+      'geometry', 'gold', 'sample', 'sorting', 'retry', 'penalty',
+      'last-minute', 'warmup', 'proof', 'verdicts', 'attendance',
+    ]);
+  });
   it('隐藏条目未解锁时只投影 ID 和隐藏状态，解锁后提供完整条件奖励', () => {
     const profile = createProfile();
     const hidden = getAchievementView(profile).find(item => item.id === 'proof');

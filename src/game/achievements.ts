@@ -69,12 +69,13 @@ export type AchievementView = { id: string; hidden: true } | {
   levels: (AchievementLevel & { unlocked: boolean; unlockedAt: AchievementUnlock | undefined; progress: number; target: number; rewardText: string })[];
 };
 export function getAchievementView(profile: Profile): AchievementView[] {
-  return achievementDefinitions.map(definition => {
+  const order = (achievement: AchievementView) => achievement.hidden ? 2 : achievement.levels.every(level => level.unlocked) ? 0 : 1;
+  return achievementDefinitions.map<AchievementView>(definition => {
     if (definition.hidden && !definition.levels.some(level => profile.achievements.unlocked.includes(achievementKey(definition.id, level.id)))) return { id: definition.id, hidden: true };
     return { ...definition, hidden: false, levels: definition.levels.map(level => ({ ...level,
       unlockedAt: profile.achievements.unlockedAt?.[achievementKey(definition.id, level.id)],
       ...conditionProgress(profile, level.condition), unlocked: profile.achievements.unlocked.includes(achievementKey(definition.id, level.id)), rewardText: formatAchievementReward(level.reward) })) };
-  });
+  }).sort((a, b) => order(a) - order(b));
 }
 export function acknowledgeAchievementNotifications(profile: Profile, ids: string[]): Profile {
   return { ...profile, achievements: { ...profile.achievements, notifications: profile.achievements.notifications.filter(id => !ids.includes(id)) } };
