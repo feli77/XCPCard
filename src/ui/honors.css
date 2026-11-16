@@ -33,3 +33,30 @@
   .honor-stats { gap: 12px; }
   .honor-stat { padding: 16px; }
 }
+.achievement-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.achievement-card { border: 1px solid var(--line); padding: 20px; min-width: 0; }
+.achievement-card.is-unlocked { border-color: #929c7b; background: #f1f2e8; }
+.achievement-card.is-hidden { display: flex; flex-direction: column; justify-content: center; background: #eeece4; }
+.achievement-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.achievement-heading h4 { margin: 8px 0 0; font-size: 17px; line-height: 1.5; }
+.achievement-category { font-size: 10px; letter-spacing: 1px; color: var(--muted); }
+.achievement-state { flex-shrink: 0; font-size: 11px; color: #787568; }
+.is-unlocked .achievement-state { color: #64734d; }
+.achievement-card > p { margin: 10px 0 16px; }
+.achievement-levels { display: flex; flex-direction: column; gap: 12px; }
+.achievement-level { border-top: 1px dashed var(--line); padding-top: 12px; }
+.achievement-level-heading { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; }
+.achievement-condition { margin: 8px 0; }
+.achievement-progress { display: flex; align-items: center; gap: 12px; font: 11px var(--mono); }
+.achievement-progress progress { flex: 1; min-width: 0; height: 6px; accent-color: #7e8b63; }
+.achievement-reward { display: block; margin-top: 10px; color: #64734d; font-size: 12px; line-height: 1.6; }
+@media (max-width: 700px) {
+  .honors-page { padding: 28px 20px; }
+  .highest-honor { padding: 22px; gap: 20px; }
+  .honor-illustration { width: 72px; height: 72px; }
+  .honor-illustration .pixel-art { width: 50px; height: 50px; }
+  .highest-honor h2 { font-size: 20px; }
+  .honor-stats { grid-template-columns: repeat(3, 1fr); }
+  .achievement-list { grid-template-columns: 1fr; }
+  .achievements, .contest-history { padding: 20px; }
+}

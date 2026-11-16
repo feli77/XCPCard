@@ -34,14 +34,17 @@ function resultAt(eventId: string, rank: number, season: number) {
   return settleMatch(profile, game).result;
 }
 
-test('empty collection shows zero awards and a future achievement section', async ({ page }) => {
+test('empty collection shows zero awards and achievement progress', async ({ page }) => {
   await openHonors(page, createProfile());
   await expect(page.locator('.highest-honor')).toBeVisible();
   await expect(page.locator('.highest-honor .award-badge')).toHaveCount(0);
   await expect(page.locator('.honor-stat strong')).toHaveText(['0', '0', '0', '0', '0', '0']);
   await expect(page.locator('.history-table tbody tr')).toHaveCount(0);
   await expect(page.getByText('成就系统', { exact: true })).toBeVisible();
-  await expect(page.getByText('开发中', { exact: true })).toBeVisible();
+  await expect(page.locator('.achievement-card')).toHaveCount(11);
+  await expect(page.locator('.achievement-card.is-hidden')).toHaveCount(5);
+  await expect(page.locator('[data-achievement="sorting"]')).toContainText('0 / 6');
+  await expect(page.locator('.achievements')).not.toContainText('开发中');
 });
 
 test('collection totals, highest honor and history persist across seasons and reloads', async ({ page }) => {

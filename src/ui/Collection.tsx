@@ -12,6 +12,7 @@ import { useCardDrag } from "./useCardDrag";
 
 interface CollectionProps {
   profile: Profile;
+  onDialogChange: (open: boolean) => void;
   playing: boolean;
   category: string;
   onCategory: (category: string) => void;
@@ -26,6 +27,7 @@ type CardZone = "collection" | "deck";
 
 export function Collection({
   profile,
+  onDialogChange,
   playing,
   category,
   onCategory,
@@ -36,6 +38,10 @@ export function Collection({
   onRecycle,
 }: CollectionProps) {
   const [pendingRecycle, setPendingRecycle] = useState<string | null>(null);
+  useEffect(() => {
+    onDialogChange(pendingRecycle !== null);
+    return () => onDialogChange(false);
+  }, [pendingRecycle, onDialogChange]);
   function requestRecycle(id: string) {
     if (cardById[id].rarity >= 4) setPendingRecycle(id);
     else onRecycle(id);

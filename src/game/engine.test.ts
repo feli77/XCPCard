@@ -726,6 +726,7 @@ describe('赛季、组卡与开包', () => {
     expect(next.season).toBe(2027);
     expect(next.collection).toEqual(profile.collection);
     expect(next.deck).toEqual(profile.deck);
+    expect(next.achievements).toEqual(settled.profile.achievements);
     expect(availableEvents(next).map(e => e.id)).toEqual(['school']);
   });
   it('主线晋级解锁下一站及支线；支线结果不改变资格，每季仅一次', () => {
@@ -781,7 +782,8 @@ describe('赛季、组卡与开包', () => {
     expect(standings(game).find(row => row.player)!.problems.filter(problem => problem.firstBlood)).toHaveLength(count);
     const settled = settleMatch(profile, game);
     expect(settled.result.packs).toBe(4 + Math.min(count, 3));
-    expect(settled.profile.packs).toHaveLength(profile.packs.length + settled.result.packs);
+    expect(settled.profile.packs.filter(pack => pack.eventId !== 'achievement')).toHaveLength(profile.packs.length + settled.result.packs);
+    expect(settled.profile.packs.filter(pack => pack.eventId === 'achievement')).toHaveLength(count >= 3 ? 1 : 0);
   });
   it('并列最早 AC 优先玩家，较晚 AC 和未通过不获得一血', () => {
     const game = startMatch(createProfile(), 'school', 7);
@@ -832,8 +834,10 @@ describe('赛季、组卡与开包', () => {
     const opened = openPack(profile);
     expect(opened.profile.packs).toHaveLength(0);
     expect(opened.profile.collection).toEqual(profile.collection);
+    expect(opened.profile.achievements).toEqual(profile.achievements);
     const collected = collectCard(opened.profile, opened.cards[0]);
     expect(collected.collection[opened.cards[0]]).toBe((profile.collection[opened.cards[0]] ?? 0) + 1);
+    expect(collected.achievements.collected).toContain(opened.cards[0]);
   });
   it('所有主线赛事按门槛晋级，WF结束后下季重置资格', () => {
     let profile = createProfile();
@@ -848,11 +852,13 @@ describe('赛季、组卡与开包', () => {
     }
     expect(profile.seasonEnded).toBe(true);
     expect(profile.playedEvents).toEqual(['school', 'online', 'regional', 'ecf', 'wf']);
-    expect(profile.packs).toHaveLength(33);
+    expect(profile.packs.filter(pack => pack.eventId !== 'achievement')).toHaveLength(33);
+    expect(profile.packs.filter(pack => pack.eventId === 'achievement')).toHaveLength(3);
     profile = nextSeason(profile);
     expect(profile.playedEvents).toEqual([]);
     expect(availableEvents(profile).map(event => event.id)).toEqual(['school']);
-    expect(profile.packs).toHaveLength(33);
+    expect(profile.packs.filter(pack => pack.eventId !== 'achievement')).toHaveLength(33);
+    expect(profile.packs.filter(pack => pack.eventId === 'achievement')).toHaveLength(3);
   });
   it('保底不会覆盖前四位已达标结果，算法普通档位遵循权重', () => {
     const upper = rollPack(4, rngSequence([0.1, 0.999, 0]));

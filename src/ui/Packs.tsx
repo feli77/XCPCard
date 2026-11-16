@@ -1,3 +1,4 @@
+import { achievementDefinitions } from '../content/achievements';
 import { PackModel, packHoverProps } from './PackModel';
 import type { Category } from '../content/types';
 import type { CSSProperties } from "react";
@@ -13,6 +14,8 @@ export interface OpenedPack {
   revealed: number[];
   eventId: string;
   category?: Category;
+  achievementId?: string;
+  levelId?: string;
 }
 interface PacksProps {
   profile: Profile;
@@ -20,6 +23,17 @@ interface PacksProps {
   onContest: () => void;
 }
 const eventById = Object.fromEntries(events.map((event) => [event.id, event]));
+
+export function packSource(pack: Pick<OpenedPack, 'eventId' | 'category' | 'achievementId' | 'levelId'>): string {
+  if (pack.eventId === 'training') return `加训兑换${pack.category ? ` · ${pack.category}专项包` : ''}`;
+  if (pack.eventId === 'starter') return '新手礼包';
+  if (pack.eventId === 'achievement') {
+    const achievement = achievementDefinitions.find(item => item.id === pack.achievementId)!;
+    const level = achievement.levels.find(item => item.id === pack.levelId)!;
+    return `成就奖励 · ${achievement.title} · ${level.title}`;
+  }
+  return `${eventById[pack.eventId].name} · 比赛奖励`;
+}
 
 export function Packs({ profile, onOpen, onContest }: PacksProps) {
   return (
@@ -48,7 +62,7 @@ export function Packs({ profile, onOpen, onContest }: PacksProps) {
                   ? `保底${rarities[pack.guarantee].name}卡包`
                   : "普通卡包"}
               </h3>
-              <span>{pack.eventId === "training" ? `加训兑换${pack.category ? ` · ${pack.category}专项包` : ""}` : pack.eventId === "starter" ? "新手礼包" : `${eventById[pack.eventId].name}奖励`}</span>
+              <span>{packSource(pack)}</span>
               <strong>拆开看看 ↗</strong>
             </button>
           ))}
@@ -82,7 +96,7 @@ export function PackReveal({
     <div className="pack-overlay">
       <div className="pack-open-heading">
         <span className="eyebrow">
-          {pack.eventId === "training" ? `加训兑换${pack.category ? ` · ${pack.category}专项包` : ""}` : pack.eventId === "starter" ? "新手礼包" : `${eventById[pack.eventId].name} · 比赛奖励`}
+          {packSource(pack)}
         </span>
         <h2>{uiText.packs.openingTitle}</h2>
         <p>点击翻开卡牌　{pack.revealed.length} / 5</p>

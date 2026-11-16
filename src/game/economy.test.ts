@@ -49,6 +49,22 @@ describe('训练点与加训', () => {
     if (single.kind === 'card') expect(updated.collection[single.cardId]).toBe(1);
     expect(purchaseOffer(updated, single.id)).toBe(updated);
   });
+  it('兑换指定卡计入曾入藏并解锁收集成就，重复兑换不重复入藏发奖', () => {
+    const geometry = cards.filter(card => card.categories.includes('计算几何')).slice(0, 5);
+    const profile = createProfile();
+    profile.trainingPoints = 500;
+    profile.achievements.collected = geometry.slice(0, 4).map(card => card.id);
+    profile.trainingOffers = [{ id: 'last-geometry', kind: 'card', cardId: geometry[4].id, price: 300, purchased: false }];
+    const bought = purchaseOffer(profile, 'last-geometry');
+    expect(bought.trainingPoints).toBe(200);
+    expect(bought.collection[geometry[4].id]).toBe(1);
+    expect(bought.achievements.collected).toContain(geometry[4].id);
+    expect(bought.achievements.unlocked).toContain('geometry:1');
+    expect(bought.packs.filter(pack => pack.eventId === 'achievement')).toHaveLength(1);
+    expect(bought.deck).toEqual([]);
+    expect(purchaseOffer(bought, 'last-geometry')).toBe(bought);
+    expect(profile.achievements.unlocked).toEqual([]);
+  });
   it('全部类别都只出匹配的五张算法卡，兑换包按类别开包', () => {
     const rng = seededRandom();
     const categories = [...new Set(cards.flatMap(card => card.categories))];

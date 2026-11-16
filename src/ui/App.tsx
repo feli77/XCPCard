@@ -1,3 +1,5 @@
+import { acknowledgeAchievementNotifications, processMatchAchievements, restoreAchievements } from '../game/achievements';
+import { AchievementUnlocks } from './AchievementUnlocks';
 import { TrainingBalance, TrainingPoints } from './TrainingPoints';
 import { purchaseOffer, recycleCard, restoreEconomy } from '../game/economy';
 import { Training } from './Training';
@@ -51,7 +53,7 @@ function load(): Session {
       openedPack: null,
     };
   const session: Session = JSON.parse(saved);
-  session.profile = restoreEconomy(restoreHistory(session.profile));
+  session.profile = restoreAchievements(restoreEconomy(restoreHistory(session.profile)), session.match);
   if (session.result) session.result = session.profile.history.find(result => result.matchId === session.result!.matchId)
     ?? { ...session.result, season: seasonYear(session.result.season ?? session.profile.season), ...contestAwards(session.result.eventId, session.result.rank, session.result.teams) };
   if (session.match?.status === "playing") session.match.paused = true;
@@ -70,6 +72,7 @@ export function App() {
   const [category, setCategory] = useState("全部");
   const [rarity, setRarity] = useState<number | null>(null);
   const [notice, setNotice] = useState("");
+  const [dialogOpen, setDialogOpen] = useState(false);
   const previousFeedback = useRef(session.match?.feedback?.id);
   const judgingClock = useRef(0);
   const { profile, match, result, openedPack } = session;
@@ -93,7 +96,7 @@ export function App() {
       setSession((s) => {
         if (!s.match) return s;
         const next = advanceMatch(advanceJudging(s.match, judgingElapsed), elapsed);
-        return next === s.match ? s : { ...s, match: next };
+        return next === s.match ? s : { ...s, match: next, profile: processMatchAchievements(s.profile, next) };
       });
     }, 100);
     return () => clearInterval(timer);
@@ -120,14 +123,20 @@ export function App() {
     const now = performance.now();
     const elapsed = now - judgingClock.current;
     judgingClock.current = now;
-    setSession((s) => ({ ...s, match: act(advanceJudging(s.match!, elapsed), action) }));
+    setSession((s) => {
+      const next = act(advanceJudging(s.match!, elapsed), action);
+      return { ...s, match: next, profile: processMatchAchievements(s.profile, next) };
+    });
     if (action.type === "play" || action.type === "discard-hand")
       setSelected([]);
   }
   function navigate(next: Screen) {
     if (screen === "match" && match?.status === "playing") {
       const elapsed = performance.now() - judgingClock.current;
-      setSession((s) => ({ ...s, match: setPaused(advanceJudging(s.match!, elapsed), true) }));
+      setSession((s) => {
+        const next = setPaused(advanceJudging(s.match!, elapsed), true);
+        return { ...s, match: next, profile: processMatchAchievements(s.profile, next) };
+      });
     }
     setScreen(next);
     setSelected([]);
@@ -149,16 +158,16 @@ export function App() {
   function togglePause() {
     const elapsed = performance.now() - judgingClock.current;
     const next = setPaused(advanceJudging(match!, elapsed), !match!.paused);
-    setSession(s => ({ ...s, match: next }));
+    setSession(s => ({ ...s, match: next, profile: processMatchAchievements(s.profile, next) }));
     setViewProblem(next.currentProblem);
   }
   function buyPack(index: number) {
-    const { eventId, category } = profile.packs[index];
+    const { eventId, category, achievementId, levelId } = profile.packs[index];
     const opened = openPack(profile, index);
     setSession((s) => ({
       ...s,
       profile: opened.profile,
-      openedPack: { cards: opened.cards, revealed: [], eventId, category },
+      openedPack: { cards: opened.cards, revealed: [], eventId, category, achievementId, levelId },
     }));
   }
   function reveal(indices: number[]) {
@@ -171,6 +180,9 @@ export function App() {
         : "flip",
     );
     setSession((s) => {
+      if (!s.openedPack) return s;
+      const fresh = [...new Set(indices)].filter(i => i >= 0 && i < s.openedPack!.cards.length && !s.openedPack!.revealed.includes(i));
+      if (!fresh.length) return s;
       const updated = fresh.reduce(
         (profile, i) => collectCard(profile, s.openedPack!.cards[i]),
         s.profile,
@@ -289,6 +301,7 @@ export function App() {
               onRarity={setRarity}
               onRemove={removeCard}
               onAdd={addCard}
+              onDialogChange={setDialogOpen}
               onRecycle={(id) => setSession(s => ({ ...s, profile: recycleCard(s.profile, id) }))}
             />
           )}
@@ -309,6 +322,7 @@ export function App() {
         <MatchView
           match={match}
           speed={speed}
+          onDialogChange={setDialogOpen}
           viewProblem={viewProblem}
           selected={selected}
           onCommand={command}
@@ -379,6 +393,9 @@ export function App() {
           onReveal={reveal}
           onClose={() => setSession((s) => ({ ...s, openedPack: null }))}
         />
+      )}
+      {!openedPack && !(result && screen === "match") && !dialogOpen && (
+        <AchievementUnlocks profile={profile} onAcknowledge={ids => setSession(s => ({ ...s, profile: acknowledgeAchievementNotifications(s.profile, ids) }))} />
       )}
       {notice && (
         <div className="notice" role="status">

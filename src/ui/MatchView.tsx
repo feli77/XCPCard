@@ -1,4 +1,4 @@
-import { useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { canQueueSubmit, cardById, standings, tableScore, TABLE_LIMIT } from '../game/engine';
 import type { Action, Match, Problem, Standing } from '../game/types';
 import { Card } from './Card';
@@ -12,6 +12,7 @@ import { useCardTransfers } from './useCardTransfers';
 
 interface MatchViewProps {
   match: Match;
+  onDialogChange: (open: boolean) => void;
   speed: 1 | 2 | 4;
   viewProblem: number;
   selected: string[];
@@ -31,11 +32,15 @@ const judgingVerdict = (judging: Problem['judging']) => judging
 const speeds = [1, 2, 4] as const;
 
 export function MatchView({
-  match, speed, viewProblem, selected,
+  match, speed, viewProblem, selected, onDialogChange,
   onCommand, onChooseProblem, onToggleSelected, onTogglePause, onChangeSpeed,
 }: MatchViewProps) {
   const root = useRef<HTMLElement>(null);
   const [deckOpen, setDeckOpen] = useState(false);
+  useEffect(() => {
+    onDialogChange(deckOpen);
+    return () => onDialogChange(false);
+  }, [deckOpen, onDialogChange]);
   const captureCards = useCardTransfers(match, root);
   useCardLayout(root);
   const leaderboard = standings(match);

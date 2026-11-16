@@ -27,3 +27,29 @@ export interface EventDefinition {
   description: string;
 }
 export interface RarityDefinition { name: string; color: string; pattern: string; }
+
+export type AchievementMetric = 'retries' | 'late-ac' | 'first-try' | 'late-start' | 'under-score' | 'all-verdicts' | 'zero-ac' | 'clean-sweep';
+export type AchievementCondition =
+  | { kind: 'cards'; cardIds: string[] }
+  | { kind: 'category'; category: Category; count: number }
+  | { kind: 'gold'; eventId: 'regional' | 'ecf' | 'wf' }
+  | { kind: 'match'; metric: AchievementMetric; target: number };
+export type AchievementReward =
+  | { kind: 'pack'; guarantee: number }
+  | { kind: 'card'; cardId: string; count: number }
+  | { kind: 'points'; amount: number };
+export interface AchievementLevel {
+  id: string;
+  title: string;
+  conditionText: string;
+  condition: AchievementCondition;
+  reward: AchievementReward;
+}
+export interface AchievementDefinition {
+  id: string;
+  category: '收集' | '荣誉' | '搞笑';
+  title: string;
+  description: string;
+  hidden: boolean;
+  levels: AchievementLevel[];
+}

@@ -13,8 +13,9 @@ test.beforeEach(async ({ page }) => {
 });
 
 async function state(page: Page) { return page.evaluate(key => JSON.parse(localStorage.getItem(key)!), storageKey); }
-async function start(page: Page) {
-  await page.clock.install();
+async function start(page: Page, freezeClock = false) {
+  await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') });
+  if (freezeClock) await page.clock.pauseAt(new Date('2026-01-01T00:00:01Z'));
   await page.goto('/');
   await page.getByRole('button', { name: '参加比赛' }).click();
   await expect(page.locator('.hand-cards .game-card')).toHaveCount(8);
@@ -22,7 +23,7 @@ async function start(page: Page) {
 async function elapsed(page: Page, seconds: number) { await page.clock.runFor(seconds * 1000); }
 
 test('contest speed switches between 1x, 2x and 4x and respects pause', async ({ page }) => {
-  await start(page);
+  await start(page, true);
   const slider = page.getByRole('slider', { name: '比赛速度' });
   await expect(slider).toHaveAttribute('aria-valuetext', '1x');
   await elapsed(page, 2);
@@ -98,7 +99,7 @@ test('leaderboard highlights first blood and preserves tied winners after reload
 });
 
 test('screen-edge countdown follows contest time, pause, warning thresholds and viewport size', async ({ page }) => {
-  await start(page);
+  await start(page, true);
   const frame = page.locator('.contest-countdown');
   const path = frame.locator('path');
   await expect(frame).toHaveCSS('color', 'rgb(105, 126, 85)');

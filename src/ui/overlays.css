@@ -405,3 +405,26 @@
     translate: 0 -35px;
   }
 }
+.achievement-unlocks {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 90;
+  width: min(420px, calc(100vw - 48px));
+  max-height: min(600px, calc(100dvh - 48px));
+  display: flex;
+  flex-direction: column;
+  color: var(--ink);
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  box-shadow: 7px 7px 0 #26291c55;
+}
+.achievement-unlocks-heading { padding: 18px 20px; border-bottom: 1px solid var(--line); }
+.achievement-unlocks-heading h2 { margin-top: 6px; font-size: 20px; }
+.achievement-unlocks-list { overflow-y: auto; padding: 0 20px; }
+.achievement-unlock { padding: 18px 0; border-bottom: 1px dashed var(--line); }
+.achievement-unlock:last-child { border-bottom: 0; }
+.achievement-unlock h3 { font-size: 17px; line-height: 1.5; }
+.achievement-unlock p { margin: 8px 0; color: var(--muted); font-size: 12px; line-height: 1.8; }
+.achievement-unlock small { font-size: 11px; color: var(--muted); }
+.achievement-unlocks > button { margin: 12px 20px 20px; flex-shrink: 0; }

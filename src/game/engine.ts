@@ -1,3 +1,5 @@
+import { createAchievementState, evaluateAchievements, processMatchAchievements } from './achievements';
+import { addToCollection } from './collection';
 import { createTrainingOffers, MATCH_POINTS } from './economy';
 import { cards, events, problemNames, teamNames, rarityWeights } from '../content/data';
 import type { Category, CardDefinition } from '../content/types';
@@ -45,7 +47,7 @@ function readingTime(difficulty: number, rng: { randomState: number }): number {
 
 export function createProfile(): Profile {
   const packs: Pack[] = Array.from({ length: 8 }, () => ({ id: uniqueId(), eventId: 'starter', guarantee: 0 }));
-  return { trainingPoints: 0, trainingOffers: createTrainingOffers(), collection: {}, deck: [], season: FIRST_SEASON_YEAR, mainIndex: 0, seasonEnded: false, playedEvents: [], packs, history: [] };
+  return { achievements: createAchievementState(), trainingPoints: 0, trainingOffers: createTrainingOffers(), collection: {}, deck: [], season: FIRST_SEASON_YEAR, mainIndex: 0, seasonEnded: false, playedEvents: [], packs, history: [] };
 }
 
 export function availableEvents(profile: Profile) {
@@ -389,9 +391,10 @@ export function settleMatch(profile: Profile, match: Match): { profile: Profile;
     solved: player.solved, penalty: player.penalty, packs: count, trainingPoints: MATCH_POINTS, promoted, seasonEnded,
     ...contestAwards(event.id, player.rank, ranking.length) };
   const packs: Pack[] = Array.from({ length: count }, () => ({ id: uniqueId(), eventId: event.id, guarantee: event.guarantee }));
-  return { profile: { ...profile, mainIndex: event.kind === 'main' && promoted ? profile.mainIndex + 1 : profile.mainIndex,
-    seasonEnded: profile.seasonEnded || seasonEnded, playedEvents: [...profile.playedEvents, event.id], packs: [...profile.packs, ...packs],
-    trainingPoints: profile.trainingPoints + MATCH_POINTS, trainingOffers: createTrainingOffers(),
+  const achieved = processMatchAchievements(profile, match, result);
+  return { profile: { ...achieved, mainIndex: event.kind === 'main' && promoted ? profile.mainIndex + 1 : profile.mainIndex,
+    seasonEnded: profile.seasonEnded || seasonEnded, playedEvents: [...profile.playedEvents, event.id], packs: [...achieved.packs, ...packs],
+    trainingPoints: achieved.trainingPoints + MATCH_POINTS, trainingOffers: createTrainingOffers(),
     history: [...profile.history, result] }, result };
 }
 
@@ -437,7 +440,7 @@ export function openPack(profile: Profile, index = 0): { profile: Profile; cards
 }
 
 export function collectCard(profile: Profile, cardId: string): Profile {
-  return { ...profile, collection: { ...profile.collection, [cardId]: (profile.collection[cardId] ?? 0) + 1 } };
+  return evaluateAchievements(addToCollection(profile, cardId));
 }
 
 export function rollCategoryPack(category: Category, randomValue: () => number = Math.random): string[] {

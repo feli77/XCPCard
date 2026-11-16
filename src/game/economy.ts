@@ -1,3 +1,5 @@
+import { evaluateAchievements } from './achievements';
+import { addToCollection } from './collection';
 import { cards } from '../content/data';
 import type { Category } from '../content/types';
 import type { Profile, TrainingOffer } from './types';
@@ -42,7 +44,7 @@ export function purchaseOffer(profile: Profile, offerId: string): Profile {
     trainingOffers: profile.trainingOffers.map(item => item.id === offerId ? { ...item, purchased: true } : item) };
   if (offer.kind === 'pack') return { ...updated, packs: [...profile.packs,
     { id: crypto.randomUUID(), eventId: 'training', guarantee: 0, category: offer.category }] };
-  return { ...updated, collection: { ...profile.collection, [offer.cardId]: (profile.collection[offer.cardId] ?? 0) + 1 } };
+  return evaluateAchievements(addToCollection(updated, offer.cardId));
 }
 
 export function recycleCard(profile: Profile, cardId: string): Profile {

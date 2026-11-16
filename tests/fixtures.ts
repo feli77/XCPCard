@@ -8,6 +8,7 @@ export function createTestProfile() {
   ].flatMap(id => [id, id]);
   profile.collection = {};
   for (const id of profile.deck) profile.collection[id] = (profile.collection[id] ?? 0) + 1;
+  profile.achievements.collected = Object.keys(profile.collection);
   profile.packs = [];
   return profile;
 }

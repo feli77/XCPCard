@@ -64,7 +64,7 @@ export interface Match {
   randomState: number;
   feedback: { id: number; problem: number; result: 'AC' | 'WA'; verdict?: Verdict; text: string } | null;
 }
-export interface Pack { id: string; eventId: string; guarantee: number; category?: Category }
+export interface Pack { id: string; eventId: string; guarantee: number; category?: Category; achievementId?: string; levelId?: string }
 export type TrainingOffer = { id: string; price: number; purchased: boolean } & (
   { kind: 'pack'; category?: Category } | { kind: 'card'; cardId: string }
 );
@@ -95,7 +95,16 @@ export interface MatchResult {
 }
 export type Medal = 'gold' | 'silver' | 'bronze';
 export type PodiumTitle = 'champion' | 'runner-up' | 'third-place';
+export interface AchievementState {
+  collected: string[];
+  unlocked: string[];
+  rewarded: string[];
+  notifications: string[];
+  progress: Record<string, number>;
+  match: { id: string; attempts: Record<string, number> } | null;
+}
 export interface Profile {
+  achievements: AchievementState;
   trainingPoints: number;
   trainingOffers: TrainingOffer[];
   collection: Record<string, number>;
