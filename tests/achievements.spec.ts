@@ -321,6 +321,8 @@ for (const width of [1440, 1040]) {
     await expect(locked.getByRole('progressbar')).toHaveAttribute('max', '6');
     await expect(unlocked).toHaveClass(/is-unlocked/);
     await expect(unlocked.getByRole('progressbar')).toHaveCount(0);
+    await expect(unlocked).toHaveText('样例居然没骗人2028 赛季 · 邀请赛');
+    await expect(locked).toHaveText('排序全家桶5 / 6');
     expect(await unlocked.evaluate(card => getComputedStyle(card).backgroundColor))
       .not.toBe(await locked.evaluate(card => getComputedStyle(card).backgroundColor));
     const cardBox = await locked.boundingBox();

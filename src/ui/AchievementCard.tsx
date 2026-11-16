@@ -32,6 +32,7 @@ export function AchievementCard({ achievement, level, stacked = false, style }: 
   const unlocked = !!level?.unlocked;
   const title = hidden ? '隐藏成就' : achievement.title;
   const name = stacked ? `${title} · ${level!.title}` : title;
+  const unlockTime = level?.unlockedAt ? `${level.unlockedAt.season} 赛季 · ${events.find(event => event.id === level.unlockedAt!.eventId)!.name}` : '未记录';
 
   useLayoutEffect(() => {
     if (!open) return;
@@ -92,16 +93,11 @@ export function AchievementCard({ achievement, level, stacked = false, style }: 
         <span className="achievement-question-pattern" aria-hidden="true">{'? '.repeat(180)}</span>
         <span className="achievement-mystery-seal" aria-hidden="true">?</span>
       </> : <>
-        <span className="achievement-card-top"><span>{stacked && level!.title}</span><span>{unlocked ? '已解锁 ◆' : '未解锁 ◇'}</span></span>
-        <span className="achievement-card-body">
-          <span className="achievement-card-copy">
-            <span className="achievement-card-title">{achievement.title}</span>
-            {unlocked ? <span className="achievement-completed"><span>✓</span> 成就达成</span> : <span className="achievement-progress">
-              <span className="achievement-progress-heading"><span>解锁进度</span><b>{Math.min(level!.progress, level!.target)} / {level!.target}</b></span>
-              <progress aria-label={`${name}进度`} value={Math.min(level!.progress, level!.target)} max={level!.target} />
-            </span>}
-          </span>
-        </span>
+        <span className="achievement-card-title">{name}</span>
+        {unlocked ? <span className="achievement-unlocked-at">{unlockTime}</span> : <span className="achievement-progress">
+          <span className="achievement-progress-value">{Math.min(level!.progress, level!.target)} / {level!.target}</span>
+          <progress aria-label={`${name}进度`} value={Math.min(level!.progress, level!.target)} max={level!.target} />
+        </span>}
       </>}
     </button>
     {open && createPortal(<div ref={details} id={tooltipId} className={`achievement-tooltip ${hidden ? 'is-hidden' : unlocked ? 'is-unlocked' : ''}`} style={position} role="tooltip">
@@ -109,7 +105,7 @@ export function AchievementCard({ achievement, level, stacked = false, style }: 
       {!hidden && <>
         <dl>
           <dt>解锁方式</dt><dd>{level!.conditionText}</dd>
-          <dt>解锁时间</dt><dd>{unlocked ? level!.unlockedAt ? `${level!.unlockedAt.season} 赛季 · ${events.find(event => event.id === level!.unlockedAt!.eventId)!.name}` : '未记录' : '尚未解锁'}</dd>
+          <dt>解锁时间</dt><dd>{unlocked ? unlockTime : '尚未解锁'}</dd>
         </dl>
         <div className="achievement-tooltip-reward">奖励：{level!.rewardText}{unlocked && ' · 已到账'}</div>
       </>}

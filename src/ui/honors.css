@@ -48,6 +48,8 @@
   z-index: calc(var(--stack-index) + 1);
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
   aspect-ratio: 183 / 125;
   padding: 10px;
   overflow: hidden;
@@ -66,17 +68,10 @@
 .achievement-card:is(:hover, :focus-visible) { z-index: 10; box-shadow: 3px 8px 0 color-mix(in srgb, var(--card-line) 65%, #d7d8ce), 0 12px 24px #30392b18; }
 .achievement-card:focus-visible { outline: 2px solid #52754d; outline-offset: 4px; }
 .achievement-card:is(:hover, :focus-visible)::after { opacity: .6; }
-.achievement-card-top { display: flex; align-items: center; justify-content: space-between; gap: 4px; position: relative; z-index: 1; color: var(--card-accent); font-size: 9px; line-height: 12px; }
-.achievement-card-top > span:last-child { flex-shrink: 0; font-size: 9px; }
-.achievement-card-top b { font-weight: 600; }
-.achievement-card-body { display: flex; flex: 1; min-height: 0; margin-top: 7px; }
-.achievement-card-copy { display: flex; flex: 1; min-width: 0; flex-direction: column; justify-content: space-between; gap: 4px; }
 .achievement-card-title { font-size: 14px; font-weight: 800; line-height: 1.45; text-wrap: balance; }
-.achievement-completed { display: flex; align-items: center; gap: 7px; font-size: 10px; letter-spacing: 2px; color: #52754d; }
-.achievement-completed > span { display: grid; place-items: center; width: 18px; height: 18px; border: 1px solid #83a074; border-radius: 50%; font-size: 11px; }
+.achievement-unlocked-at { color: #52754d; font-size: 10px; line-height: 1.6; }
 .achievement-progress { display: flex; flex-direction: column; gap: 5px; color: #83877f; font-size: 9px; }
-.achievement-progress-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 4px; }
-.achievement-progress-heading b { font: 11px var(--mono); color: #61685e; }
+.achievement-progress-value { align-self: flex-end; font: 11px var(--mono); color: #61685e; }
 .achievement-progress progress { appearance: none; width: 100%; height: 4px; border: 0; border-radius: 2px; overflow: hidden; background: #d8dcd4; }
 .achievement-progress progress::-webkit-progress-bar { background: #d8dcd4; }
 .achievement-progress progress::-webkit-progress-value { background: #8a9483; }
