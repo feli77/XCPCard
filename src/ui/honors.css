@@ -70,11 +70,6 @@
 .achievement-card-top > span:last-child { flex-shrink: 0; font-size: 9px; }
 .achievement-card-top b { font-weight: 600; }
 .achievement-card-body { display: flex; gap: 15px; flex: 1; min-height: 0; margin-top: 13px; }
-.achievement-art { position: relative; display: grid; place-items: center; flex: 0 0 84px; color: var(--card-accent); border: 1px solid color-mix(in srgb, var(--card-accent) 35%, transparent); border-radius: 3px; background: repeating-linear-gradient(135deg, transparent 0 5px, #85888212 5px 6px); }
-.is-unlocked .achievement-art { background: repeating-linear-gradient(135deg, transparent 0 5px, #52754d12 5px 6px), #d8e5ce; }
-.achievement-art::before { content: ''; position: absolute; width: 60px; height: 60px; border: 1px solid color-mix(in srgb, var(--card-accent) 35%, transparent); border-radius: 50%; }
-.achievement-art .pixel-art { width: 46px; height: 36px; filter: drop-shadow(1px 2px 0 #ffffff80); }
-.achievement-art-star { position: absolute; bottom: 2px; font-size: 14px; }
 .achievement-card-copy { display: flex; flex: 1; min-width: 0; flex-direction: column; justify-content: space-between; gap: 12px; padding: 4px 1px 7px 0; }
 .achievement-card-title { font-size: 18px; font-weight: 800; line-height: 1.55; letter-spacing: -.5px; text-wrap: balance; }
 .achievement-completed { display: flex; align-items: center; gap: 7px; font-size: 10px; letter-spacing: 2px; color: #52754d; }

@@ -3,16 +3,9 @@ import type { CSSProperties, Dispatch, PointerEvent, PropsWithChildren, SetState
 import { createPortal } from 'react-dom';
 import { events } from '../content/data';
 import type { AchievementView } from '../game/achievements';
-import { PixelArt } from './PixelArt';
 
 type VisibleAchievement = Extract<AchievementView, { hidden: false }>;
 type Level = VisibleAchievement['levels'][number];
-
-const illustrations: Record<string, string> = {
-  sorting: 'sort', geometry: 'geometry', gold: 'trophy', retry: 'bag',
-  'last-minute': 'coffee', sample: 'search', warmup: 'coffee', proof: 'template',
-  verdicts: 'dice', attendance: 'template', penalty: 'trophy',
-};
 
 const DetailsContext = createContext<{ active: string | null; setActive: Dispatch<SetStateAction<string | null>> } | null>(null);
 
@@ -101,7 +94,6 @@ export function AchievementCard({ achievement, level, stacked = false, style }: 
       </> : <>
         <span className="achievement-card-top"><span>{stacked && level!.title}</span><span>{unlocked ? '已解锁 ◆' : '未解锁 ◇'}</span></span>
         <span className="achievement-card-body">
-          <span className="achievement-art" aria-hidden="true"><PixelArt kind={illustrations[achievement.id] ?? 'trophy'} /><span className="achievement-art-star">✦</span></span>
           <span className="achievement-card-copy">
             <span className="achievement-card-title">{achievement.title}</span>
             {unlocked ? <span className="achievement-completed"><span>✓</span> 成就达成</span> : <span className="achievement-progress">
