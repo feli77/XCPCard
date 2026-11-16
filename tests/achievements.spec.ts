@@ -324,7 +324,14 @@ for (const width of [1440, 1040]) {
     expect(await unlocked.evaluate(card => getComputedStyle(card).backgroundColor))
       .not.toBe(await locked.evaluate(card => getComputedStyle(card).backgroundColor));
     const cardBox = await locked.boundingBox();
-    expect(cardBox!.width).toBeGreaterThan(cardBox!.height);
+    expect(cardBox!.width / cardBox!.height).toBeCloseTo(183 / 125, 2);
+    const frontCards = await page.locator('.achievement-list > .achievement-stack').evaluateAll(stacks => stacks.map(stack => {
+      const rect = stack.lastElementChild!.getBoundingClientRect();
+      return { top: rect.top, width: rect.width };
+    }));
+    expect(frontCards.slice(0, 5).every(card => Math.abs(card.top - frontCards[0].top) < 1)).toBe(true);
+    expect(frontCards[5].top).toBeGreaterThan(frontCards[0].top);
+    expect(frontCards.every(card => card.width < 260)).toBe(true);
 
     await locked.hover();
     const tooltip = page.getByRole('tooltip');
