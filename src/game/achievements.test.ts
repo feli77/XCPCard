@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { achievementDefinitions } from '../content/achievements';
 import { cards, events } from '../content/data';
 import { acknowledgeAchievementNotifications, evaluateAchievements, getAchievementView, processMatchAchievements, restoreAchievements } from './achievements';
-import { advanceJudging, collectCard, createProfile, nextSeason, settleMatch, startMatch } from './engine';
+import { act, advanceJudging, collectCard, createProfile, nextSeason, settleMatch, startMatch } from './engine';
 import { recycleCard } from './economy';
 import type { Attempt, Match, Profile, Verdict } from './types';
 
@@ -177,8 +177,9 @@ describe('成就持久化和重复调用', () => {
     const profile = createProfile();
     profile.achievements.unlocked = ['geometry:1', 'sample:1', 'gold:regional', 'gold:ecf', 'gold:wf', 'retry:1'];
     expect(getAchievementView(profile).map(achievement => achievement.id)).toEqual([
-      'geometry', 'gold', 'sample', 'sorting', 'retry', 'penalty',
+      'geometry', 'gold', 'sample', 'sorting', 'retry', 'penalty', 'segment-tree', 'automaton', 'reader',
       'last-minute', 'warmup', 'proof', 'verdicts', 'attendance',
+      'false-advertising', 'unlucky', 'brute-force', 'gambler', 'caffeine-rhythm', 'ancestor',
     ]);
   });
   it('隐藏条目未解锁时只投影 ID 和隐藏状态，解锁后提供完整条件奖励', () => {
@@ -378,5 +379,139 @@ describe('成就解锁时间', () => {
     expect(updated.achievements.unlockedAt['sorting:1']).toBeUndefined();
     expect(updated.achievements.unlockedAt['sample:1']).toEqual({ season: restored.season, eventId: 'school' });
     expect(restoreAchievements(JSON.parse(JSON.stringify(updated)))).toEqual(updated);
+  });
+});
+
+describe('新增成就条件和奖励', () => {
+  const segmentTrees = ['segment-tree', 'li-chao-tree', 'segment-tree-merge', 'persistent-segment-tree', 'segment-tree-divide-conquer'];
+  const automatons = ['aho-corasick', 'subsequence-automaton', 'suffix-automaton', 'palindromic-tree'];
+
+  it('万物皆可线段树：集齐五种线段树卡后解锁并赠送树套树', () => {
+    let profile = segmentTrees.slice(0, 4).reduce(collectCard, createProfile());
+    expect(profile.achievements.unlocked).not.toContain('segment-tree:1');
+    const view = getAchievementView(profile).find(item => item.id === 'segment-tree')!;
+    if (!view.hidden) expect(view.levels[0]).toMatchObject({ progress: 4, target: 5, unlocked: false });
+    profile = collectCard(profile, segmentTrees[4]);
+    expect(profile.achievements.unlocked).toContain('segment-tree:1');
+    expect(profile.collection['tree-of-trees']).toBe(1);
+    expect(profile.achievements.collected).toContain('tree-of-trees');
+    expect(profile.deck).toEqual([]);
+  });
+
+  it('全自动解题：集齐四种自动机后解锁并发放紫保底包', () => {
+    let profile = automatons.slice(0, 3).reduce(collectCard, createProfile());
+    expect(profile.achievements.unlocked).not.toContain('automaton:1');
+    profile = collectCard(profile, automatons[3]);
+    expect(profile.achievements.unlocked).toContain('automaton:1');
+    expect(profile.packs.filter(pack => pack.achievementId === 'automaton')).toEqual([
+      { id: 'achievement:automaton:1', eventId: 'achievement', achievementId: 'automaton', levelId: '1', guarantee: 4 },
+    ]);
+  });
+
+  it('我们仨都是读题位：读完所有题面即解锁，差一题不解锁', () => {
+    const profile = createProfile();
+    const match = startMatch(profile, 'school', 42);
+    for (const problem of match.problems.slice(0, -1)) problem.readProgress = problem.readTime;
+    const before = processMatchAchievements(profile, match);
+    expect(before.achievements.unlocked).not.toContain('reader:1');
+    match.problems.at(-1)!.readProgress = match.problems.at(-1)!.readTime;
+    const after = processMatchAchievements(before, match);
+    expect(after.achievements.unlocked).toContain('reader:1');
+    expect(after.trainingPoints).toBe(50);
+    expect(processMatchAchievements(after, match)).toBe(after);
+  });
+
+  it('虚假宣传：牌桌含 AC 自动机且未通过解锁；AC 或无 AC 自动机 WA 不解锁', () => {
+    const waWithAcam = processMatchAchievements(createProfile(), gameWith([{ time: 20, result: 'WA', verdict: 'WA', score: 0, cards: ['aho-corasick'] }]));
+    expect(waWithAcam.achievements.unlocked).toContain('false-advertising:1');
+    expect(waWithAcam.trainingPoints).toBe(50);
+    const acWithAcam = processMatchAchievements(createProfile(), gameWith([{ time: 20, result: 'AC', verdict: 'AC', score: 5000, cards: ['aho-corasick'] }]));
+    expect(acWithAcam.achievements.unlocked).not.toContain('false-advertising:1');
+    const waWithoutAcam = processMatchAchievements(createProfile(), gameWith([{ time: 20, result: 'WA', verdict: 'WA', score: 0, cards: ['enumerate'] }]));
+    expect(waWithoutAcam.achievements.unlocked).not.toContain('false-advertising:1');
+  });
+
+  it('被卡常了：分数不低于难度却未通过解锁；低分 WA 或高分 AC 不解锁', () => {
+    const match = gameWith([]);
+    const difficulty = match.problems[0].difficulty;
+    match.problems[0].attempts = [{ time: 20, result: 'WA', verdict: 'TLE', score: difficulty - 1 }];
+    expect(processMatchAchievements(createProfile(), match).achievements.unlocked).not.toContain('unlucky:1');
+    match.problems[0].attempts = [{ time: 20, result: 'AC', verdict: 'AC', score: difficulty }];
+    match.problems[0].acTime = 20;
+    expect(processMatchAchievements(createProfile(), match).achievements.unlocked).not.toContain('unlucky:1');
+    const unluckyMatch = gameWith([{ time: 20, result: 'WA', verdict: 'TLE', score: difficulty }]);
+    const unlocked = processMatchAchievements(createProfile(), unluckyMatch);
+    expect(unlocked.achievements.unlocked).toContain('unlucky:1');
+    expect(unlocked.trainingPoints).toBe(50);
+  });
+
+  it('大力出奇迹：仅用不匹配算法卡 AC 解锁并送模拟退火；含匹配卡或未通过不解锁', () => {
+    const match = gameWith([]);
+    const targetCat = match.problems[0].categories[0];
+    const mismatched = cards.find(c => c.type === 'algorithm' && !c.categories.some(cat => match.problems[0].categories.includes(cat)))!;
+    const matched = cards.find(c => c.type === 'algorithm' && c.categories.includes(targetCat))!;
+    match.problems[0].attempts = [{ time: 30, result: 'AC', verdict: 'AC', score: 5000, cards: [mismatched.id, 'template'] }];
+    match.problems[0].acTime = 30;
+    const unlocked = processMatchAchievements(createProfile(), match);
+    expect(unlocked.achievements.unlocked).toContain('brute-force:1');
+    expect(unlocked.collection['simulated-annealing']).toBe(1);
+
+    const mixedMatch = gameWith([{ time: 30, result: 'AC', verdict: 'AC', score: 5000, cards: [mismatched.id, matched.id] }]);
+    expect(processMatchAchievements(createProfile(), mixedMatch).achievements.unlocked).not.toContain('brute-force:1');
+    const failedMatch = gameWith([{ time: 30, result: 'WA', verdict: 'WA', score: 0, cards: [mismatched.id] }]);
+    expect(processMatchAchievements(createProfile(), failedMatch).achievements.unlocked).not.toContain('brute-force:1');
+  });
+
+  it('阳寿做题：牌桌无算法卡 AC 解锁并送骰子；含算法卡或未通过不解锁', () => {
+    const unlocked = processMatchAchievements(createProfile(), gameWith([{ time: 25, result: 'AC', verdict: 'AC', score: 5000, cards: ['dice', 'template'] }]));
+    expect(unlocked.achievements.unlocked).toContain('gambler:1');
+    expect(unlocked.collection.dice).toBe(1);
+    const withAlgo = processMatchAchievements(createProfile(), gameWith([{ time: 25, result: 'AC', verdict: 'AC', score: 5000, cards: ['dice', 'enumerate'] }]));
+    expect(withAlgo.achievements.unlocked).not.toContain('gambler:1');
+    const waOnlyTech = processMatchAchievements(createProfile(), gameWith([{ time: 25, result: 'WA', verdict: 'WA', score: 0, cards: ['dice'] }]));
+    expect(waOnlyTech.achievements.unlocked).not.toContain('gambler:1');
+  });
+
+  it('咖啡配音游：双全局效果同时激活解锁并送舞萌曲谱；单效果或过期不解锁', () => {
+    const profile = createProfile();
+    const match = startMatch(profile, 'school', 42);
+    match.time = 10;
+    match.globalEffects = { coffee: { expiresAt: 50, factor: 0.75 } };
+    expect(processMatchAchievements(profile, match).achievements.unlocked).not.toContain('caffeine-rhythm:1');
+    match.globalEffects = { coffee: { expiresAt: 10, factor: 0.75 }, draw: { expiresAt: 50, interval: 3 } };
+    expect(processMatchAchievements(profile, match).achievements.unlocked).not.toContain('caffeine-rhythm:1');
+    match.globalEffects = { coffee: { expiresAt: 50, factor: 0.75 }, draw: { expiresAt: 50, interval: 3 } };
+    const unlocked = processMatchAchievements(profile, match);
+    expect(unlocked.achievements.unlocked).toContain('caffeine-rhythm:1');
+    expect(unlocked.collection.maimai).toBe(1);
+    expect(processMatchAchievements(unlocked, match)).toBe(unlocked);
+  });
+
+  it('违背祖宗的决定：知识回炉分解祖传模板解锁并加 50 训练点，分解其它卡不解锁', () => {
+    let profile = collectCard(createProfile(), 'enumerate');
+    profile = recycleCard(profile, 'enumerate');
+    expect(profile.achievements.unlocked).not.toContain('ancestor:1');
+    expect(profile.trainingPoints).toBe(5);
+
+    profile = collectCard(profile, 'template');
+    profile = recycleCard(profile, 'template');
+    expect(profile.achievements.unlocked).toContain('ancestor:1');
+    expect(profile.trainingPoints).toBe(60);
+  });
+
+  it('完整提交流程自动记录牌桌卡牌到 attempt.cards 并触发牌桌相关成就', () => {
+    const profile = createProfile();
+    let match = startMatch(profile, 'school', 42);
+    const problem = match.problems[0];
+    problem.readProgress = problem.readTime;
+    problem.difficulty = -100000;
+    problem.table = [{ uid: 't1', cardId: 'dice', progress: 2, duration: 2, active: true, dice: 600 }];
+    match = act(match, { type: 'submit' });
+    expect(match.problems[0].judging?.attempt.cards).toEqual(['dice']);
+    match = advanceJudging(match, 5000);
+    expect(match.problems[0].attempts[0].cards).toEqual(['dice']);
+    const unlocked = processMatchAchievements(profile, match);
+    expect(unlocked.achievements.unlocked).toContain('gambler:1');
+    expect(unlocked.collection.dice).toBe(1);
   });
 });

@@ -135,7 +135,7 @@ test('公布多题结果才解锁，原生对话框排队，三类奖励和隐�
   await page.locator('[data-achievement="last-minute"] .achievement-card').focus();
   await expect(page.getByRole('tooltip')).toContainText('已到账');
   await expect(page.getByRole('tooltip')).toContainText(`${profile.season} 赛季 · 校赛`);
-  await expect(page.locator('.achievement-card.is-hidden')).toHaveCount(2);
+  await expect(page.locator('.achievement-card.is-hidden')).toHaveCount(8);
   await expect(page.locator('.achievements')).not.toContainText('来都来了');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1040);
   await page.screenshot({ path: 'test-results/achievements-compact.png', fullPage: true, animations: 'disabled' });
@@ -322,7 +322,8 @@ for (const width of [1440, 1040]) {
     await load(page, updated);
     await page.getByRole('button', { name: '成就', exact: true }).click();
     expect(await page.locator('.achievement-list > .achievement-stack').evaluateAll(stacks => stacks.map(stack => stack.getAttribute('data-achievement')))).toEqual([
-      'last-minute', 'sample', 'sorting', 'geometry', 'gold', 'retry', 'penalty', 'warmup', 'proof', 'verdicts', 'attendance',
+      'last-minute', 'sample', 'sorting', 'geometry', 'gold', 'retry', 'penalty', 'segment-tree', 'automaton', 'reader',
+      'warmup', 'proof', 'verdicts', 'attendance', 'false-advertising', 'unlucky', 'brute-force', 'gambler', 'caffeine-rhythm', 'ancestor',
     ]);
 
     const locked = page.locator('[data-achievement="sorting"] .achievement-card');

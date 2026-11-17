@@ -8,7 +8,7 @@ export interface TableCard extends CardInstance {
   dice?: number;
 }
 export type Verdict = 'AC' | 'WA' | 'TLE' | 'MLE' | 'RE';
-export interface Attempt { time: number; result: 'AC' | 'WA'; verdict?: Verdict; score: number }
+export interface Attempt { time: number; result: 'AC' | 'WA'; verdict?: Verdict; score: number; cards?: string[] }
 export interface Problem {
   id: string;
   label: string;

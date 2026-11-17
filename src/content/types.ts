@@ -28,7 +28,22 @@ export interface EventDefinition {
 }
 export interface RarityDefinition { name: string; color: string; pattern: string; }
 
-export type AchievementMetric = 'retries' | 'late-ac' | 'first-try' | 'late-start' | 'under-score' | 'all-verdicts' | 'zero-ac' | 'clean-sweep';
+export type AchievementMetric =
+  | 'retries'
+  | 'late-ac'
+  | 'first-try'
+  | 'late-start'
+  | 'under-score'
+  | 'all-verdicts'
+  | 'zero-ac'
+  | 'clean-sweep'
+  | 'read-all'
+  | 'ac-automaton-wa'
+  | 'over-score-wa'
+  | 'mismatch-ac'
+  | 'no-algorithm-ac'
+  | 'dual-buff'
+  | 'recycle-template';
 export type AchievementCondition =
   | { kind: 'cards'; cardIds: string[] }
   | { kind: 'category'; category: Category; count: number }

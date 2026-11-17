@@ -145,7 +145,7 @@ function submit(match: Match, index: number) {
     : failureFeedback[Math.floor(random(cosmetic) * failureFeedback.length)];
   const duration = 1000 + Math.floor(random(cosmetic) * 4001);
   problem.judging = { duration, remaining: duration,
-    attempt: { time: match.time, result: accepted ? 'AC' : 'WA', verdict: feedback.verdict, score }, text: feedback.text };
+    attempt: { time: match.time, result: accepted ? 'AC' : 'WA', verdict: feedback.verdict, score, cards: problem.table.map(card => card.cardId) }, text: feedback.text };
   problem.submitQueued = false;
   return true;
 }

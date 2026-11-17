@@ -4,6 +4,7 @@ import type { AchievementCondition, AchievementLevel, AchievementReward } from '
 import type { AchievementState, AchievementUnlock, Match, MatchResult, Profile } from './types';
 import { addToCollection } from './collection';
 
+const cardById = Object.fromEntries(cards.map(card => [card.id, card]));
 export const achievementKey = (achievementId: string, levelId: string) => `${achievementId}:${levelId}`;
 export function createAchievementState(): AchievementState {
   return { collected: [], unlocked: [], unlockedAt: {}, rewarded: [], notifications: [], progress: {}, match: null };
@@ -83,19 +84,35 @@ export function acknowledgeAchievementNotifications(profile: Profile, ids: strin
 export function processMatchAchievements(profile: Profile, match: Match, result?: MatchResult): Profile {
   const state = profile.achievements;
   const previous = state.match?.id === match.id ? state.match.attempts : {};
-  if (!result && match.problems.every(problem => (previous[problem.id] ?? 0) === problem.attempts.length)) return profile;
+  const readAll = match.problems.length > 0 && match.problems.every(problem => problem.readProgress >= problem.readTime);
+  const dualBuff = !!(match.globalEffects.coffee && match.globalEffects.coffee.expiresAt > match.time &&
+    match.globalEffects.draw && match.globalEffects.draw.expiresAt > match.time);
+  if (!result && !(readAll && !state.progress['read-all']) && !(dualBuff && !state.progress['dual-buff']) &&
+    match.problems.every(problem => (previous[problem.id] ?? 0) === problem.attempts.length)) return profile;
   const progress = { ...state.progress };
   const record = (key: string, value = 1) => { progress[key] = Math.max(progress[key] ?? 0, value); };
+  if (readAll) record('read-all');
+  if (dualBuff) record('dual-buff');
   for (const problem of match.problems) {
     for (let i = previous[problem.id] ?? 0; i < problem.attempts.length; i++) {
       const attempt = problem.attempts[i];
-      if (attempt.result !== 'AC') continue;
+      const played = (attempt.cards ?? []).map(id => cardById[id]).filter(Boolean);
+      if (attempt.result !== 'AC') {
+        if (attempt.score >= problem.difficulty) record('over-score-wa');
+        if (attempt.cards?.includes('aho-corasick')) record('ac-automaton-wa');
+        continue;
+      }
       const failures = problem.attempts.slice(0, i).filter(item => item.result !== 'AC');
       record('retries', failures.length);
       if (i === 0) record('first-try');
       if (attempt.time >= 295 && attempt.time < 300) record('late-ac');
       if (attempt.score < problem.difficulty) record('under-score');
       if (['WA', 'TLE', 'MLE', 'RE'].every(verdict => failures.some(item => item.verdict === verdict))) record('all-verdicts');
+      if (played.length) {
+        const algorithms = played.filter(card => card.type === 'algorithm');
+        if (!algorithms.length) record('no-algorithm-ac');
+        else if (algorithms.every(card => !card.categories.some(category => problem.categories.includes(category)))) record('mismatch-ac');
+      }
     }
   }
   if (result && !match.problems.some(problem => problem.judging) && !profile.history.some(item => item.matchId === match.id)) {

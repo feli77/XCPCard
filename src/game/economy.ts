@@ -54,5 +54,10 @@ export function recycleCard(profile: Profile, cardId: string): Profile {
   if (--collection[cardId] === 0) delete collection[cardId];
   const deck = [...profile.deck];
   if (deck.filter(id => id === cardId).length > (collection[cardId] ?? 0)) deck.splice(deck.indexOf(cardId), 1);
-  return { ...profile, collection, deck, trainingPoints: profile.trainingPoints + RECYCLE_POINTS[card.rarity] };
+  const next = { ...profile, collection, deck, trainingPoints: profile.trainingPoints + RECYCLE_POINTS[card.rarity] };
+  if (cardId !== 'template') return next;
+  return evaluateAchievements({
+    ...next,
+    achievements: { ...next.achievements, progress: { ...next.achievements.progress, 'recycle-template': 1 } },
+  }, false);
 }
