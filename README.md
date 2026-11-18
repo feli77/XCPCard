@@ -17,4 +17,7 @@ npm run test:e2e # 浏览器流程测试，首次运行需 npx playwright instal
 npm run build   # 生产构建
 ```
 
+推送到 `main` 分支会通过 GitHub Actions 自动构建并发布到 GitHub Pages。
+仓库启用 Pages 后，游戏地址为：`https://feli77.github.io/XCPCard/`
+
 卡牌、题名、队名与赛事配置在 `src/content/`，比赛及赛季规则在 `src/game/`，界面在 `src/ui/`。新卡沿用现有效果时只需添加内容数据；新效果需扩展效果类型和引擎处理。
